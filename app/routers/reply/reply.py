@@ -1,0 +1,60 @@
+from fastapi import APIRouter
+from fastapi.params import Depends
+from sqlalchemy.orm import Session
+
+from app.db.database import obter_sessao
+from app.exceptions.exceptions import AIResponseException
+from app.schemas.digisac_schema import DigisacRequest
+from app.schemas.evolutionapi_schema import EvolutionAPIRequest
+from app.services.company_service import get_company
+from app.services.contato_service import obter_criar_contato
+from app.services.direcionamento_service import direcionar
+from app.services.mensagem_service import obter_mensagem, enviar_mensagem
+from app.services.thread_service import executar_thread
+from app.utils.logger import logger
+from reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
+
+router = APIRouter()
+
+
+@router.post("/{slug}/{token}")
+async def reply(
+        request: DigisacRequest | EvolutionAPIRequest,
+        slug: str,
+        token: str,
+        db: Session = Depends(obter_sessao)
+):
+    reply_result = False
+
+    company_data = await get_company(slug, token, db)
+    if company_data is None:
+        return reply_result
+    company, message_client, agenda_client, crm_client = company_data
+
+    contact, assistant, contact_data = await obter_criar_contato(request, None, company, message_client, crm_client, db)
+    if contact is None:
+        return reply_result
+
+    try:
+        if not _handle_contact_can_receive_replies(contact):
+            return reply_result
+
+        message, is_audio, image = await obter_mensagem(request, message_client, assistant)
+
+        if isinstance(request, EvolutionAPIRequest):
+            if not await _handle_evolutionapi_request(request, company, contact, is_audio, db):
+                return reply_result
+        else:
+            if not await _handle_digisac_request(request, contact, db):
+                return reply_result
+
+        response = await executar_thread(message, image, contact, contact_data, assistant, db)
+        await direcionar(response, is_audio, message_client, agenda_client, crm_client, company, contact, assistant, db)
+
+        reply_result = True
+    except AIResponseException:
+        await enviar_mensagem(company.mensagem_erro_ia, False, None, contact, None, message_client, assistant, db)
+        logger.exception(f"An AI response error occurred while processing the request")
+    except Exception:
+        logger.exception(f"An unexpected error occurred while processing the request")
+    return reply_result
