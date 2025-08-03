@@ -8,7 +8,7 @@ from app.types.types import CompanyData
 
 
 async def get_company(slug: str, token: str, db: Session) -> CompanyData:
-    company = db.query(Empresa).filter(slug=slug, token=token, empresa_ativa=True).first()
+    company = db.query(Empresa).filter_by(slug=slug, token=token, empresa_ativa=True).first()
 
     if company is not None:
         message_client = criar_message_client(company, db)

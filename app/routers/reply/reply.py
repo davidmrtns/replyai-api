@@ -12,7 +12,7 @@ from app.services.direcionamento_service import direcionar
 from app.services.mensagem_service import obter_mensagem, enviar_mensagem
 from app.services.thread_service import executar_thread
 from app.utils.logger import logger
-from reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
+from .reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
 
 router = APIRouter()
 
