@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 
 from app.db.new_models import Contact, Company
 from app.db.models import Agenda
-from app.services.agendamento_service import extrair_dados_evento, criar_agenda_client
+from app.services.agenda_service import create_agenda_client
+from app.services.agendamento_service import extrair_dados_evento
 from app.services.cobranca_service import extrair_dados_cobranca, criar_financial_client
 from app.services.contato_service import redefinir_contato, obter_criar_contato, atualizar_thread_contato, \
     atualizar_assistente_atual_contato, transferir_contato, obter_id_contato
@@ -53,7 +54,7 @@ async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Sessi
 
 
 async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Company, db: Session):
-    agenda_client = criar_agenda_client(empresa, db)
+    agenda_client = create_agenda_client(empresa, db)
     agendas = db.query(Agenda).filter_by(id_empresa=empresa.id).all()
 
     message_client = criar_message_client(empresa, db)

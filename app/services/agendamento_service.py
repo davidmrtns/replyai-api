@@ -194,34 +194,3 @@ async def obter_nova_data_reagendamento(
         return resposta_dict.get("nova_data", "")
     return None
 
-
-def criar_agenda_client(empresa: Company, db: Session):
-    if empresa.agenda_client_type == "outlook":
-        outlook_client_db = db.query(OutlookClient).filter_by(id_empresa=empresa.id).first()
-        if outlook_client_db:
-            return Outlook(
-                access_token=outlook_client_db.access_token,
-                refresh_token=outlook_client_db.refresh_token,
-                expires_in=outlook_client_db.expires_in,
-                expires_at=outlook_client_db.expires_at,
-                usuarioPadrao=outlook_client_db.usuarioPadrao,
-                duracaoEvento=empresa.duracao_evento,
-                horaInicioAgenda=empresa.hora_inicio_agenda,
-                horaFinalAgenda=empresa.hora_final_agenda,
-                timeZone=outlook_client_db.timeZone,
-                client_db=outlook_client_db,
-                db=db
-            )
-    elif empresa.agenda_client_type == "google_calendar":
-        googlecalendar_client_db = db.query(GoogleCalendarClient).filter_by(id_empresa=empresa.id).first()
-        if googlecalendar_client_db:
-            return GoogleCalendar(
-                access_token=googlecalendar_client_db.access_token,
-                refresh_token=googlecalendar_client_db.refresh_token,
-                duracao_evento=empresa.duracao_evento,
-                hora_inicio_agenda=empresa.hora_inicio_agenda,
-                hora_final_agenda=empresa.hora_final_agenda,
-                timezone=googlecalendar_client_db.timezone,
-                client_db=googlecalendar_client_db,
-                db=db
-            )

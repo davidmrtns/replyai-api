@@ -14,8 +14,7 @@ from app.db.new_models import OutlookClient
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.atualizacao_empresa_schema import InformacoesFusoHorario
 from app.schemas.empresa_schema import OutlookClientSchema as OutlookClientSchemaEmpresa
-from app.services.agendamento_service import criar_agenda_client
-from app.utils.outlook import Outlook
+from app.services.agenda_service import create_agenda_client
 
 
 router = APIRouter()
@@ -119,7 +118,7 @@ async def obter_timezones(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    outlook_client = criar_agenda_client(empresa, db)
+    outlook_client = create_agenda_client(empresa, db)
     if outlook_client:
         timezones = await outlook_client.listar_timezones()
         return timezones

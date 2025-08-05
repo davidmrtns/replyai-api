@@ -12,7 +12,6 @@ from app.db.new_models import GoogleCalendarClient
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.atualizacao_empresa_schema import InformacoesFusoHorario
 from app.schemas.empresa_schema import GoogleCalendarClientSchema as GoogleCalendarClientSchemaEmpresa
-from app.services.agendamento_service import criar_agenda_client
 
 router = APIRouter()
 
