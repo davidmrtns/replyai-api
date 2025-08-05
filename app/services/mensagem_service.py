@@ -3,8 +3,6 @@ from sqlalchemy.orm import Session
 from app.db.models import Midia
 from app.db.new_models import Contact, Voice, Assistant, Company
 from app.db.new_models import DigisacClient, EvolutionAPIClient
-from app.schemas.digisac_schema import DigisacRequest
-from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.utils.assistant import Assistant as AiAssistant
 from app.utils.digisac import Digisac
 from app.utils.eleven_labs import ElevenLabs
@@ -67,35 +65,3 @@ def criar_message_client(empresa: Company, db: Session):
     else:
         raise ValueError(f"Tipo de MessageClient desconhecido: {empresa.message_client_type}")
     return None
-
-
-async def obter_mensagem(request: DigisacRequest | EvolutionAPIRequest, message_client: MessageClient, assistente: Assistant):
-    audio = False
-    mensagem = ""
-    imagem = ""
-
-    if isinstance(request, DigisacRequest):
-        if request.data.message.type == "audio" or request.data.message.type == "ptt":
-            audio = True
-        else:
-            mensagem = request.data.message.text or ""
-            if request.data.message.type == "image":
-                imagem = message_client.obter_arquivo(request=request, apenas_url=True)
-    elif isinstance(request, EvolutionAPIRequest):
-        if request.data.message.audioMessage is not None:
-            audio = True
-        elif request.data.message.imageMessage is not None:
-            mensagem = request.data.message.imageMessage.caption
-            imagem = request.data.message.base64
-        else:
-            if request.data.message.extendedTextMessage:
-                mensagem = request.data.message.extendedTextMessage.text
-            else:
-                mensagem = request.data.message.conversation or ""
-
-    if audio:
-        arquivo = message_client.obter_arquivo(request=request)
-        if arquivo is not None:
-            transcricao = await assistente.transcrever_audio(arquivo)
-            mensagem = transcricao
-    return mensagem, audio, imagem
