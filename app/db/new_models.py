@@ -123,7 +123,7 @@ class Contact(Base):
     contact_id = Column(String, index=True)
     phone_number = Column(String)
     contact_name = Column(String)
-    current_thread = Column(Integer, ForeignKey("threads.id"), nullable=True, default=None)
+    current_thread_id = Column(Integer, ForeignKey("threads.id"), nullable=True, default=None)
     current_assistant = Column(Integer, ForeignKey("assistants.id"), nullable=True, default=None)
     last_message_at = Column(DateTime)
     recall_count = Column(Integer, default=0)
@@ -134,6 +134,7 @@ class Contact(Base):
     company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company", backref="contacts")
+    current_thread = relationship("Thread", foreign_keys=[current_thread_id])
 
 
 class DigisacClient(Base):

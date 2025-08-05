@@ -3,21 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.models import Agenda, Departamento
 from app.db.new_models import Company, Assistant
 from app.db.new_models import DigisacClient
-from app.services.agendamento_service import criar_agenda_client
-from app.services.crm_service import create_crm_client
-from app.services.mensagem_service import criar_message_client
 from app.utils.assistant import Assistant
-
-
-async def obter_empresa(slug: str, token: str, db: Session):
-    empresa: Company | None = db.query(Company).filter_by(slug=slug, token=token, empresa_ativa=True).first()
-
-    if empresa is not None:
-        message_client = criar_message_client(empresa, db)
-        agenda_client = criar_agenda_client(empresa, db)
-        crm_client = create_crm_client(empresa, db)
-        return empresa, message_client, agenda_client, crm_client
-    return None
 
 
 async def obter_endereco_agenda(empresa: Company, atalho: str, db: Session):

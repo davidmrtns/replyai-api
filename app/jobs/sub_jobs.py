@@ -9,7 +9,7 @@ from app.services.contato_service import redefinir_contato, obter_criar_contato,
 from app.services.direcionamento_service import direcionar
 from app.services.empresa_service import obter_assistente, obter_departamento
 from app.services.mensagem_service import criar_message_client
-from app.services.thread_service import executar_thread
+from app.services.thread_service import execute_thread
 from app.utils.digisac import Digisac
 from app.utils.financial_client import FinancialClient
 from app.utils.message_client import MessageClient
@@ -40,7 +40,7 @@ async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Sessi
                 if origem_mensagem is None or origem_mensagem == "user":
                     await redefinir_contato(contato, db)
                     return
-        resposta = await executar_thread(acao, None, contato, None, assistente, db)
+        resposta = await execute_thread(acao, None, contato, assistente, db)
         await direcionar(resposta, False, message_client, None, None, empresa, contato, assistente, db)
 
         if resposta.atividade != "E":

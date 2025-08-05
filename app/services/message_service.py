@@ -39,7 +39,7 @@ async def get_message(
 ) -> MessageData:
     is_audio = False
     message_in_text = ""
-    image_url = None
+    image = None
 
     if isinstance(request, DigisacRequest):
         if request.data.message.type == "audio" or request.data.message.type == "ptt":
@@ -47,13 +47,13 @@ async def get_message(
         else:
             message_in_text = request.data.message.text or ""
             if request.data.message.type == "image":
-                image_url = message_client.obter_arquivo(request=request, apenas_url=True)
+                image = message_client.obter_arquivo(request=request, apenas_url=True)
     elif isinstance(request, EvolutionAPIRequest):
         if request.data.message.audioMessage is not None:
             is_audio = True
         elif request.data.message.imageMessage is not None:
             message_in_text = request.data.message.imageMessage.caption
-            image_url = request.data.message.base64
+            image = request.data.message.base64
         else:
             if request.data.message.extendedTextMessage:
                 message_in_text = request.data.message.extendedTextMessage.text
@@ -64,4 +64,4 @@ async def get_message(
         file = message_client.obter_arquivo(request=request)
         if file is not None:
             message_in_text = await assistant.transcrever_audio(file)
-    return message_in_text, is_audio, image_url
+    return message_in_text, is_audio, image

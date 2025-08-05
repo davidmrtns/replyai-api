@@ -2,35 +2,41 @@ import json
 
 from sqlalchemy.orm import Session
 
-from app.db.new_models import Contact
-from app.utils.assistant import Assistant, Resposta
-from app.utils.message_client import DadosContato
+from app.db.new_models import Contact, Thread
+from app.utils.assistant import Assistant as AiAssistant, Resposta
 
 
-async def executar_thread(
-        mensagem: str | None,
-        imagem: str | None,
-        contato: Contact,
-        dados_contato: DadosContato | None,
-        assistente: Assistant,
+async def execute_thread(
+        message: str | None,
+        image: str | None,
+        contact: Contact,
+        assistant: AiAssistant,
         db: Session
-):
-    if mensagem:
-        assistente.adicionar_mensagens([mensagem], [], contato.threadId or None)
+) -> Resposta:
+    current_thread_id = contact.current_thread.thread_id if contact.current_thread else None
 
-    if dados_contato:
-        assistente.adicionar_mensagens([dados_contato.__str__()], [], contato.threadId or None)
+    if message:
+        assistant.adicionar_mensagens([message], [], current_thread_id)
 
-    if imagem:
-        id_imagens = assistente.subir_imagens([imagem])
-        assistente.adicionar_imagens(id_imagens, contato.threadId or None)
+    '''if contact_data:
+        assistente.adicionar_mensagens([contact_data.__str__()], [], contato.threadId or None)''' # TODO: check how to pass the contact data in a better way
 
-    resposta, thread_id = assistente.criar_rodar_thread(thread_id=contato.threadId)
+    if image:
+        image_id = assistant.subir_imagens([image])
+        assistant.adicionar_imagens(image_id, current_thread_id)
 
-    if not contato.threadId:
-        contato.threadId = thread_id
+    response, thread_id = assistant.criar_rodar_thread(thread_id=current_thread_id)
+
+    if not contact.current_thread:
+        thread = Thread(
+            thread_id=thread_id,
+            last_message_from="assistant",
+            contact_id=contact.id
+        )
+        db.add(thread)
+        contact.current_thread = thread
         db.commit()
 
-    resposta = json.loads(resposta)
-    resposta_obj = Resposta.from_dict(resposta)
-    return resposta_obj
+    response = json.loads(response)
+    response_obj = Resposta.from_dict(response)
+    return response_obj
