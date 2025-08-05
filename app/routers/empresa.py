@@ -6,7 +6,9 @@ from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Empresa, Assistente, RDStationCRMClient, RDStationCRMDealStage, AsaasClient, Usuario, Colaborador
+from app.db.models import AsaasClient, Usuario, Colaborador
+from app.db.new_models import RDStationCRMClient, RDStationCRMDealStage
+from app.db.new_models import Company, Assistant
 from app.routers.usuario import obter_usuario_logado
 from app.schemas.atualizacao_empresa_schema import InformacoesBasicas, InformacoesMensagens, InformacoesAgenda, InformacoesAssistentes, \
     InformacoesCRM, InformacoesRDStationCRMClient, InformacoesRDStationDealStage, InformacoesFinanceiras, InformacoesAsaas, \
@@ -20,7 +22,7 @@ async def verificar_permissao_empresa(
     db: Session = Depends(obter_sessao),
     usuario: Usuario = Depends(obter_usuario_logado)
 ):
-    empresa = db.query(Empresa).filter_by(slug=slug).first()
+    empresa = db.query(Company).filter_by(slug=slug).first()
     if not empresa:
         raise HTTPException(status_code=404, detail="Empresa não encontrada")
 
@@ -35,9 +37,9 @@ router = APIRouter(dependencies=[Depends(obter_usuario_logado)])
 @router.get("/", response_model=List[EmpresaMinSchema])
 async def obter_todas_empresas(usuario: Usuario = Depends(obter_usuario_logado), db: Session = Depends(obter_sessao)):
     if not usuario.id_empresa:
-        empresas = db.query(Empresa).all()
+        empresas = db.query(Company).all()
     else:
-        empresas = db.query(Empresa).filter_by(id=usuario.id_empresa, empresa_ativa=True).all()
+        empresas = db.query(Company).filter_by(id=usuario.id_empresa, empresa_ativa=True).all()
     return empresas
 
 @router.post("/")
@@ -47,10 +49,10 @@ async def criar_empresa(
         db: Session = Depends(obter_sessao)
 ):
     if not usuario.id_empresa:
-        empresa = db.query(Empresa).filter_by(slug=request.slug).first()
+        empresa = db.query(Company).filter_by(slug=request.slug).first()
         if not empresa:
             token = secrets.token_hex(32)
-            empresa = Empresa(
+            empresa = Company(
                 nome=request.nome,
                 slug=request.slug,
                 token=token,
@@ -68,7 +70,7 @@ async def criar_empresa(
 @router.get("/{slug}", response_model=EmpresaSchema)
 async def obter_empresa(
         slug: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     return empresa
@@ -77,7 +79,7 @@ async def obter_empresa(
 async def alterar_informacoes_basicas(
         slug: str,
         request: InformacoesBasicas,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     empresa.nome = request.nome
@@ -92,7 +94,7 @@ async def alterar_informacoes_basicas(
 async def adicionar_colaborador(
         slug: str,
         request: InformacoesColaborador,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     colaborador = Colaborador(
@@ -111,7 +113,7 @@ async def adicionar_colaborador(
 async def alterar_colaborador(
         slug: str,
         request: InformacoesColaborador,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     colaborador = db.query(Colaborador).filter_by(id=request.id, id_empresa=empresa.id).first()
@@ -128,7 +130,7 @@ async def alterar_colaborador(
 async def remover_colaborador(
         slug: str,
         id: int,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     colaborador = db.query(Colaborador).filter_by(id=id, id_empresa=empresa.id).first()
@@ -142,11 +144,11 @@ async def remover_colaborador(
 async def alterar_informacoes_assistentes(
         slug: str,
         request: InformacoesAssistentes,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     if request.assistente_padrao:
-        assistente = db.query(Assistente).filter_by(id=request.assistente_padrao, id_empresa=empresa.id, proposito="responder").first()
+        assistente = db.query(Assistant).filter_by(id=request.assistente_padrao, id_empresa=empresa.id, proposito="responder").first()
         if not assistente:
             raise HTTPException(status_code=404, detail="Assistente não encontrado para essa empresa")
 
@@ -158,7 +160,7 @@ async def alterar_informacoes_assistentes(
 async def alterar_informacoes_mensagens(
         slug: str,
         request: InformacoesMensagens,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     empresa.message_client_type = request.tipo_cliente
@@ -175,7 +177,7 @@ async def alterar_informacoes_mensagens(
 async def alterar_informacoes_agenda(
         slug: str,
         request: InformacoesAgenda,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     empresa.agenda_client_type = request.tipo_cliente
@@ -191,7 +193,7 @@ async def alterar_informacoes_agenda(
 async def alterar_informacoes_crm(
         slug: str,
         request: InformacoesCRM,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     empresa.crm_client_type = request.tipo_cliente
@@ -202,7 +204,7 @@ async def alterar_informacoes_crm(
 async def adicionar_cliente_rdstation(
         slug: str,
         request: InformacoesRDStationCRMClient,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     rdstationcrm_client = db.query(RDStationCRMClient).filter_by(id_empresa=empresa.id).first()
@@ -224,7 +226,7 @@ async def adicionar_cliente_rdstation(
 async def alterar_informacoes_rdstation(
         slug: str,
         request: InformacoesRDStationCRMClient,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     rdstationcrm_client = db.query(RDStationCRMClient).filter_by(id_empresa=empresa.id).first()
@@ -240,7 +242,7 @@ async def alterar_informacoes_rdstation(
 async def adicionar_estagio(
         slug: str,
         request: InformacoesRDStationDealStage,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     rdstationcrm_client = db.query(RDStationCRMClient).filter_by(id_empresa=empresa.id).first()
@@ -264,7 +266,7 @@ async def adicionar_estagio(
 async def alterar_informacoes_estagio(
         slug: str,
         request: InformacoesRDStationDealStage,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     rdstationcrm_client = db.query(RDStationCRMClient).filter_by(id_empresa=empresa.id).first()
@@ -286,7 +288,7 @@ async def alterar_informacoes_estagio(
 async def remover_estagio(
         slug: str,
         id: int,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     rdstationcrm_client = db.query(RDStationCRMClient).filter_by(id_empresa=empresa.id).first()
@@ -304,7 +306,7 @@ async def remover_estagio(
 async def alterar_informacoes_financeiras(
         slug: str,
         request: InformacoesFinanceiras,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     empresa.financial_client_type = request.tipo_cliente
@@ -318,7 +320,7 @@ async def alterar_informacoes_financeiras(
 async def adicionar_cliente_asaas(
         slug: str,
         request: InformacoesAsaas,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     asaas_client = db.query(AsaasClient).filter_by(id_empresa=empresa.id, client_number=request.numero_cliente).first()
@@ -341,7 +343,7 @@ async def adicionar_cliente_asaas(
 async def alterar_informacoes_cliente_asaas(
         slug: str,
         request: InformacoesAsaas,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     asaas_client = db.query(AsaasClient).filter_by(id_empresa=empresa.id, client_number=request.numero_cliente).first()
@@ -357,7 +359,7 @@ async def alterar_informacoes_cliente_asaas(
 async def remover_cliente_asaas(
         slug: str,
         id: int,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     asaas_client = db.query(AsaasClient).filter_by(id=id, id_empresa=empresa.id).first()

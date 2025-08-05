@@ -16,7 +16,7 @@ from kiota_abstractions.base_request_configuration import RequestConfiguration
 from msgraph.generated.users.item.events.events_request_builder import EventsRequestBuilder
 from sqlalchemy.orm import Session
 
-from app.db.models import OutlookClient
+from app.db.new_models import OutlookClient
 from app.utils.agenda_client import AgendaClient, Schedule, EventoTituloAgenda, EventoTituloAgendaDataNova
 
 

@@ -9,7 +9,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Empresa, OutlookClient
+from app.db.new_models import Company
+from app.db.new_models import OutlookClient
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.atualizacao_empresa_schema import InformacoesFusoHorario
 from app.schemas.empresa_schema import OutlookClientSchema as OutlookClientSchemaEmpresa
@@ -30,7 +31,7 @@ async def callback(
     if not codigo:
         raise HTTPException(status_code=400, detail="Código não encontrado")
 
-    empresa = db.query(Empresa).filter_by(slug=empresa).first()
+    empresa = db.query(Company).filter_by(slug=empresa).first()
     if empresa:
         payload = {
             "client_id": os.getenv("MICROSOFT_CLIENT_ID"),
@@ -94,7 +95,7 @@ async def callback(
 @router.get("/{slug}/auth-link")
 async def obter_link_autorizacao(
         slug: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa)
+        empresa: Company = Depends(verificar_permissao_empresa)
 ):
     client_id = os.getenv("MICROSOFT_CLIENT_ID")
     redirect_uri = os.getenv("MICROSOFT_REDIRECT_URI")
@@ -115,7 +116,7 @@ async def obter_link_autorizacao(
 @router.get("/{slug}/timezones")
 async def obter_timezones(
         slug: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     outlook_client = criar_agenda_client(empresa, db)
@@ -128,7 +129,7 @@ async def obter_timezones(
 async def alterar_timezone(
         slug: str,
         request: InformacoesFusoHorario,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     outlook_client = db.query(OutlookClient).filter_by(id_empresa=empresa.id).first()

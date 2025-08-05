@@ -7,12 +7,13 @@ from app.exceptions.exceptions import AIResponseException
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.services.company_service import get_company
-from app.services.contato_service import obter_criar_contato
 from app.services.direcionamento_service import direcionar
 from app.services.mensagem_service import obter_mensagem, enviar_mensagem
 from app.services.thread_service import executar_thread
 from app.utils.logger import logger
 from .reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
+from ...services.contact_service import get_or_create_contact
+
 
 router = APIRouter()
 
@@ -31,7 +32,7 @@ async def reply(
         return reply_result
     company, message_client, agenda_client, crm_client = company_data
 
-    contact, assistant, contact_data = await obter_criar_contato(request, None, company, message_client, crm_client, db)
+    contact, assistant = await get_or_create_contact(request, company_data, db)
     if contact is None:
         return reply_result
 
@@ -42,13 +43,13 @@ async def reply(
         message, is_audio, image = await obter_mensagem(request, message_client, assistant)
 
         if isinstance(request, EvolutionAPIRequest):
-            if not await _handle_evolutionapi_request(request, company, contact, is_audio, db):
+            if not await _handle_evolutionapi_request(request, company, message_client, is_audio, db):
                 return reply_result
         else:
             if not await _handle_digisac_request(request, contact, db):
                 return reply_result
 
-        response = await executar_thread(message, image, contact, contact_data, assistant, db)
+        response = await executar_thread(message, image, contact, None, assistant, db) # TODO: remove contact_data parameter
         await direcionar(response, is_audio, message_client, agenda_client, crm_client, company, contact, assistant, db)
 
         reply_result = True

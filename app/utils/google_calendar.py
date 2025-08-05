@@ -7,7 +7,7 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from sqlalchemy.orm import Session
 
-from app.db.models import GoogleCalendarClient
+from app.db.new_models import GoogleCalendarClient
 from app.utils.agenda_client import AgendaClient, Schedule, EventoTituloAgenda, EventoTituloAgendaDataNova
 
 

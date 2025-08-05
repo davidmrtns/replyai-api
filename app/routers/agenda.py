@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Empresa, Agenda
+from app.db.models import Agenda
+from app.db.new_models import Company
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.atualizacao_empresa_schema import InformacoesAgendaUnica
 from app.schemas.empresa_schema import AgendaSchema as AgendaSchemaEmpresa
@@ -15,7 +16,7 @@ router = APIRouter()
 async def criar_agenda(
         slug: str,
         request: InformacoesAgendaUnica,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     agenda = Agenda(
@@ -33,7 +34,7 @@ async def editar_agenda(
         slug: str,
         id: int,
         request: InformacoesAgendaUnica,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     agenda = db.query(Agenda).filter_by(id=id, id_empresa=empresa.id).first()
@@ -50,7 +51,7 @@ async def editar_agenda(
 async def excluir_agenda(
         slug: str,
         id: int,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     agenda = db.query(Agenda).filter_by(id=id, id_empresa=empresa.id).first()

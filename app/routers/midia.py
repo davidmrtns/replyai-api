@@ -2,7 +2,8 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Empresa, Midia
+from app.db.models import Midia
+from app.db.new_models import Company
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.atualizacao_empresa_schema import InformacoesMidia, parse_form_data_midia
 from app.schemas.empresa_schema import MidiaSchema as MidiaSchemaEmpresa
@@ -16,7 +17,7 @@ async def criar_midia(
         slug: str,
         arquivo: UploadFile = File(...),
         request: InformacoesMidia = Depends(parse_form_data_midia),
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     filename = f"{arquivo.filename}"
@@ -45,7 +46,7 @@ async def editar_midia(
         slug: str,
         id: int,
         request: InformacoesMidia,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     midia = db.query(Midia).filter_by(id=id, id_empresa=empresa.id).first()
@@ -60,7 +61,7 @@ async def editar_midia(
 async def excluir_midia(
         slug: str,
         id: int,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     midia = db.query(Midia).filter_by(id=id, id_empresa=empresa.id).first()

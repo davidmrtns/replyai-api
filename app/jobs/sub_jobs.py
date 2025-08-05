@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
-from app.db.models import Contato, Empresa, Agenda
+from app.db.new_models import Contact, Company
+from app.db.models import Agenda
 from app.services.agendamento_service import extrair_dados_evento, criar_agenda_client
 from app.services.cobranca_service import extrair_dados_cobranca, criar_financial_client
 from app.services.contato_service import redefinir_contato, obter_criar_contato, atualizar_thread_contato, \
@@ -14,7 +15,7 @@ from app.utils.financial_client import FinancialClient
 from app.utils.message_client import MessageClient
 
 
-async def enviar_retomada_conversa(contato: Contato, empresa: Empresa, db: Session):
+async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Session):
     try:
         assistente, _ = await obter_assistente(empresa, "retomar", None, db)
 
@@ -51,7 +52,7 @@ async def enviar_retomada_conversa(contato: Contato, empresa: Empresa, db: Sessi
         print(f"Erro ao enviar retomada de conversa para o contato de ID {contato.id}: {e}")
 
 
-async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Empresa, db: Session):
+async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Company, db: Session):
     agenda_client = criar_agenda_client(empresa, db)
     agendas = db.query(Agenda).filter_by(id_empresa=empresa.id).all()
 
@@ -89,7 +90,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Empre
                 print(f"Erro ao processar evento {evento}: {e}")
 
 
-async def enviar_aviso_vencimento(data_cobranca: str, data_atual: str, empresa: Empresa, db: Session):
+async def enviar_aviso_vencimento(data_cobranca: str, data_atual: str, empresa: Company, db: Session):
     message_client = criar_message_client(empresa, db)
     financial_clients = criar_financial_client(empresa, db)
 
@@ -100,7 +101,7 @@ async def enviar_aviso_vencimento(data_cobranca: str, data_atual: str, empresa: 
                 await processar_cobranca("extrair_dados_aviso_vencimento", cobranca, data_atual, empresa.enviar_boleto_lembrar_vencimento, empresa, message_client, financial_client, db)
 
 
-async def enviar_cobranca_inadimplente(data: str, empresa: Empresa, db: Session):
+async def enviar_cobranca_inadimplente(data: str, empresa: Company, db: Session):
     message_client = criar_message_client(empresa, db)
     financial_clients = criar_financial_client(empresa, db)
 
@@ -111,7 +112,7 @@ async def enviar_cobranca_inadimplente(data: str, empresa: Empresa, db: Session)
                 await processar_cobranca("extrair_dados_inadimplencia", cobranca, data, False, empresa, message_client, financial_client, db)
 
 
-async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_boleto: bool, empresa: Empresa, message_client: MessageClient, financial_client: FinancialClient, db: Session):
+async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_boleto: bool, empresa: Company, message_client: MessageClient, financial_client: FinancialClient, db: Session):
     try:
         cliente = financial_client.obter_cliente(id_cliente=cobranca.get("customer", ""))
         if cliente:
@@ -144,7 +145,7 @@ async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_
         print(f"Erro ao processar cobrança da empresa de ID {empresa.id}: {e}")
 
 
-async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Empresa, message_client: MessageClient, financial_client: FinancialClient, db: Session):
+async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Company, message_client: MessageClient, financial_client: FinancialClient, db: Session):
     try:
         cliente = financial_client.obter_cliente(id_cliente=nota.get("customer", ""))
         if cliente:

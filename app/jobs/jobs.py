@@ -4,7 +4,7 @@ import pytz
 from sqlalchemy import or_, and_
 
 from app.db.database import retornar_sessao
-from app.db.models import Empresa, Contato
+from app.db.new_models import Company, Contact
 from app.jobs.sub_jobs import enviar_retomada_conversa, enviar_confirmacao_consulta, enviar_aviso_vencimento, \
     enviar_cobranca_inadimplente
 
@@ -27,7 +27,7 @@ async def retomar_conversa():
 
     with retornar_sessao() as db:
         try:
-            empresas = db.query(Empresa).filter_by(recall_ativo=True, empresa_ativa=True).all()
+            empresas = db.query(Company).filter_by(recall_is_active=True, is_active=True).all()
 
             for empresa in empresas:
                 timeout_padrao = empresa.recall_timeout_minutes or 60
@@ -36,26 +36,26 @@ async def retomar_conversa():
                 timeout_final = empresa.final_recall_timeout_minutes or 1440
                 timeout_final_time = agora - timedelta(minutes=timeout_final)
 
-                query = db.query(Contato).filter(
-                    Contato.id_empresa == empresa.id,
+                query = db.query(Contact).filter(
+                    Contact.company_id == empresa.id,
                     or_(
                         and_(
-                            Contato.lastMessage <= timeout_padrao_time,
-                            Contato.recallCount < empresa.recall_quant - 1,
-                            Contato.receber_respostas_ia == True,
-                            Contato.aguardando_humano == False
+                            Contact.last_message_at <= timeout_padrao_time,
+                            Contact.recall_count < empresa.recall_quant - 1,
+                            Contact.receive_ai_replies == True,
+                            Contact.awaiting_human_contact == False
                         ),
                         and_(
-                            Contato.lastMessage <= timeout_final_time,
-                            Contato.recallCount == empresa.recall_quant - 1,
-                            Contato.receber_respostas_ia == True,
-                            Contato.aguardando_humano == False
+                            Contact.last_message_at <= timeout_final_time,
+                            Contact.recall_count == empresa.recall_quant - 1,
+                            Contact.receive_ai_replies == True,
+                            Contact.awaiting_human_contact == False
                         )
                     )
                 )
 
                 if not empresa.recall_confirmacao_ativo:
-                    query = query.filter_by(appointmentConfirmation=False)
+                    query = query.filter_by(appointment_confirmation_is_active=False)
 
                 interacoes_inativas = query.all()
 
@@ -68,10 +68,10 @@ async def retomar_conversa():
 async def confirmar_agendamento():
     with retornar_sessao() as db:
         try:
-            empresas = db.query(Empresa).filter_by(confirmar_agendamentos_ativo=True, empresa_ativa=True).all()
+            empresas = db.query(Company).filter_by(appointment_confirmation_is_active=True, is_active=True).all()
 
             for empresa in empresas:
-                timezone = empresa.fuso_horario if empresa.fuso_horario else "UTC"
+                timezone = empresa.timezone if empresa.timezone else "UTC"
                 tz = pytz.timezone(timezone)
 
                 data_atual = datetime.now(tz)
@@ -86,10 +86,10 @@ async def confirmar_agendamento():
 async def avisar_vencimento():
     with retornar_sessao() as db:
         try:
-            empresas = db.query(Empresa).filter_by(lembrar_vencimentos_ativo=True, empresa_ativa=True).all()
+            empresas = db.query(Company).filter_by(charge_due_payments_is_active=True, is_active=True).all()
 
             for empresa in empresas:
-                timezone = empresa.fuso_horario if empresa.fuso_horario else "UTC"
+                timezone = empresa.timezone if empresa.timezone else "UTC"
                 tz = pytz.timezone(timezone)
 
                 data_atual = datetime.now(tz)
@@ -106,10 +106,10 @@ async def avisar_vencimento():
 async def cobrar_inadimplentes():
     with retornar_sessao() as db:
         try:
-            empresas = db.query(Empresa).filter_by(cobrar_inadimplentes_ativo=True, empresa_ativa=True).all()
+            empresas = db.query(Company).filter_by(charge_due_payments_is_active=True, is_active=True).all()
 
             for empresa in empresas:
-                timezone = empresa.fuso_horario if empresa.fuso_horario else "UTC"
+                timezone = empresa.timezone if empresa.timezone else "UTC"
                 tz = pytz.timezone(timezone)
 
                 data_atual = datetime.now(tz).strftime("%Y-%m-%d")

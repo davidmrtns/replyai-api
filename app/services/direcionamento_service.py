@@ -2,7 +2,7 @@ import json
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Contato, Empresa
+from app.db.new_models import Contact, Company
 from app.services.agendamento_service import verificar_data_sugerida, cadastrar_evento, obter_nova_data_reagendamento, \
     obter_titulo_agenda_evento
 from app.services.contato_service import encerrar_contato, atualizar_assistente_atual_contato, transferir_contato, \
@@ -24,8 +24,8 @@ async def direcionar(
         message_client: MessageClient,
         agenda_client: AgendaClient | None,
         crm_client: CRMClient | None,
-        empresa: Empresa,
-        contato: Contato,
+        empresa: Company,
+        contato: Contact,
         assistente: Assistant,
         db: Session
 ):

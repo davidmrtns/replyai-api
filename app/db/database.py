@@ -35,7 +35,7 @@ RETRY_DELAY = 5
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"sslmode": "verify-full"},
+    #connect_args={"sslmode": "verify-full"},
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,

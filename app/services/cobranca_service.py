@@ -2,7 +2,8 @@ import json
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Assistente, Empresa, AsaasClient
+from app.db.models import AsaasClient
+from app.db.new_models import Assistant, Company
 from app.utils.asaas import Asaas
 from app.utils.assistant import Assistant, Instrucao, RespostaFinanceiro
 
@@ -14,7 +15,7 @@ async def extrair_dados_cobranca(
         data_atual: str,
         data_vencimento: str,
         descricao_boleto: str,
-        empresa: Empresa,
+        empresa: Company,
         db: Session
 ):
     instrucao = Instrucao(
@@ -28,7 +29,7 @@ async def extrair_dados_cobranca(
         }
     )
 
-    assistente_db = db.query(Assistente).filter_by(proposito="cobrar", id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(proposito="cobrar", id_empresa=empresa.id).first()
 
     try:
         if assistente_db is not None:
@@ -42,7 +43,7 @@ async def extrair_dados_cobranca(
     return {}, None
 
 
-def criar_financial_client(empresa: Empresa, db: Session, client_number: int | None = None):
+def criar_financial_client(empresa: Company, db: Session, client_number: int | None = None):
     clients = []
 
     if empresa.financial_client_type == "asaas":

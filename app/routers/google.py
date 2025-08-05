@@ -7,7 +7,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Empresa, GoogleCalendarClient
+from app.db.new_models import Company
+from app.db.new_models import GoogleCalendarClient
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.atualizacao_empresa_schema import InformacoesFusoHorario
 from app.schemas.empresa_schema import GoogleCalendarClientSchema as GoogleCalendarClientSchemaEmpresa
@@ -26,7 +27,7 @@ async def callback(
     if not codigo:
         raise HTTPException(status_code=400, detail="Código não encontrado")
 
-    empresa = db.query(Empresa).filter_by(slug=empresa).first()
+    empresa = db.query(Company).filter_by(slug=empresa).first()
     if empresa:
         payload = {
             "client_id": os.getenv("GOOGLE_CLIENT_ID"),
@@ -93,7 +94,7 @@ async def callback(
 @router.get("/{slug}/auth-link")
 async def obter_link_autorizacao(
         slug: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa)
+        empresa: Company = Depends(verificar_permissao_empresa)
 ):
 
     client_id = os.getenv("GOOGLE_CLIENT_ID")
@@ -121,7 +122,7 @@ async def obter_link_autorizacao(
 async def alterar_informacoes_googlecalendar(
         slug: str,
         request: InformacoesFusoHorario,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     googlecalendar_client = db.query(GoogleCalendarClient).filter_by(id_empresa=empresa.id).first()

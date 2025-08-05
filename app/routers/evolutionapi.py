@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Empresa, EvolutionAPIClient
+from app.db.new_models import Company
+from app.db.new_models import EvolutionAPIClient
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.integrations_schemas import EvolutionInstanceSchema, EvolutionWebhookSchema
 from app.utils.evolutionapi import EvolutionAPI
@@ -15,7 +16,7 @@ router = APIRouter()
 @router.post("/{slug}")
 async def criar_instancia(
         request: EvolutionInstanceSchema,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     global_api_key = os.getenv("EVOLUTIONAPI_GLOBAL_KEY", "")
@@ -42,7 +43,7 @@ async def criar_instancia(
 async def obter_instancia(
         slug: str,
         api_key: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     evolutionapi_db = db.query(EvolutionAPIClient).filter_by(apiKey=api_key, id_empresa=empresa.id).first()
@@ -57,7 +58,7 @@ async def obter_instancia(
 async def conectar_instancia(
         slug: str,
         api_key: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     evolutionapi_db = db.query(EvolutionAPIClient).filter_by(apiKey=api_key, id_empresa=empresa.id).first()
@@ -72,7 +73,7 @@ async def conectar_instancia(
 async def reiniciar_instancia(
         slug: str,
         api_key: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     evolutionapi_db = db.query(EvolutionAPIClient).filter_by(apiKey=api_key, id_empresa=empresa.id).first()
@@ -87,7 +88,7 @@ async def reiniciar_instancia(
 async def desligar_instancia(
         slug: str,
         api_key: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     evolutionapi_db = db.query(EvolutionAPIClient).filter_by(apiKey=api_key, id_empresa=empresa.id).first()
@@ -102,7 +103,7 @@ async def desligar_instancia(
 async def checar_conexao_instancia(
         slug: str,
         api_key: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     evolutionapi_db = db.query(EvolutionAPIClient).filter_by(apiKey=api_key, id_empresa=empresa.id).first()
@@ -118,7 +119,7 @@ async def adicionar_webhook(
         slug: str,
         api_key: str,
         request: EvolutionWebhookSchema,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     evolutionapi_db = db.query(EvolutionAPIClient).filter_by(apiKey=api_key, id_empresa=empresa.id).first()
@@ -133,7 +134,7 @@ async def adicionar_webhook(
 async def listar_webhooks(
         slug: str,
         api_key: str,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     evolutionapi_db = db.query(EvolutionAPIClient).filter_by(apiKey=api_key, id_empresa=empresa.id).first()

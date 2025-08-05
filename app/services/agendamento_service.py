@@ -3,21 +3,22 @@ import pytz
 import json
 from sqlalchemy.orm import Session
 
-from app.db.models import Contato, Assistente, Empresa, OutlookClient, GoogleCalendarClient
+from app.db.new_models import Contact, Assistant, Company
+from app.db.new_models import GoogleCalendarClient, OutlookClient
 from app.utils.agenda_client import AgendaClient, EventoTituloAgenda, EventoTituloAgendaDataNova
-from app.utils.assistant import Assistant, Instrucao, RespostaDataSugerida, RespostaAgendamento, RespostaConfirmacao
+from app.utils.assistant import Assistant as AiAssistant, Instrucao, RespostaDataSugerida, RespostaAgendamento, RespostaConfirmacao
 from app.utils.google_calendar import GoogleCalendar
 from app.utils.outlook import Outlook
 
 
 async def verificar_data_sugerida(
         agenda_client: AgendaClient,
-        contato: Contato,
+        contato: Contact,
         endereco_agenda: str,
-        empresa: Empresa,
+        empresa: Company,
         db: Session
 ):
-    timezone = pytz.timezone(empresa.fuso_horario)
+    timezone = pytz.timezone(empresa.timezone)
     hoje = datetime.now(timezone)
     hoje_formatado = hoje.strftime("%d/%m/%Y, %A")
     amanha = hoje + timedelta(days=1)
@@ -35,11 +36,11 @@ async def verificar_data_sugerida(
         }
     )
 
-    assistente_db = db.query(Assistente).filter_by(proposito="agendar", id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(proposito="agendar", id_empresa=empresa.id).first()
 
     if assistente_db is not None:
-        assistente = Assistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
-        assistente.adicionar_mensagens(mensagens=[instrucao.__str__()], id_arquivos=[], thread_id=contato.threadId)
+        assistente = AiAssistant(nome=assistente_db.assistant_name, id=assistente_db.openai_assistant_id, api_key=empresa.openai_api_key)
+        assistente.adicionar_mensagens(mensagens=[instrucao.__str__()], id_arquivos=[], thread_id=contato.current_thread) # TODO: get thread openai id
 
         resposta, _ = assistente.criar_rodar_thread(thread_id=contato.threadId)
         resposta = RespostaDataSugerida.from_dict(json.loads(resposta))
@@ -77,9 +78,9 @@ async def verificar_data_sugerida(
 
 async def cadastrar_evento(
         agenda_client: AgendaClient,
-        contato: Contato,
+        contato: Contact,
         endereco_agenda: str,
-        empresa: Empresa,
+        empresa: Company,
         db: Session
 ):
     timezone = pytz.timezone(empresa.fuso_horario)
@@ -93,10 +94,10 @@ async def cadastrar_evento(
         }
     )
 
-    assistente_db = db.query(Assistente).filter_by(proposito="agendar", id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(proposito="agendar", id_empresa=empresa.id).first()
 
     if assistente_db is not None:
-        assistente = Assistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
+        assistente = AiAssistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
         assistente.adicionar_mensagens(mensagens=[instrucao.__str__()], id_arquivos=[], thread_id=contato.threadId)
 
         resposta, _ = assistente.criar_rodar_thread(thread_id=contato.threadId)
@@ -116,7 +117,7 @@ async def extrair_dados_evento(
         agenda: str,
         evento: dict,
         data_atual: str,
-        empresa: Empresa,
+        empresa: Company,
         db: Session
 ):
     instrucao = Instrucao(
@@ -131,11 +132,11 @@ async def extrair_dados_evento(
         }
     )
 
-    assistente_db = db.query(Assistente).filter_by(proposito="agendar", id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(proposito="agendar", id_empresa=empresa.id).first()
 
     try:
         if assistente_db is not None:
-            assistente = Assistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
+            assistente = AiAssistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
             assistente.adicionar_mensagens(mensagens=[instrucao.__str__()], id_arquivos=[], thread_id=None)
             resposta, thread_id = assistente.criar_rodar_thread()
             resposta_obj = RespostaConfirmacao.from_dict(json.loads(resposta))
@@ -147,7 +148,7 @@ async def extrair_dados_evento(
 
 async def obter_titulo_agenda_evento(
         assistente: Assistant,
-        contato: Contato,
+        contato: Contact,
         data_nova: str | None = None
 ):
     mensagem = assistente.obter_mensagem_thread(contato.threadId, 0, "asc", 1)
@@ -174,7 +175,7 @@ async def obter_titulo_agenda_evento(
 
 async def obter_nova_data_reagendamento(
         thread_id: str,
-        empresa: Empresa,
+        empresa: Company,
         db: Session
 ):
     instrucao = Instrucao(
@@ -182,7 +183,7 @@ async def obter_nova_data_reagendamento(
         dados=None
     )
 
-    assistente_db = db.query(Assistente).filter_by(proposito="agendar", id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(proposito="agendar", id_empresa=empresa.id).first()
 
     if assistente_db is not None:
         assistente = Assistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
@@ -194,7 +195,7 @@ async def obter_nova_data_reagendamento(
     return None
 
 
-def criar_agenda_client(empresa: Empresa, db: Session):
+def criar_agenda_client(empresa: Company, db: Session):
     if empresa.agenda_client_type == "outlook":
         outlook_client_db = db.query(OutlookClient).filter_by(id_empresa=empresa.id).first()
         if outlook_client_db:

@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Empresa, DigisacClient, Departamento
+from app.db.models import Departamento
+from app.db.new_models import Company
+from app.db.new_models import DigisacClient
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.integrations_schemas import DigisacClientSchema, DigisacDepartmentSchema
 from app.schemas.empresa_schema import DigisacClientSchema as DigisacClientSchemaEmpresa, DepartamentoSchema as DigisacDepartmentSchemaEmpresa
@@ -17,7 +19,7 @@ async def listar_servicos(
         pagina: int = 1,
         nome: str = None,
         id: str = None,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client_db = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
@@ -38,7 +40,7 @@ async def listar_usuarios(
         pagina: int = 1,
         nome: str = None,
         id: str = None,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client_db = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
@@ -59,7 +61,7 @@ async def listar_departamentos(
         pagina: int = 1,
         nome: str = None,
         id: str = None,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client_db = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
@@ -78,7 +80,7 @@ async def listar_departamentos(
 async def adicionar_departamento(
         slug: str,
         request: DigisacDepartmentSchema,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
@@ -104,7 +106,7 @@ async def editar_departamento(
         slug: str,
         id: int,
         request: DigisacDepartmentSchema,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
@@ -127,7 +129,7 @@ async def editar_departamento(
 async def excluir_departamento(
         slug: str,
         id: int,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
@@ -145,7 +147,7 @@ async def excluir_departamento(
 async def criar_digisac_client(
         slug: str,
         request: DigisacClientSchema,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
@@ -169,7 +171,7 @@ async def criar_digisac_client(
 async def editar_digisac_client(
         slug: str,
         request: DigisacClientSchema,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
+        empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
     digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()

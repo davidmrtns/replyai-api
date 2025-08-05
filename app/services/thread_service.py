@@ -2,7 +2,7 @@ import json
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Contato
+from app.db.new_models import Contact
 from app.utils.assistant import Assistant, Resposta
 from app.utils.message_client import DadosContato
 
@@ -10,7 +10,7 @@ from app.utils.message_client import DadosContato
 async def executar_thread(
         mensagem: str | None,
         imagem: str | None,
-        contato: Contato,
+        contato: Contact,
         dados_contato: DadosContato | None,
         assistente: Assistant,
         db: Session

@@ -7,14 +7,14 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 from app.db.database import obter_sessao
-from app.db.models import Assistente, Empresa
+from app.db.new_models import Assistant, Company
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.integrations_schemas import AssistenteSchema
 from app.schemas.empresa_schema import AssistenteSchema as AssistenteSchemaEmpresa
 from app.utils.assistant import CustomHTTPClient, Ferramentas
 
 
-def obter_openai_client(empresa: Empresa = Depends(verificar_permissao_empresa)):
+def obter_openai_client(empresa: Company = Depends(verificar_permissao_empresa)):
     return OpenAI(http_client=CustomHTTPClient(), api_key=empresa.openai_api_key)
 
 
@@ -24,7 +24,7 @@ router = APIRouter()
 async def criar_assistente(
         slug: str,
         request: AssistenteSchema,
-        empresa: Annotated[Empresa, Depends(verificar_permissao_empresa)],
+        empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
         cliente: Annotated[OpenAI, Depends(obter_openai_client)],
         db: Session = Depends(obter_sessao)
 ):
@@ -41,7 +41,7 @@ async def criar_assistente(
     )
 
     if assistente:
-        assistente_bd = Assistente(
+        assistente_bd = Assistant(
             assistantId=assistente.id,
             nome=assistente.name,
             proposito=request.proposito,
@@ -60,11 +60,11 @@ async def criar_assistente(
 async def obter_instrucoes_assistente(
         slug: str,
         id: int,
-        empresa: Annotated[Empresa, Depends(verificar_permissao_empresa)],
+        empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
         cliente: Annotated[OpenAI, Depends(obter_openai_client)],
         db: Session = Depends(obter_sessao)
 ):
-    assistente_db = db.query(Assistente).filter_by(id=id, id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(id=id, id_empresa=empresa.id).first()
     if assistente_db:
         assistente_openai = cliente.beta.assistants.retrieve(assistant_id=assistente_db.assistantId)
         if assistente_openai:
@@ -76,11 +76,11 @@ async def editar_assistente(
         slug: str,
         id: int,
         request: AssistenteSchema,
-        empresa: Annotated[Empresa, Depends(verificar_permissao_empresa)],
+        empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
         cliente: Annotated[OpenAI, Depends(obter_openai_client)],
         db: Session = Depends(obter_sessao)
 ):
-    assistente_db = db.query(Assistente).filter_by(id=id, id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(id=id, id_empresa=empresa.id).first()
     if assistente_db:
         cliente.beta.assistants.update(
             assistant_id=assistente_db.assistantId,
@@ -101,14 +101,14 @@ async def editar_assistente(
 async def excluir_assistente(
         slug: str,
         id: int,
-        empresa: Annotated[Empresa, Depends(verificar_permissao_empresa)],
+        empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
         cliente: Annotated[OpenAI, Depends(obter_openai_client)],
         db: Session = Depends(obter_sessao)
 ):
     if empresa.assistentePadrao == id:
         raise HTTPException(status_code=403, detail="Não é possível excluir o assistente padrão da empresa. Troque o assistente padrão e tente novamente")
 
-    assistente_db = db.query(Assistente).filter_by(id=id, id_empresa=empresa.id).first()
+    assistente_db = db.query(Assistant).filter_by(id=id, id_empresa=empresa.id).first()
     if assistente_db:
         try:
             assistente = cliente.beta.assistants.delete(
