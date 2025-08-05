@@ -42,7 +42,7 @@ async def get_or_create_contact(
         db.commit()
 
     if contact.current_assistant:
-        assistant_db = db.query(Assistant).filter_by(id=contact.current_assistant, id_empresa=company.id).first()
+        assistant_db = db.query(Assistant).filter_by(id=contact.current_assistant, company_id=company.id).first()
     else:
         assistant_db = company.default_assistant
         await update_current_assistant(contact, assistant_db.id, db)
