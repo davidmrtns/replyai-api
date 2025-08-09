@@ -41,6 +41,7 @@ async def reply(
             return reply_result
 
         message, is_audio, image = await get_message(request, message_client, assistant)
+        if not message and not image : return reply_result
 
         if isinstance(request, EvolutionAPIRequest):
             if not await _handle_evolutionapi_request(request, company, message_client, is_audio, db):

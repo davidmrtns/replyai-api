@@ -37,8 +37,8 @@ async def get_message(
         message_client: MessageClient,
         assistant: AiAssistant
 ) -> MessageData:
+    message_in_text = None
     is_audio = False
-    message_in_text = ""
     image = None
 
     if isinstance(request, DigisacRequest):
