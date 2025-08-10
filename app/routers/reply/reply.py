@@ -7,10 +7,10 @@ from app.exceptions.exceptions import AIResponseException
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.services.company_service import get_company
-from app.services.direcionamento_service import direcionar
 from app.services.mensagem_service import enviar_mensagem
 from app.services.thread_service import execute_thread
 from app.utils.logger import logger
+from app.utils.pipelines import PIPELINES
 from .reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
 from ...services.contact_service import get_or_create_contact
 from ...services.message_service import get_message
@@ -30,7 +30,7 @@ async def reply(
     company_data = await get_company(slug, token, db)
     if company_data is None:
         return reply_result
-    company, message_client, agenda_client, crm_client = company_data
+    company, message_client, _, __ = company_data
 
     contact, assistant = await get_or_create_contact(request, company_data, db)
     if contact is None:
@@ -51,9 +51,10 @@ async def reply(
                 return reply_result
 
         response = await execute_thread(message, image, contact, assistant, db)
-        await direcionar(response, is_audio, message_client, agenda_client, crm_client, company, contact, assistant, db)
-
-        reply_result = True
+        
+        pipeline = PIPELINES.get(response.atividade)
+        if pipeline:
+            reply_result = await pipeline(response, is_audio, contact, company_data, assistant, db)
     except AIResponseException:
         await enviar_mensagem(company.mensagem_erro_ia, False, None, contact, None, message_client, assistant, db)
         logger.exception(f"An AI response error occurred while processing the request")
