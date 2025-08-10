@@ -56,7 +56,7 @@ async def reply(
         if pipeline:
             reply_result = await pipeline(response, is_audio, contact, company_data, assistant, db)
     except AIResponseException:
-        await enviar_mensagem(company.mensagem_erro_ia, False, None, contact, None, message_client, assistant, db)
+        await enviar_mensagem(company.ai_reply_error_message, False, None, contact, None, message_client, assistant, db)
         logger.exception(f"An AI response error occurred while processing the request")
     except Exception:
         logger.exception(f"An unexpected error occurred while processing the request")
