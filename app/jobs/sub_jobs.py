@@ -5,10 +5,10 @@ from app.db.models import Agenda
 from app.services.agenda_service import create_agenda_client
 from app.services.agendamento_service import extrair_dados_evento
 from app.services.cobranca_service import extrair_dados_cobranca, criar_financial_client
+from app.services.company_service import get_assistant_from_company, get_department
 from app.services.contato_service import redefinir_contato, obter_criar_contato, atualizar_thread_contato, \
     atualizar_assistente_atual_contato, transferir_contato, obter_id_contato
-from app.services.direcionamento_service import direcionar
-from app.services.empresa_service import obter_assistente, obter_departamento
+from app.services.direcionamento_service import direcionar # TODO: update to use the new pipelines
 from app.services.mensagem_service import criar_message_client
 from app.services.thread_service import execute_thread
 from app.utils.digisac import Digisac
@@ -18,7 +18,7 @@ from app.utils.message_client import MessageClient
 
 async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Session):
     try:
-        assistente, _ = await obter_assistente(empresa, "retomar", None, db)
+        assistente, _ = await get_assistant_from_company(empresa, "retomar", None, db)
 
         if not assistente:
             return
@@ -70,7 +70,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
                             id_contato = await obter_id_contato(message_client, resposta_extracao.telefone, resposta_extracao.cliente)
                             if id_contato:
                                 contato = (await obter_criar_contato(None, id_contato, empresa, message_client, None, db))[0]
-                                assistente, assistente_db_id = await obter_assistente(empresa, "confirmar", None, db)
+                                assistente, assistente_db_id = await get_assistant_from_company(empresa, "confirmar", None, db)
                                 if assistente:
                                     if not contato.appointmentConfirmation:
                                         contato.appointmentConfirmation = True
@@ -78,7 +78,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
                                         await atualizar_assistente_atual_contato(contato, assistente_db_id, db)
                                     if isinstance(message_client, Digisac):
                                         message_client.encerrar_chamado(contactId=contato.contactId, ticketTopicIds=[], comments="Chamado encerrado para confirmação de consulta", byUserId=None)
-                                        departamento = await obter_departamento(empresa, None, True, db)
+                                        departamento = await get_department(empresa, None, True, db)
                                         if departamento:
                                             await transferir_contato(message_client, contato, departamento)
                                     await direcionar(resposta_extracao.resposta_confirmacao, False, message_client, None, None, empresa, contato, assistente, db)
@@ -125,7 +125,7 @@ async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_
                                                                           descricao_boleto, empresa, db)
 
             if resposta_vencimento:
-                assistente, assistente_db_id = await obter_assistente(empresa, "cobrar", None, db)
+                assistente, assistente_db_id = await get_assistant_from_company(empresa, "cobrar", None, db)
                 id_contato = await obter_id_contato(message_client, resposta_vencimento.telefone, nome)
                 contato = (await obter_criar_contato(None, id_contato, empresa, message_client, None, db))[0]
                 await atualizar_assistente_atual_contato(contato, assistente_db_id, db)
@@ -159,7 +159,7 @@ async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Company,
                     resposta_vencimento, thread_id = await extrair_dados_cobranca(acao, nome, telefone, data_atual, "",
                                                                                   "", empresa, db)
                     if resposta_vencimento:
-                        assistente, assistente_db_id = await obter_assistente(empresa, "cobrar", None, db)
+                        assistente, assistente_db_id = await get_assistant_from_company(empresa, "cobrar", None, db)
                         id_contato = await obter_id_contato(message_client, resposta_vencimento.telefone, nome)
                         contato = (await obter_criar_contato(None, id_contato, empresa, message_client, None, db))[0]
                         await atualizar_assistente_atual_contato(contato, assistente_db_id, db)

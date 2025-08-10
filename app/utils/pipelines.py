@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from app.db.new_models import Contact
 from app.services.agendamento_service import cadastrar_evento, obter_nova_data_reagendamento, obter_titulo_agenda_evento, verificar_data_sugerida
+from app.services.company_service import get_agenda, get_assistant_from_company, get_department
 from app.services.contato_service import atualizar_assistente_atual_contato, encerrar_contato, mudar_aguardando_humano, transferir_contato
 from app.services.crm_service import mover_lead
-from app.services.empresa_service import obter_assistente, obter_departamento, obter_endereco_agenda
 from app.services.mensagem_service import enviar_mensagem
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
@@ -44,7 +44,7 @@ async def _transfer_pipeline(
         company, message_client, _, __ = company_data
         
         if isinstance(message_client, Digisac):
-            department = await obter_departamento(company, department_code, False, db)
+            department = await get_department(company, department_code, False, db)
             if department:
                 await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
                 await mudar_aguardando_humano(contact, True, db)
@@ -88,7 +88,7 @@ async def _migrate_assistant_pipeline(
         company, message_client, _, __ = company_data
 
         await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
-        assistant, assistant_id = await obter_assistente(company, None, assistant_code, db)
+        assistant, assistant_id = await get_assistant_from_company(company, None, assistant_code, db)
         if assistant:
             new_response = await execute_thread(None, None, contact, assistant, db)
             await atualizar_assistente_atual_contato(contact, assistant_id, db)
@@ -112,7 +112,7 @@ async def _agenda_check_pipeline(
         company, message_client, agenda_client, __ = company_data
 
         if agenda_client is not None:
-            agenda = await obter_endereco_agenda(company, agenda_code, db)
+            agenda = await get_agenda(company, agenda_code, db)
             if agenda:
                 new_response = await verificar_data_sugerida(agenda_client, contact, agenda.endereco, company, db)
                 if new_response:
@@ -136,7 +136,7 @@ async def _agenda_create_event_pipeline(
         company, message_client, agenda_client, crm_client = company_data
 
         if agenda_client is not None:
-            agenda = await obter_endereco_agenda(company, agenda_code, db)
+            agenda = await get_agenda(company, agenda_code, db)
             if agenda:
                 new_response = await cadastrar_evento(agenda_client, contact, agenda.endereco, company, db)
                 await mover_lead(crm_client, contact, company, activity, db)
