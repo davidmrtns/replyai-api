@@ -9,7 +9,7 @@ from app.services.company_service import get_assistant_from_company, get_departm
 from app.services.contato_service import redefinir_contato, obter_criar_contato, atualizar_thread_contato, \
     atualizar_assistente_atual_contato, transferir_contato, obter_id_contato
 from app.services.direcionamento_service import direcionar # TODO: update to use the new pipelines
-from app.services.mensagem_service import criar_message_client
+from app.services.message_service import create_message_client
 from app.services.thread_service import execute_thread
 from app.utils.digisac import Digisac
 from app.utils.financial_client import FinancialClient
@@ -28,7 +28,7 @@ async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Sessi
         else:
             acao = "encerrar_conversa"
 
-        message_client = criar_message_client(empresa, db)
+        message_client = create_message_client(empresa, db)
         if isinstance(message_client, Digisac):
             ticket_id, last_message_id = message_client.obter_ticket_ultima_mensagem(contato.contactId)
             if ticket_id is None:
@@ -57,7 +57,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
     agenda_client = create_agenda_client(empresa, db)
     agendas = db.query(Agenda).filter_by(id_empresa=empresa.id).all()
 
-    message_client = criar_message_client(empresa, db)
+    message_client = create_message_client(empresa, db)
     respostas = await agenda_client.obter_horarios(agendas=[agenda.endereco for agenda in agendas], data=data)
 
     for resposta in respostas:
@@ -92,7 +92,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
 
 
 async def enviar_aviso_vencimento(data_cobranca: str, data_atual: str, empresa: Company, db: Session):
-    message_client = criar_message_client(empresa, db)
+    message_client = create_message_client(empresa, db)
     financial_clients = criar_financial_client(empresa, db)
 
     for financial_client in financial_clients:
@@ -103,7 +103,7 @@ async def enviar_aviso_vencimento(data_cobranca: str, data_atual: str, empresa: 
 
 
 async def enviar_cobranca_inadimplente(data: str, empresa: Company, db: Session):
-    message_client = criar_message_client(empresa, db)
+    message_client = create_message_client(empresa, db)
     financial_clients = criar_financial_client(empresa, db)
 
     for financial_client in financial_clients:

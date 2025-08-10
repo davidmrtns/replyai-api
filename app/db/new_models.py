@@ -103,6 +103,7 @@ class Assistant(Base):
     company_id = Column(Integer, ForeignKey("companies.id")) # TODO: check table order with company
 
     company = relationship("Company", backref="assistants", foreign_keys=[company_id])
+    voice = relationship("Voice", foreign_keys=[voice_id])
 
 
 class Thread(Base):

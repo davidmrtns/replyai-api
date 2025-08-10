@@ -4,7 +4,7 @@ from app.services.agendamento_service import cadastrar_evento, obter_nova_data_r
 from app.services.company_service import get_agenda, get_assistant_from_company, get_department
 from app.services.contato_service import atualizar_assistente_atual_contato, encerrar_contato, mudar_aguardando_humano, transferir_contato
 from app.services.crm_service import mover_lead
-from app.services.mensagem_service import enviar_mensagem
+from app.services.message_service import send_message
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
 from app.utils.assistant import Resposta, Assistant as AiAssistant
@@ -21,10 +21,10 @@ async def _response_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media = response.mensagem, response.midia
+        message, media_code = response.mensagem, response.midia
         company, message_client, _, __ = company_data
 
-        await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
+        await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
         return True
     except Exception as e:
         logger.exception(f"Error in response pipeline: {e}")
@@ -40,13 +40,13 @@ async def _transfer_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media, department_code = response.mensagem, response.midia, response.departamento
+        message, media_code, department_code = response.mensagem, response.midia, response.departamento
         company, message_client, _, __ = company_data
         
         if isinstance(message_client, Digisac):
             department = await get_department(company, department_code, False, db)
             if department:
-                await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
+                await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
                 await mudar_aguardando_humano(contact, True, db)
                 await transferir_contato(message_client, contact, department)
             return True
@@ -64,10 +64,10 @@ async def _end_contact_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media = response.mensagem, response.midia
+        message, media_code = response.mensagem, response.midia
         company, message_client, _, __ = company_data
 
-        await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
+        await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
         await encerrar_contato(contact, message_client, db)
         return True
     except Exception as e:
@@ -84,15 +84,15 @@ async def _migrate_assistant_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media, assistant_code = response.mensagem, response.midia, response.assistente
+        message, media_code, assistant_code = response.mensagem, response.midia, response.assistente
         company, message_client, _, __ = company_data
 
-        await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
+        await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
         assistant, assistant_id = await get_assistant_from_company(company, None, assistant_code, db)
         if assistant:
             new_response = await execute_thread(None, None, contact, assistant, db)
             await atualizar_assistente_atual_contato(contact, assistant_id, db)
-            await enviar_mensagem(new_response.mensagem, is_audio, media, contact, company, message_client, assistant, db)
+            await send_message(new_response.mensagem, is_audio, media_code, contact, company, message_client, assistant, db)
             return True
     except Exception as e:
         logger.exception(f"Error in migrate assistant pipeline: {e}")
@@ -108,7 +108,7 @@ async def _agenda_check_pipeline(
         db: Session
 ) -> bool:
     try:
-        _, media, agenda_code = response.mensagem, response.midia, response.agenda
+        _, media_code, agenda_code = response.mensagem, response.midia, response.agenda
         company, message_client, agenda_client, __ = company_data
 
         if agenda_client is not None:
@@ -116,7 +116,7 @@ async def _agenda_check_pipeline(
             if agenda:
                 new_response = await verificar_data_sugerida(agenda_client, contact, agenda.endereco, company, db)
                 if new_response:
-                    await enviar_mensagem(new_response, is_audio, media, contact, company, message_client, assistant, db)
+                    await send_message(new_response, is_audio, media_code, contact, company, message_client, assistant, db)
                     return True
     except Exception as e:
         logger.exception(f"Error in agenda check pipeline: {e}")
@@ -132,7 +132,7 @@ async def _agenda_create_event_pipeline(
         db: Session
 ) -> bool:
     try:
-        _, media, agenda_code, activity = response.mensagem, response.midia, response.agenda, response.atividade
+        _, media_code, agenda_code, activity = response.mensagem, response.midia, response.agenda, response.atividade
         company, message_client, agenda_client, crm_client = company_data
 
         if agenda_client is not None:
@@ -141,7 +141,7 @@ async def _agenda_create_event_pipeline(
                 new_response = await cadastrar_evento(agenda_client, contact, agenda.endereco, company, db)
                 await mover_lead(crm_client, contact, company, activity, db)
                 if new_response:
-                    await enviar_mensagem(new_response, is_audio, media, contact, company, message_client, assistant, db)
+                    await send_message(new_response, is_audio, media_code, contact, company, message_client, assistant, db)
     except Exception as e:
         logger.exception(f"Error in agenda create event pipeline: {e}")
     return False
@@ -156,7 +156,7 @@ async def _agenda_reschedule_event_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media, activity = response.mensagem, response.midia, response.atividade
+        message, media_code, activity = response.mensagem, response.midia, response.atividade
         company, message_client, agenda_client, crm_client = company_data
 
         if agenda_client is not None:
@@ -166,7 +166,7 @@ async def _agenda_reschedule_event_pipeline(
                 if original_event_data:
                     if await agenda_client.reagendar_evento(original_event_data):
                         await mover_lead(crm_client, contact, company, activity, db)
-                        await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
+                        await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
                         await encerrar_contato(contact, message_client, db)
                         return True
     except Exception as e:
@@ -183,7 +183,7 @@ async def _agenda_cancel_event_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media, activity = response.mensagem, response.midia, response.atividade
+        message, media_code, activity = response.mensagem, response.midia, response.atividade
         company, message_client, agenda_client, crm_client = company_data
 
         if agenda_client is not None:
@@ -191,7 +191,7 @@ async def _agenda_cancel_event_pipeline(
             if original_event_data:
                 if await agenda_client.cancelar_evento(original_event_data, company.event_cancellation_type):
                     await mover_lead(crm_client, contact, company, activity, db)
-                    await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
+                    await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
                     await encerrar_contato(contact, message_client, db)
                     return True
     except Exception as e:
@@ -208,7 +208,7 @@ async def _agenda_confirm_event_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media, activity = response.mensagem, response.midia, response.atividade
+        message, media_code, activity = response.mensagem, response.midia, response.atividade
         company, message_client, agenda_client, crm_client = company_data
 
         if agenda_client is not None:
@@ -216,7 +216,7 @@ async def _agenda_confirm_event_pipeline(
             if event_data:
                 if await agenda_client.confirmar_evento(event_data):
                     await mover_lead(crm_client, contact, company, activity, db)
-                    await enviar_mensagem(message, is_audio, media, contact, company, message_client, assistant, db)
+                    await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
                     await encerrar_contato(contact, message_client, db)
                     return True
     except Exception as e:

@@ -10,4 +10,4 @@ from app.utils.message_client import MessageClient
 AssistantData = Tuple[AiAssistant | None, int | None]
 CompanyData = Tuple[Company, MessageClient | None, AgendaClient | None, CRMClient | None]
 ContactAndAssistant = Tuple[Contact, AiAssistant]
-MessageData = Tuple[str, bool, str | None]
+MessageData = Tuple[str | None, bool, str | None]
