@@ -10,6 +10,7 @@ from openai import OpenAI
 from openai.types.beta import FunctionToolParam
 import time
 
+from app.exceptions.exceptions import AIResponseException
 from app.utils.function_utils import obter_data_hora_atual, obter_colaboradores
 
 
@@ -255,7 +256,13 @@ class Assistant:
                 print(f"Tentantiva {tentativa}: Ocorreu um erro inesperado: {e}")
                 time.sleep(10)
                 continue
-        raise Exception(f"AIResponseError: Falha ao gerar uma resposta após {max_tentantivas} tentativas")
+        raise AIResponseException(
+            thread_id=thread_id,
+            assistant_id=self.id,
+            detail=f"Failed to generate a response after {max_tentantivas} attempts.",
+            user_friendly_detail=f"The AI assistant was unable to generate a response at this time. Please try again later.",
+            http_status_code=500
+        )
 
     def listar_mensagens_thread(self, thread_id: str, ordem: str, limite: int):
         mensagens = self.client.beta.threads.messages.list(thread_id, order=ordem, limit=limite)

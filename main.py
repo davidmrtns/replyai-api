@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from app.exceptions.exception_handler import exception_handler
+from app.exceptions.exceptions import AppException
 from app.routers import trabalho, empresa, usuario, assistente, voz, evolutionapi, digisac, midia, agenda, microsoft, google, exemplo
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -17,6 +19,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+app.add_exception_handler(AppException, exception_handler)
 
 app.include_router(reply.router, prefix="/reply", tags=["Replies"])
 

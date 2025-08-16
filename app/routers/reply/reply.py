@@ -8,11 +8,11 @@ from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.services.company_service import get_company
 from app.services.thread_service import execute_thread
-from app.utils.logger import logger
 from app.utils.pipelines import PIPELINES
 from .reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
 from ...services.contact_service import get_or_create_contact
 from ...services.message_service import get_message, send_message
+
 
 router = APIRouter()
 
@@ -54,9 +54,7 @@ async def reply(
         pipeline = PIPELINES.get(response.atividade)
         if pipeline:
             reply_result = await pipeline(response, is_audio, contact, company_data, assistant, db)
-    except AIResponseException:
+    except AIResponseException as exc:
         await send_message(company.ai_reply_error_message, False, None, contact, company, message_client, assistant, db)
-        logger.exception(f"An AI response error occurred while processing the request")
-    except Exception:
-        logger.exception(f"An unexpected error occurred while processing the request")
+        raise exc
     return reply_result
