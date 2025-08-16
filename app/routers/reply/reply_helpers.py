@@ -1,7 +1,7 @@
 from app.db.new_models import Company, Contact
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
-from app.services.contato_service import mudar_recebimento_ia, redefinir_contato
+from app.services.contact_service import change_ai_reply_reception, reset_contact
 from app.utils.evolutionapi import EvolutionAPI
 from app.utils.message_client import MessageClient
 
@@ -15,7 +15,7 @@ async def _handle_evolutionapi_request(
 ) -> bool:
     if request.data.key.fromMe:
         if company:
-            await mudar_recebimento_ia(request.data.key.remoteJid, company, False, db)
+            await change_ai_reply_reception(contact_id=request.data.key.remoteJid, company=company, value=False, db=db)
         return False
     if isinstance(message_client, EvolutionAPI):
         message_client.enviar_presenca(request.data.key.remoteJid, is_audio)
@@ -28,7 +28,7 @@ async def _handle_digisac_request(
         db
 ) -> bool:
     if request.data.command == 'reset':
-        await redefinir_contato(contact, db)
+        await reset_contact(contact, db)
         return False
     return True
 

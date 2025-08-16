@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.db.new_models import Contact
 from app.services.agendamento_service import cadastrar_evento, obter_nova_data_reagendamento, obter_titulo_agenda_evento, verificar_data_sugerida
 from app.services.company_service import get_agenda, get_assistant_from_company, get_department
-from app.services.contato_service import atualizar_assistente_atual_contato, encerrar_contato, mudar_aguardando_humano, transferir_contato
+from app.services.contact_service import change_awaiting_human_contact, end_contact, transfer_contact, update_current_assistant
 from app.services.crm_service import mover_lead
 from app.services.message_service import send_message
 from app.services.thread_service import execute_thread
@@ -47,8 +47,8 @@ async def _transfer_pipeline(
             department = await get_department(company, department_code, False, db)
             if department:
                 await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-                await mudar_aguardando_humano(contact, True, db)
-                await transferir_contato(message_client, contact, department)
+                await change_awaiting_human_contact(contact, True, db)
+                await transfer_contact(message_client, contact, department)
             return True
     except Exception as e:
         logger.exception(f"Error in transfer pipeline: {e}")
@@ -68,7 +68,7 @@ async def _end_contact_pipeline(
         company, message_client, _, __ = company_data
 
         await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-        await encerrar_contato(contact, message_client, db)
+        await end_contact(contact, message_client, db)
         return True
     except Exception as e:
         logger.exception(f"Error in end contact pipeline: {e}")
@@ -91,7 +91,7 @@ async def _migrate_assistant_pipeline(
         assistant, assistant_id = await get_assistant_from_company(company, None, assistant_code, db)
         if assistant:
             new_response = await execute_thread(None, None, contact, assistant, db)
-            await atualizar_assistente_atual_contato(contact, assistant_id, db)
+            await update_current_assistant(contact, assistant_id, db)
             await send_message(new_response.mensagem, is_audio, media_code, contact, company, message_client, assistant, db)
             return True
     except Exception as e:
@@ -167,7 +167,7 @@ async def _agenda_reschedule_event_pipeline(
                     if await agenda_client.reagendar_evento(original_event_data):
                         await mover_lead(crm_client, contact, company, activity, db)
                         await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-                        await encerrar_contato(contact, message_client, db)
+                        await end_contact(contact, message_client, db)
                         return True
     except Exception as e:
         logger.exception(f"Error in agenda reschedule event pipeline: {e}")
@@ -192,7 +192,7 @@ async def _agenda_cancel_event_pipeline(
                 if await agenda_client.cancelar_evento(original_event_data, company.event_cancellation_type):
                     await mover_lead(crm_client, contact, company, activity, db)
                     await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-                    await encerrar_contato(contact, message_client, db)
+                    await end_contact(contact, message_client, db)
                     return True
     except Exception as e:
         logger.exception(f"Error in agenda cancel event pipeline: {e}")
@@ -217,7 +217,7 @@ async def _agenda_confirm_event_pipeline(
                 if await agenda_client.confirmar_evento(event_data):
                     await mover_lead(crm_client, contact, company, activity, db)
                     await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-                    await encerrar_contato(contact, message_client, db)
+                    await end_contact(contact, message_client, db)
                     return True
     except Exception as e:
         logger.exception(f"Error in agenda confirm event pipeline: {e}")
