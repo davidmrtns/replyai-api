@@ -2,11 +2,12 @@ from fastapi import FastAPI
 
 from app.exceptions.exception_handler import exception_handler
 from app.exceptions.exceptions import AppException
-from app.routers import trabalho, empresa, usuario, assistente, voz, evolutionapi, digisac, midia, agenda, microsoft, google, exemplo
+from app.routers import trabalho, empresa, usuario, assistente, voz, evolutionapi, digisac, midia, microsoft, google, exemplo
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from app.routers.reply import reply
+from app.routers.agenda import agenda
 
 app = FastAPI()
 
@@ -23,11 +24,11 @@ app.add_middleware(
 app.add_exception_handler(AppException, exception_handler)
 
 app.include_router(reply.router, prefix="/reply", tags=["Replies"])
+app.include_router(agenda.router, prefix="/agenda", tags=["Agendas"])
 
 app.include_router(trabalho.router, prefix="/trabalho",tags=["Trabalhos"])
 app.include_router(empresa.router, prefix="/empresa", tags=["Empresas"])
 app.include_router(usuario.router, prefix="/usuario", tags=["Usuarios"])
-app.include_router(agenda.router, prefix="/agenda", tags=["Agendas"])
 app.include_router(midia.router, prefix="/midia", tags=["Mídias"])
 app.include_router(assistente.router, prefix="/assistente", tags=["Assistentes"])
 app.include_router(exemplo.router, prefix="/exemplo", tags=["Exemplos"])

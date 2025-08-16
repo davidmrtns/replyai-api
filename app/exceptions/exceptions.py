@@ -18,3 +18,21 @@ class AIResponseException(AppException):
         self.thread_id = thread_id or "Unknown thread"
         self.assistant_id = assistant_id or "Unknown assistant"
         super().__init__(**kwargs)
+
+
+class NoAccessToCompanyException(AppException):
+    def __init__(self, company_slug: str, **kwargs):
+        self.company_slug = company_slug
+        super().__init__(**kwargs)
+
+
+class ResourceNotFoundException(AppException):
+    def __init__(self, resource_name: str, resource_id: str, **kwargs):
+        self.resource_name = resource_name or "Unknown resource"
+        self.resource_identifier = resource_id or "No ID provided"
+        super().__init__(**kwargs)
+
+
+class UserLoginException(AppException):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
