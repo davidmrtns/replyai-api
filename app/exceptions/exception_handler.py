@@ -11,7 +11,7 @@ async def exception_handler(request: Request, exc: AppException):
     
     return JSONResponse(
         status_code=exc.http_status_code,
-        content={"message": f"An unexpected error occurred while processing the request: {exc.user_friendly_detail}"}
+        content={"message": exc.user_friendly_detail}
     )
 
 
