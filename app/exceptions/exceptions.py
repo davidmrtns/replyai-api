@@ -36,3 +36,9 @@ class ResourceNotFoundException(AppException):
 class UserLoginException(AppException):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+class AssistantEditingException(AppException):
+    def __init__(self, assistant_id: str, **kwargs):
+        self.assistant_id = assistant_id or "Unknown assistant"
+        super().__init__(**kwargs)
