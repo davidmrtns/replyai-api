@@ -4,10 +4,10 @@ from app.db.new_models import Contact, Company
 from app.db.models import Agenda
 from app.services.agenda_service import create_agenda_client
 from app.services.agendamento_service import extrair_dados_evento
-from app.services.cobranca_service import extrair_dados_cobranca, criar_financial_client
+from app.services.billing_service import generate_billing_response, create_financial_clients
 from app.services.company_service import get_assistant_from_company, get_department
 from app.services.contact_service import get_or_create_contact, reset_contact, transfer_contact, update_current_assistant
-from app.services.direcionamento_service import direcionar # TODO: update to use the new pipelines
+from app.services.direcionamento_service import direcionar # pyright: ignore[reportMissingImports] #TODO: update to use the new pipelines
 from app.services.message_service import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
 from app.utils.digisac import Digisac
@@ -92,7 +92,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
 
 async def enviar_aviso_vencimento(data_cobranca: str, data_atual: str, empresa: Company, db: Session):
     message_client = create_message_client(empresa, db)
-    financial_clients = criar_financial_client(empresa, db)
+    financial_clients = create_financial_clients(empresa, db)
 
     for financial_client in financial_clients:
         resposta = financial_client.listar_cobrancas(due_date_le=data_cobranca, due_date_ge=data_cobranca, status="PENDING", limit="100")
@@ -103,7 +103,7 @@ async def enviar_aviso_vencimento(data_cobranca: str, data_atual: str, empresa: 
 
 async def enviar_cobranca_inadimplente(data: str, empresa: Company, db: Session):
     message_client = create_message_client(empresa, db)
-    financial_clients = criar_financial_client(empresa, db)
+    financial_clients = create_financial_clients(empresa, db)
 
     for financial_client in financial_clients:
         resposta = financial_client.listar_cobrancas(status="OVERDUE", limit="100")
@@ -120,7 +120,7 @@ async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_
             nome = cliente.get("name", "")
             data_vencimento = cobranca.get("dueDate", "")
             descricao_boleto = cobranca.get("description", "")
-            resposta_vencimento, thread_id = await extrair_dados_cobranca(acao, nome, telefone, data_atual, data_vencimento,
+            resposta_vencimento, thread_id = await generate_billing_response(acao, nome, telefone, data_atual, data_vencimento,
                                                                           descricao_boleto, empresa, db)
 
             if resposta_vencimento:
@@ -155,7 +155,7 @@ async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Company,
             if url_nota:
                 documento = message_client.baixar_arquivo(url_nota)
                 if documento:
-                    resposta_vencimento, thread_id = await extrair_dados_cobranca(acao, nome, telefone, data_atual, "",
+                    resposta_vencimento, thread_id = await generate_billing_response(acao, nome, telefone, data_atual, "",
                                                                                   "", empresa, db)
                     if resposta_vencimento:
                         assistente, assistente_db_id = await get_assistant_from_company(empresa, "cobrar", None, db)

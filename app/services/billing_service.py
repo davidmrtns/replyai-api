@@ -1,0 +1,63 @@
+import json
+
+from sqlalchemy.orm import Session
+
+from app.db.models import AsaasClient
+from app.db.new_models import Assistant, Company
+from app.types.types import BillingResponse
+from app.utils.asaas import Asaas
+from app.utils.assistant import Assistant as AiAssistant, Instrucao, RespostaFinanceiro
+from app.utils.logger import logger
+
+
+def create_financial_clients(
+        company: Company,
+        db: Session,
+        client_number: int | None = None
+) -> list[Asaas] | Asaas:
+    if company.financial_client_type != "asaas":
+        return []
+
+    query = db.query(AsaasClient).filter_by(id_empresa=company.id)
+
+    if client_number is not None:
+        query = query.filter_by(client_number=client_number)
+
+    clients = [Asaas(token=c.token) for c in query.all()]
+
+    return clients[0] if client_number is not None else clients
+
+
+async def generate_billing_response(
+        action: str,
+        contact_name: str,
+        phone_number: str,
+        current_date: str,
+        due_date: str,
+        billing_description: str,
+        company: Company,
+        db: Session
+)  -> BillingResponse:
+    instruction = Instrucao(
+        acao=action,
+        dados={
+            "contact_name": contact_name,
+            "phone_number": phone_number,
+            "due_date": due_date,
+            "current_date": current_date,
+            "billing_description": billing_description
+        }
+    )
+
+    assistant_db = db.query(Assistant).filter_by(purpose="cobrar", company_id=company.id).first()
+
+    try:
+        if assistant_db is not None:
+            assistant = AiAssistant(nome=assistant_db.nome, id=assistant_db.assistantId, api_key=company.openai_api_key)
+            assistant.adicionar_mensagens(mensagens=[instruction.__str__()], id_arquivos=[], thread_id=None)
+            response, thread_id = assistant.criar_rodar_thread() # TODO: check if i can use the thread service here
+            response_to_obj = RespostaFinanceiro.from_dict(json.loads(response))
+            return response_to_obj, thread_id
+    except Exception as e:
+        logger.exception(f"Error generating billing response: {e}")
+    return None, None

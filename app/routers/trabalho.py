@@ -10,7 +10,7 @@ from app.jobs.jobs import rodar_confirmar_agendamento, rodar_avisar_vencimento, 
     rodar_retomar_conversa
 from app.jobs.sub_jobs import processar_cobranca, processar_nf
 from app.schemas.asaas_schema import AsaasPaymentRequest, AsaasInvoiceRequest
-from app.services.cobranca_service import criar_financial_client
+from app.services.billing_service import create_financial_clients
 from app.services.company_service import get_company
 
 
@@ -63,7 +63,7 @@ async def executar_agradecer_pagamento(
     dados_empresa = await get_company(slug, token, db)
     if dados_empresa is not None:
         empresa, message_client, _, __ = dados_empresa
-        financial_client = criar_financial_client(empresa, db, client_number)
+        financial_client = create_financial_clients(empresa, db, client_number)
         await processar_cobranca("extrair_dados_agradecer_pagamento", request.payment.model_dump(), "", False,
                                  empresa, message_client, financial_client, db)
         return {"status": "Trabalho [agradecer_pagamento] executado com sucesso"}
@@ -79,7 +79,7 @@ async def executar_enviar_nf(
     dados_empresa = await get_company(slug, token, db)
     if dados_empresa is not None:
         empresa, message_client, _, __ = dados_empresa
-        financial_client = criar_financial_client(empresa, db, client_number)
+        financial_client = create_financial_clients(empresa, db, client_number)
         await processar_nf("extrair_dados_nf_emitida", request.invoice.model_dump(), "", empresa,
                                  message_client, financial_client, db)
         return {"status": "Trabalho [enviar_nf] executado com sucesso"}
