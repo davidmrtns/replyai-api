@@ -73,7 +73,7 @@ async def get_instructions_from_assistant(
 
 
 @router.put("/{company_slug}/{assistant_id}", response_model=AssistenteSchemaEmpresa)
-async def editar_assistente(
+async def edit_assistant(
         company_slug: str,
         assistant_id: int,
         request: AssistenteSchema,
