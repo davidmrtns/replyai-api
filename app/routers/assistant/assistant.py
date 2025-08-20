@@ -2,7 +2,7 @@ import openai
 from fastapi import APIRouter
 from fastapi.params import Depends
 from openai import OpenAI
-from openai.types import ResponseFormatJSONObject, ResponseFormatText
+from openai.types import ResponseFormatJSONObject
 from sqlalchemy.orm import Session
 from typing import Annotated
 
@@ -33,7 +33,7 @@ async def create_assistant(
         model="gpt-4o",
         instructions=request.instrucoes,
         name=f"{request.nome} - {request.proposito}",
-        response_format=ResponseFormatJSONObject(type="json_object") if request.proposito != "reescrever" else ResponseFormatText(type="text"),
+        response_format=ResponseFormatJSONObject(type="json_object"),
         temperature=1.0,
         tools=tools,
         top_p=1.0
