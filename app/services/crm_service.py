@@ -21,20 +21,29 @@ def create_crm_client(company: Company, db: Session) -> CRMClient | None:
     return None
 
 
-# TODO: after removing the events pipelines, this function is not being used anymore; improve and start using it
-async def mover_lead(crm_client: CRMClient, contato: Contact, empresa: Company, atalho: str, db: Session):
-    if crm_client and contato.deal_id:
+# TODO: after removing the events pipelines, this function is not being used anymore; start using it
+async def move_lead(
+        crm_client: CRMClient,
+        contact: Contact,
+        company: Company,
+        deal_stage_shortcut: str,
+        db: Session
+) -> bool:
+    status = False
+
+    if crm_client and contact.deal_id:
         deal_stage_db = (
             db.query(RDStationCRMDealStage)
-            .join(RDStationCRMClient, RDStationCRMDealStage.id_rdstationcrm_client == RDStationCRMClient.id)
+            .join(RDStationCRMClient, RDStationCRMDealStage.rdstationcrm_client_id == RDStationCRMClient.id)
             .filter(
-                RDStationCRMDealStage.atalho == atalho,
-                RDStationCRMClient.id_empresa == empresa.id
+                RDStationCRMDealStage.shortcut == deal_stage_shortcut,
+                RDStationCRMClient.company_id == company.id
             )
             .first()
         )
 
         if deal_stage_db:
-            return crm_client.mudar_etapa(deal_id=contato.deal_id,
-                                          deal_stage_id=deal_stage_db.deal_stage_id,
-                                          user_id=deal_stage_db.user_id)
+            crm_client.mudar_etapa(deal_id=contact.deal_id, deal_stage_id=deal_stage_db.deal_stage_id, user_id=deal_stage_db.user_id)
+            status = True
+
+    return status
