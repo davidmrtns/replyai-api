@@ -1,9 +1,7 @@
 from sqlalchemy.orm import Session
 from app.db.new_models import Contact
-from app.services.agendamento_service import cadastrar_evento, obter_nova_data_reagendamento, obter_titulo_agenda_evento, verificar_data_sugerida
-from app.services.company_service import get_agenda, get_assistant_from_company, get_department
+from app.services.company_service import get_assistant_from_company, get_department
 from app.services.contact_service import change_awaiting_human_contact, end_contact, transfer_contact, update_current_assistant
-from app.services.crm_service import mover_lead
 from app.services.message_service import send_message
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
@@ -99,139 +97,9 @@ async def _migrate_assistant_pipeline(
     return False
 
 
-async def _agenda_check_pipeline(
-        response: Resposta,
-        is_audio: bool,
-        contact: Contact,
-        company_data: CompanyData,
-        assistant: AiAssistant,
-        db: Session
-) -> bool:
-    try:
-        _, media_code, agenda_code = response.mensagem, response.midia, response.agenda
-        company, message_client, agenda_client, __ = company_data
-
-        if agenda_client is not None:
-            agenda = await get_agenda(company, agenda_code, db)
-            if agenda:
-                new_response = await verificar_data_sugerida(agenda_client, contact, agenda.endereco, company, db)
-                if new_response:
-                    await send_message(new_response, is_audio, media_code, contact, company, message_client, assistant, db)
-                    return True
-    except Exception as e:
-        logger.exception(f"Error in agenda check pipeline: {e}")
-    return False
-
-
-async def _agenda_create_event_pipeline(
-        response: Resposta,
-        is_audio: bool,
-        contact: Contact,
-        company_data: CompanyData,
-        assistant: AiAssistant,
-        db: Session
-) -> bool:
-    try:
-        _, media_code, agenda_code, activity = response.mensagem, response.midia, response.agenda, response.atividade
-        company, message_client, agenda_client, crm_client = company_data
-
-        if agenda_client is not None:
-            agenda = await get_agenda(company, agenda_code, db)
-            if agenda:
-                new_response = await cadastrar_evento(agenda_client, contact, agenda.endereco, company, db)
-                await mover_lead(crm_client, contact, company, activity, db)
-                if new_response:
-                    await send_message(new_response, is_audio, media_code, contact, company, message_client, assistant, db)
-    except Exception as e:
-        logger.exception(f"Error in agenda create event pipeline: {e}")
-    return False
-
-
-async def _agenda_reschedule_event_pipeline(
-        response: Resposta,
-        is_audio: bool,
-        contact: Contact,
-        company_data: CompanyData,
-        assistant: AiAssistant,
-        db: Session
-) -> bool:
-    try:
-        message, media_code, activity = response.mensagem, response.midia, response.atividade
-        company, message_client, agenda_client, crm_client = company_data
-
-        if agenda_client is not None:
-            new_date = await obter_nova_data_reagendamento(contact.current_thread.thread_id, company, db)
-            if new_date:
-                original_event_data = await obter_titulo_agenda_evento(assistant, contact, new_date)
-                if original_event_data:
-                    if await agenda_client.reagendar_evento(original_event_data):
-                        await mover_lead(crm_client, contact, company, activity, db)
-                        await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-                        await end_contact(contact, message_client, db)
-                        return True
-    except Exception as e:
-        logger.exception(f"Error in agenda reschedule event pipeline: {e}")
-    return False
-
-
-async def _agenda_cancel_event_pipeline(
-        response: Resposta,
-        is_audio: bool,
-        contact: Contact,
-        company_data: CompanyData,
-        assistant: AiAssistant,
-        db: Session
-) -> bool:
-    try:
-        message, media_code, activity = response.mensagem, response.midia, response.atividade
-        company, message_client, agenda_client, crm_client = company_data
-
-        if agenda_client is not None:
-            original_event_data = await obter_titulo_agenda_evento(assistant, contact)
-            if original_event_data:
-                if await agenda_client.cancelar_evento(original_event_data, company.event_cancellation_type):
-                    await mover_lead(crm_client, contact, company, activity, db)
-                    await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-                    await end_contact(contact, message_client, db)
-                    return True
-    except Exception as e:
-        logger.exception(f"Error in agenda cancel event pipeline: {e}")
-    return False
-
-
-async def _agenda_confirm_event_pipeline(
-        response: Resposta,
-        is_audio: bool,
-        contact: Contact,
-        company_data: CompanyData,
-        assistant: AiAssistant,
-        db: Session
-) -> bool:
-    try:
-        message, media_code, activity = response.mensagem, response.midia, response.atividade
-        company, message_client, agenda_client, crm_client = company_data
-
-        if agenda_client is not None:
-            event_data = await obter_titulo_agenda_evento(assistant, contact)
-            if event_data:
-                if await agenda_client.confirmar_evento(event_data):
-                    await mover_lead(crm_client, contact, company, activity, db)
-                    await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-                    await end_contact(contact, message_client, db)
-                    return True
-    except Exception as e:
-        logger.exception(f"Error in agenda confirm event pipeline: {e}")
-    return False
-
-
 PIPELINES = {
     "R": _response_pipeline,
     "T": _transfer_pipeline,
     "E": _end_contact_pipeline,
-    "M": _migrate_assistant_pipeline,
-    "AG": _agenda_check_pipeline,
-    "AG-OK": _agenda_create_event_pipeline,
-    "AG-RE": _agenda_reschedule_event_pipeline,
-    "AG-CN": _agenda_cancel_event_pipeline,
-    "AG-CF": _agenda_confirm_event_pipeline
+    "M": _migrate_assistant_pipeline
 }

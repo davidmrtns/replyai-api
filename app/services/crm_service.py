@@ -21,6 +21,7 @@ def create_crm_client(company: Company, db: Session) -> CRMClient | None:
     return None
 
 
+# TODO: after removing the events pipelines, this function is not being used anymore; improve and start using it
 async def mover_lead(crm_client: CRMClient, contato: Contact, empresa: Company, atalho: str, db: Session):
     if crm_client and contato.deal_id:
         deal_stage_db = (

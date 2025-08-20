@@ -1,9 +1,13 @@
+from datetime import datetime, timedelta
+import json
 from sqlalchemy.orm import Session
 
-from app.db.new_models import Company, OutlookClient, GoogleCalendarClient
-from app.utils.agenda_client import AgendaClient
+from app.db.new_models import Assistant, Company, Contact, OutlookClient, GoogleCalendarClient
+from app.utils.agenda_client import AgendaClient, EventoTituloAgenda, Schedule
+from app.utils.assistant import Instrucao
 from app.utils.google_calendar import GoogleCalendar
 from app.utils.outlook import Outlook
+from app.utils.assistant import Assistant as AiAssistant, RespostaConfirmacao
 
 
 def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
@@ -37,3 +41,79 @@ def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
                 db=db
             )
     return None
+
+
+# TODO: make this function better, and add typing
+async def get_original_event_data(
+        assistant: Assistant,
+        contact: Contact
+):
+    message = assistant.obter_mensagem_thread(contact.current_thread_id, 0, "asc", 1)
+    if message:
+        mensagem_dict = json.loads(message)
+        data = mensagem_dict.get("dados", {})
+        if data:
+            original_event_data = EventoTituloAgenda(
+                endereco_agenda=data.get("email_agenda", ""),
+                titulo=data.get("titulo", ""),
+                start_datetime=data.get("data_hora_inicio", "")
+            )
+            return original_event_data
+    return None
+
+
+# TODO: check if this function is still needed or if it can be replaced by an assistant action
+async def extract_event_data(
+        agenda: str,
+        evento: dict,
+        data_atual: str,
+        empresa: Company,
+        db: Session
+):
+    instrucao = Instrucao(
+        acao="extrair_dados_evento",
+        dados={
+            "email_agenda": agenda,
+            "titulo": evento.get("subject", ""),
+            "local": evento.get("location", ""),
+            "data_hora_inicio": evento.get("start").get("date_time"),
+            "data_hora_fim": evento.get("end").get("date_time"),
+            "data_hora_atual": data_atual
+        }
+    )
+
+    assistente_db = db.query(Assistant).filter_by(proposito="agendar", id_empresa=empresa.id).first()
+
+    try:
+        if assistente_db is not None:
+            assistente = AiAssistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
+            assistente.adicionar_mensagens(mensagens=[instrucao.__str__()], id_arquivos=[], thread_id=None)
+            resposta, thread_id = assistente.criar_rodar_thread()
+            resposta_obj = RespostaConfirmacao.from_dict(json.loads(resposta))
+            return resposta_obj, thread_id
+    except Exception as e:
+        print(e)
+    return {}, None
+
+
+def schedule_to_list(
+        schedule: Schedule,
+        company: Company
+) -> list:
+    start = datetime.strptime(company.agenda_starting_time, "%H:%M:%S")
+    end = datetime.strptime(company.agenda_ending_time, "%H:%M:%S")
+    duration = timedelta(minutes=company.appointment_duration_in_minutes)
+
+    slots = []
+    current = start
+
+    for i, availability in enumerate(schedule.availability_view):
+        if current >= end:
+            break
+
+        if availability == "0": # available time slot
+            slots.append(current.strftime("%H:%M"))
+
+        current += duration
+
+    return slots

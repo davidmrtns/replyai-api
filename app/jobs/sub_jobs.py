@@ -2,8 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.db.new_models import Contact, Company
 from app.db.models import Agenda
-from app.services.agenda_service import create_agenda_client
-from app.services.agendamento_service import extrair_dados_evento
+from app.services.agenda_service import create_agenda_client, extract_event_data
 from app.services.billing_service import generate_billing_response, create_financial_clients
 from app.services.company_service import get_assistant_from_company, get_department
 from app.services.contact_service import get_or_create_contact, reset_contact, transfer_contact, update_current_assistant
@@ -62,7 +61,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
     for resposta in respostas:
         for evento in resposta.schedule_items:
             try:
-                resposta_extracao, thread_id = await extrair_dados_evento(resposta.schedule_id, evento, data_atual, empresa, db)
+                resposta_extracao, thread_id = await extract_event_data(resposta.schedule_id, evento, data_atual, empresa, db)
                 if resposta_extracao:
                     if resposta_extracao.telefone:
                         try:
