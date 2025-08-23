@@ -28,7 +28,7 @@ async def execute_thread(
     response, thread_id = assistant.criar_rodar_thread(thread_id=current_thread_id)
 
     if not contact.current_thread:
-        assign_new_thread_to_contact(contact, thread_id, db)
+        await assign_new_thread_to_contact(contact, thread_id, db)
 
     response = json.loads(response)
     response_obj = Resposta.from_dict(response)
