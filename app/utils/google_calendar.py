@@ -98,7 +98,7 @@ class GoogleCalendar(AgendaClient):
             evento_obj = eventos.get("items")[0] if eventos.get("items") else None
 
             if evento_obj:
-                evento_obj["summary"] = f"CONFIRMADO - {evento_obj["summary"]}"
+                evento_obj["summary"] = f"CONFIRMADO - {evento_obj['summary']}"
                 self.service.events().update(
                     calendarId=dados.endereco_agenda,
                     eventId=evento_obj["id"],
@@ -123,7 +123,7 @@ class GoogleCalendar(AgendaClient):
                 data = datetime.strptime(dados.data_nova, '%Y-%m-%dT%H:%M:%S').astimezone(self.timezone)
                 data_final = data + timedelta(minutes=self.duracao_evento)
 
-                evento_obj["summary"] = f"REAGENDADO - {evento_obj["summary"]}"
+                evento_obj["summary"] = f"REAGENDADO - {evento_obj['summary']}"
                 evento_obj["start"] = {
                     "dateTime": data.strftime("%Y-%m-%dT%H:%M:%S%z"),
                     "timeZone": str(self.timezone)
@@ -160,7 +160,7 @@ class GoogleCalendar(AgendaClient):
                         eventId=evento_obj["id"]
                     ).execute()
                 elif tipo_cancelamento == "manter":
-                    evento_obj["summary"] = f"CANCELADO - {evento_obj["summary"]}"
+                    evento_obj["summary"] = f"CANCELADO - {evento_obj['summary']}"
                     self.service.events().update(
                         calendarId=dados.endereco_agenda,
                         eventId=evento_obj["id"],

@@ -102,7 +102,7 @@ class Outlook(AgendaClient):
             request_body = Event()
             request_body.subject = titulo
             request_body.start = DateTimeTimeZone(date_time=f"{data}", time_zone=self.timezone)
-            request_body.end = DateTimeTimeZone(date_time=f"{data_final.strftime("%Y-%m-%dT%H:%M:%S")}", time_zone=self.timezone)
+            request_body.end = DateTimeTimeZone(date_time=f"{data_final.strftime('%Y-%m-%dT%H:%M:%S')}", time_zone=self.timezone)
 
             if descricao:
                 request_body.body = ItemBody(
@@ -167,7 +167,7 @@ class Outlook(AgendaClient):
                 request_body = Event()
                 request_body.subject = f"REAGENDADO - {dados.titulo}"
                 request_body.start = DateTimeTimeZone(date_time=f"{dados.data_nova}", time_zone=self.timezone)
-                request_body.end = DateTimeTimeZone(date_time=f"{data_final.strftime("%Y-%m-%dT%H:%M:%S")}", time_zone=self.timezone)
+                request_body.end = DateTimeTimeZone(date_time=f"{data_final.strftime('%Y-%m-%dT%H:%M:%S')}", time_zone=self.timezone)
 
                 await self.graph_client.users.by_user_id(dados.endereco_agenda).events.by_event_id(id).patch(body=request_body)
                 return True
