@@ -87,7 +87,6 @@ class Voice(Base):
     style = Column(Float)
     company_id = Column(Integer, ForeignKey("companies.id"))
 
-    assistant = relationship("Assistant", backref="voice")
     company = relationship("Company", backref="voices")
 
 
@@ -125,7 +124,7 @@ class Contact(Base):
     phone_number = Column(String)
     contact_name = Column(String)
     current_thread_id = Column(Integer, ForeignKey("threads.id"), nullable=True, default=None)
-    current_assistant = Column(Integer, ForeignKey("assistants.id"), nullable=True, default=None)
+    current_assistant = Column(Integer, ForeignKey("assistants.id"), nullable=True, default=None) # TODO: change to current_assistant_id and add direct reference to assistant
     last_message_at = Column(DateTime)
     recall_count = Column(Integer, default=0)
     under_appointment_confirmation = Column(Boolean, default=False)
@@ -151,6 +150,7 @@ class DigisacClient(Base):
     company = relationship("Company")
 
 
+# TODO: change name to not conflict with the utility class
 class EvolutionAPIClient(Base):
     __tablename__ = "evolutionapi_clients"
 

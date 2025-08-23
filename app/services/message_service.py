@@ -1,15 +1,15 @@
 from sqlalchemy.orm import Session
 
+from app.clients.evolutionapi_client import EvolutionAPIClient
 from app.db.models import Midia
-from app.db.new_models import Assistant, Company, Contact, DigisacClient, EvolutionAPIClient
+from app.db.new_models import Assistant, Company, Contact, DigisacClient, EvolutionAPIClient as EvolutionAPIClientDB
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import MessageData
 from app.utils.assistant import Assistant as AiAssistant
 from app.utils.digisac import Digisac
 from app.utils.eleven_labs import ElevenLabs
-from app.utils.evolutionapi import EvolutionAPI
-from app.utils.message_client import MessageClient
+from app.clients.message_client import MessageClient
 from app.utils.string_replacements import replace_abbreviations
 from app.utils.logger import logger
 
@@ -26,16 +26,17 @@ def create_message_client(company: Company, db: Session) -> MessageClient | None
                 defaultAssistantName=company.default_assistant.assistant_name,
             )
     else:
-        evolutionapi_client = db.query(EvolutionAPIClient).filter_by(company_id=company.id).first()
+        evolutionapi_client = db.query(EvolutionAPIClientDB).filter_by(company_id=company.id).first()
         if evolutionapi_client:
-            return EvolutionAPI(
+            return EvolutionAPIClient(
                 api_key=evolutionapi_client.api_key,
-                instance=evolutionapi_client.instance_name,
-                defaultAssistantName=company.default_assistant.assistant_name
+                instance_name=evolutionapi_client.instance_name,
+                delay_amount=80000
             )
     return None
 
 
+# TODO: refactor service to make it more efficient
 async def get_message(
         request: DigisacRequest | EvolutionAPIRequest,
         message_client: MessageClient,
@@ -100,8 +101,11 @@ async def send_message(
                     base64_audio_message = await elevenlabs_client.gerar_audio(message, voice.elevenlabs_voice_id, voice.stability,
                                                                                voice.similarity_boost, voice.style)
         
-        message_client.enviar_mensagem(message, base64_audio_message, mediatype,
-                                    None, contact.contact_id, None, 'bot', assistant.nome)
+        if isinstance(message_client, EvolutionAPIClient):
+            message_client.send_message(contact.phone_number, message, assistant.nome)
+        else:
+            message_client.send_message(message, base64_audio_message, mediatype,
+                                        None, contact.contact_id, None, 'bot', assistant.nome)
 
         if media_code:
             medias = db.query(Midia).filter_by(atalho=media_code, id_empresa=company.id).order_by(Midia.ordem).all()

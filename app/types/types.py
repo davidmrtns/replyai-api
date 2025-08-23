@@ -4,7 +4,7 @@ from app.db.new_models import Contact, Company
 from app.utils.agenda_client import AgendaClient
 from app.utils.assistant import Assistant as AiAssistant, RespostaFinanceiro
 from app.utils.crm_client import CRMClient
-from app.utils.message_client import MessageClient
+from app.clients.message_client import MessageClient
 
 
 AssistantData = Tuple[AiAssistant | None, int | None]

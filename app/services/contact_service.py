@@ -10,9 +10,10 @@ from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import CompanyData, ContactAndAssistant
 from app.utils.assistant import Assistant as AiAssistant
 from app.utils.digisac import Digisac
-from app.utils.message_client import MessageClient
+from app.clients.message_client import MessageClient
 
 
+# TODO: refactor to improve redability and maintainability
 async def get_or_create_contact(
         request: DigisacRequest | EvolutionAPIRequest | None,
         company_data: CompanyData,
@@ -63,7 +64,7 @@ async def create_contact(
 ) -> Contact:
     company, message_client, _, crm_client = company_data
 
-    contact_data = message_client.obter_dados_contato(request=request)
+    contact_data = message_client.get_contact_data(request=request)
 
     deal_id = None
     if crm_client and contact_data:
@@ -105,23 +106,6 @@ async def change_ai_reply_reception(
         db.commit()
         return True
     return False
-
-
-'''async def mudar_recebimento_ia(contato: Contact | str, empresa: Company, valor: bool, db: Session):
-    if isinstance(contato, str):
-        contato_db = db.query(Contact).filter_by(contactId=contato, id_empresa=empresa.id).first()
-        if not contato_db:
-            timezone = pytz.timezone(empresa.fuso_horario)
-            await criar_contato(contato, None, empresa, timezone, valor, db)
-            return True
-    else:
-        contato_db = contato
-
-    if contato_db and contato_db.receber_respostas_ia != valor:
-        contato_db.receber_respostas_ia = valor
-        db.commit()
-        return True
-    return False'''
 
 
 async def change_awaiting_human_contact(
