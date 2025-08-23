@@ -22,7 +22,7 @@ async def _response_pipeline(
         message, media_code = response.mensagem, response.midia
         company, message_client, _, __ = company_data
 
-        await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
+        await send_message(message, is_audio, media_code, contact, company, message_client, assistant, db) # TODO: add handling for HTTP errors
         return True
     except Exception as e:
         logger.exception(f"Error in response pipeline: {e}")

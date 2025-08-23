@@ -1,14 +1,14 @@
 from datetime import datetime
-from typing_extensions import Literal
-from sqlalchemy.orm import Session
+'''from typing_extensions import Literal
+from sqlalchemy.orm import Session'''
 
 import pytz
 
 from app.db.database import retornar_sessao
 from app.db.models import Colaborador
 from app.db.new_models import Assistant, Company, Contact
-from app.services.agenda_service import create_agenda_client, get_original_event_data, schedule_to_list
-from app.services.company_service import get_agenda
+'''from app.services.agenda_service import create_agenda_client, get_original_event_data, schedule_to_list
+from app.services.company_service import get_agenda'''
 
 
 def obter_data_hora_atual(id_assistente: str):
@@ -43,7 +43,7 @@ def obter_colaboradores(id_assistente: str):
     return {"employees": ""}
 
 
-async def check_agenda_for_date(
+'''async def check_agenda_for_date(
         assistant_id: str,
         agenda_code: str,
         suggestion_date: str
@@ -165,4 +165,4 @@ async def _get_variables(
     if agenda_client is None:
         return None
     
-    return company, assistant, agenda_client, agenda
+    return company, assistant, agenda_client, agenda'''

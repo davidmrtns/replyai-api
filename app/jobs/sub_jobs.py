@@ -6,7 +6,7 @@ from app.services.agenda_service import create_agenda_client, extract_event_data
 from app.services.billing_service import generate_billing_response, create_financial_clients
 from app.services.company_service import get_assistant_from_company, get_department
 from app.services.contact_service import get_or_create_contact, reset_contact, transfer_contact, update_current_assistant
-from app.services.direcionamento_service import direcionar # pyright: ignore[reportMissingImports] #TODO: update to use the new pipelines
+# from app.services.direcionamento_service import direcionar # pyright: ignore[reportMissingImports] #TODO: update to use the new pipelines
 from app.services.message_service import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
 from app.utils.digisac import Digisac
@@ -40,7 +40,7 @@ async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Sessi
                     await reset_contact(contato, db)
                     return
         resposta = await execute_thread(acao, None, contato, assistente, db)
-        await direcionar(resposta, False, message_client, None, None, empresa, contato, assistente, db)
+        # await direcionar(resposta, False, message_client, None, None, empresa, contato, assistente, db)
 
         if resposta.atividade != "E":
             contato.recallCount += 1
@@ -79,7 +79,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
                                         departamento = await get_department(empresa, None, True, db)
                                         if departamento:
                                             await transfer_contact(message_client, contato, departamento)
-                                    await direcionar(resposta_extracao.resposta_confirmacao, False, message_client, None, None, empresa, contato, assistente, db)
+                                    # await direcionar(resposta_extracao.resposta_confirmacao, False, message_client, None, None, empresa, contato, assistente, db)
                                     await assign_new_thread_to_contact(contato, thread_id, db)
                         except Exception as e:
                             db.rollback()
@@ -127,8 +127,8 @@ async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_
                 id_contato = await message_client.obter_id_contato(resposta_vencimento.telefone, nome)
                 contato = (await get_or_create_contact(None, id_contato, empresa, message_client, None, db))[0]
                 await update_current_assistant(contato, assistente_db_id, db)
-                await direcionar(resposta_vencimento.resposta, False, message_client, None, None, empresa, contato,
-                                 assistente, db)
+                '''await direcionar(resposta_vencimento.resposta, False, message_client, None, None, empresa, contato,
+                                 assistente, db)'''
 
                 if enviar_boleto:
                     url_boleto = cobranca.get("bankSlipUrl", "")
@@ -161,8 +161,8 @@ async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Company,
                         id_contato = await message_client.obter_id_contato(resposta_vencimento.telefone, nome)
                         contato = (await get_or_create_contact(None, id_contato, empresa, message_client, None, db))[0]
                         await update_current_assistant(contato, assistente_db_id, db)
-                        await direcionar(resposta_vencimento.resposta, False, message_client, None, None, empresa, contato,
-                                         assistente, db)
+                        '''await direcionar(resposta_vencimento.resposta, False, message_client, None, None, empresa, contato,
+                                         assistente, db)'''
 
                         mediatype = "application/pdf" if isinstance(message_client, Digisac) else "document"
                         message_client.enviar_mensagem(mensagem="", base64=documento, mediatype=mediatype, nome_arquivo="nota_fiscal.pdf", contact_id=contato.contactId, userId=None, origin="bot", nome_assistente=assistente.nome)

@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.post("/{slug}/{token}")
 async def reply(
-        request: DigisacRequest | EvolutionAPIRequest,
+        request: EvolutionAPIRequest, # TODO: change to DigisacRequest | EvolutionAPIRequest
         slug: str,
         token: str,
         db: Session = Depends(obter_sessao)
@@ -29,6 +29,7 @@ async def reply(
     company_data = await get_company(slug, token, db)
     if company_data is None:
         return reply_result
+
     company, message_client, _, __ = company_data
 
     contact, assistant = await get_or_create_contact(request, company_data, db)
