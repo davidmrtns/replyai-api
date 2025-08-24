@@ -1,6 +1,9 @@
 from abc import abstractmethod
-import base64
-import requests
+from io import BytesIO
+from typing import Tuple
+
+
+FileData = Tuple[str, str, BytesIO]
 
 
 class ContactData:
@@ -27,9 +30,18 @@ class ContactData:
     def __str__(self):
         import json
         return json.dumps(self.to_dict(), indent=2)
+    
+
+class MediaMessageData:
+    def __init__(self, mediatype: str, mimetype: str, caption: str, media: str, filename: str):
+        self.mediatype = mediatype
+        self.mimetype = mimetype
+        self.caption = caption
+        self.media = media
+        self.filename = filename
 
 
-class MessageClient():
+class MessageClient:
     @abstractmethod
     def send_message(self, **kwargs):
         pass
@@ -41,13 +53,10 @@ class MessageClient():
 
 
     @abstractmethod
-    def get_file_data(self, url: str) -> str | None:
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
+    def get_contact_id(self, phone_number: str, **kwargs) -> str:
+        pass
 
-            base64_content = base64.b64encode(response.content).decode('utf-8')
-            return base64_content
-        except requests.exceptions.RequestException as e:
-            print(f"Error while downloading file: {e}") # TODO: add logger and raise custom exception
-            return None
+
+    @abstractmethod
+    def get_file_data(self, **kwargs) -> FileData | None:
+        pass

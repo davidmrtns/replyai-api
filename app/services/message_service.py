@@ -102,7 +102,14 @@ async def send_message(
                                                                                voice.similarity_boost, voice.style)
         
         if isinstance(message_client, EvolutionAPIClient):
-            message_client.send_message(contact.phone_number, message, assistant.nome)
+            message_client.send_message(
+                phone_number=contact.phone_number,
+                message_type='audio' if is_audio else 'text',
+                text_message=None if is_audio else message,
+                audio_message_base64=base64_audio_message if is_audio else None,
+                media_message=None,
+                assistant_name=assistant.nome
+            )
         else:
             message_client.send_message(message, base64_audio_message, mediatype,
                                         None, contact.contact_id, None, 'bot', assistant.nome)

@@ -1,11 +1,15 @@
+import base64
+from io import BytesIO
+import mimetypes
 import os
+import threading
 from typing import Literal
 
 import requests
 from requests import Response
 
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
-from .message_client import ContactData, MessageClient
+from .message_client import ContactData, FileData, MediaMessageData, MessageClient
 
 
 class EvolutionAPIClient(MessageClient):
@@ -19,18 +23,44 @@ class EvolutionAPIClient(MessageClient):
         self.base_url = os.getenv('EVOLUTIONAPI_SERVER_URL')
 
 
-    # TODO: add another types of messages (media, audio)
     def send_message(
             self,
             phone_number: str,
-            text_message: str,
+            message_type: Literal['text', 'audio', 'media'],
+            text_message: str | None,
+            audio_message_base64: str | None,
+            media_message: MediaMessageData | None,
             assistant_name: str
     ) -> Response:
-        endpoint = f'{self.base_url}/message/sendText/{self.instance_name}'
+        endpoint = (
+            f'{self.base_url}/message/sendText/{self.instance_name}' if message_type == 'text' else
+            f'{self.base_url}/message/sendWhatsAppAudio/{self.instance_name}' if message_type == 'audio' else
+            f'{self.base_url}/message/sendMedia/{self.instance_name}' if message_type == 'media' else
+            None
+        )
+
+        if endpoint is None:
+            raise ValueError('Invalid message type') # TODO: raise custom exception
+        
         payload = {
-            'number': phone_number,
-            'text': f'*{assistant_name}:*\n{text_message}'
+            'number': phone_number
         }
+
+        if message_type == 'text':
+            payload['text'] = f'*{assistant_name}:*\n{text_message}'
+        elif message_type == 'audio':
+            payload['audio'] = audio_message_base64
+        elif message_type == 'media':
+            if media_message is None:
+                raise ValueError('media_message cannot be None when message_type is "media"') # TODO: raise custom exception
+            
+            payload['mediatype'] = media_message.mediatype
+            payload['mimetype'] = media_message.mimetype
+            payload['caption'] = media_message.caption
+            payload['media'] = media_message.media
+            payload['fileName'] = media_message.filename
+        else:
+            raise ValueError('Invalid message type') # TODO: raise custom exception
 
         response = requests.post(endpoint, headers=self.headers, json=payload)
         return response
@@ -40,7 +70,7 @@ class EvolutionAPIClient(MessageClient):
             self,
             phone_number: str,
             presence_type: Literal['composing', 'recording']
-    ) -> Response:
+    ) -> None:
         endpoint = f'{self.base_url}/chat/sendPresence/{self.instance_name}'
         payload = {
             'number': phone_number,
@@ -51,14 +81,37 @@ class EvolutionAPIClient(MessageClient):
             }
         }
 
-        response = requests.post(endpoint, headers=self.headers, json=payload)
-        return response
+        function = lambda url, json, headers : requests.post(url, json=json, headers=headers)
+        threading.Thread(target=function, args=(endpoint, payload, self.headers), daemon=True).start()
 
 
     def get_contact_data(self, request: EvolutionAPIRequest) -> ContactData:
         contact_name = request.data.pushName
         phone_number = request.data.key.remoteJid.split('@')[0]
         return ContactData(contact_name=contact_name, phone_number=phone_number)
+    
+
+    def get_contact_id(self, phone_number: str) -> str:
+        return f'{phone_number}@s.whatsapp.net'
+
+
+    def get_file_data(self, request: EvolutionAPIRequest) -> FileData | None:
+        file_bytes = base64.b64decode(request.data.message.base64)
+        file_stream = BytesIO(file_bytes)
+        
+        mimetype = (
+            request.data.message.audioMessage.mimetype if request.data.messageType == 'audioMessage'
+            else request.data.message.imageMessage.mimetype if request.data.messageType == 'imageMessage'
+            else request.data.message.documentMessage.mimetype if request.data.messageType == 'documentMessage'
+            else None
+        )
+        if mimetype is None:
+            return None
+
+        file_extension = mimetypes.guess_extension(mimetype.split(';')[0].strip())
+        filename = f'downloaded_file{file_extension}'
+
+        return filename, mimetype, file_stream
 
 
     def create_instance(
