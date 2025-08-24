@@ -1,3 +1,4 @@
+from typing import Literal
 from sqlalchemy.orm import Session
 
 from app.clients.evolutionapi_client import EvolutionAPIClient
@@ -6,12 +7,12 @@ from app.db.new_models import Assistant, Company, Contact, DigisacClient, Evolut
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import MessageData
+from app.utils.download_file import download_file
 from app.utils.assistant import Assistant as AiAssistant
 from app.utils.digisac import Digisac
 from app.utils.eleven_labs import ElevenLabs
-from app.clients.message_client import MessageClient
+from app.clients.message_client import MediaMessageData, MessageClient
 from app.utils.string_replacements import replace_abbreviations
-from app.utils.logger import logger
 
 
 def create_message_client(company: Company, db: Session) -> MessageClient | None:
@@ -36,7 +37,6 @@ def create_message_client(company: Company, db: Session) -> MessageClient | None
     return None
 
 
-# TODO: refactor service to make it more efficient
 async def get_message(
         request: DigisacRequest | EvolutionAPIRequest,
         message_client: MessageClient,
@@ -47,33 +47,34 @@ async def get_message(
     image = None
 
     if isinstance(request, DigisacRequest):
-        if request.data.message.type == 'audio' or request.data.message.type == 'ptt':
-            is_audio = True
-        else:
-            message_in_text = request.data.message.text or ''
-            if request.data.message.type == 'image':
-                image = message_client.obter_arquivo(request=request, apenas_url=True)
+        match request.data.message.type:
+            case 'text':
+                message_in_text = request.data.message.text
+            case 'audio' | 'ptt':
+                is_audio = True
+            case 'image':
+                image = message_client.get_file_data(request=request, is_just_url=True)
     elif isinstance(request, EvolutionAPIRequest):
-        if request.data.message.audioMessage is not None:
-            is_audio = True
-        elif request.data.message.imageMessage is not None:
-            message_in_text = request.data.message.imageMessage.caption
-            image = request.data.message.base64
-        else:
-            if request.data.message.extendedTextMessage:
+        match request.data.messageType:
+            case 'conversation':
+                message_in_text = request.data.message.conversation
+            case 'extendedTextMessage':
                 message_in_text = request.data.message.extendedTextMessage.text
-            else:
-                message_in_text = request.data.message.conversation or ''
+            case 'imageMessage':
+                message_in_text = request.data.message.imageMessage.caption or ''
+                image = request.data.message.base64
+            case 'audioMessage':
+                is_audio = True
 
-    if is_audio:
-        file = message_client.obter_arquivo(request=request)
-        if file is not None:
-            message_in_text = await assistant.transcrever_audio(file)
+    file = message_client.get_file_data(request=request)
+    if file is not None:
+        message_in_text = await assistant.transcrever_audio(file) # TODO: update transcribe audio to receive FileData type
+
     return message_in_text, is_audio, image
 
 
-async def send_message(
-        message: str,
+async def process_and_send_message(
+        text_message: str,
         is_audio: bool,
         media_code: str | None,
         contact: Contact,
@@ -81,47 +82,108 @@ async def send_message(
         message_client: MessageClient,
         assistant: AiAssistant,
         db: Session
+) -> None:
+    base64_audio_message = await _generate_audio_message(is_audio, text_message, company, assistant, db)
+    message_type = 'audio' if is_audio else 'text'
+    text_message = None if is_audio else text_message
+
+    await _handle_message_sending_through_client(
+        message_client,
+        text_message, message_type,
+        base64_audio_message,
+        None,
+        contact, assistant
+    )
+    await _send_medias(media_code, contact, company, message_client, assistant, db)
+
+
+async def _generate_audio_message(
+        is_audio: bool,
+        text_message: str,
+        company: Company,
+        assistant: AiAssistant,
+        db: Session
+) -> str | None:
+    base64_audio_message = None
+    
+    if is_audio:
+        assistant_db = db.query(Assistant).filter_by(assistantId=assistant.id).first()
+        if assistant_db:
+            voice = assistant_db.voice
+            if voice and company.elevenlabs_api_key:
+                elevenlabs_client = ElevenLabs(company.elevenlabs_api_key)
+                text_message = replace_abbreviations(text_message)
+                base64_audio_message = await elevenlabs_client.gerar_audio(
+                    text_message,
+                    voice.elevenlabs_voice_id,
+                    voice.stability,
+                    voice.similarity_boost,
+                    voice.style
+                )
+
+    return base64_audio_message
+
+
+async def _send_medias(
+        media_code: str | None,
+        contact: Contact,
+        company: Company,
+        message_client: MessageClient,
+        assistant: AiAssistant,
+        db: Session
 ) -> bool:
-    try:
-        base64_audio_message = None
-        mediatype = ''
+    if media_code:
+        medias = db.query(Midia).filter_by(atalho=media_code, id_empresa=company.id).order_by(Midia.ordem).all()
+        for media in medias:
+            content = download_file(media.url)
+            if content:
+                media_message_data = MediaMessageData(
+                    mediatype=media.mediatype,
+                    mimetype=media.mimetype,
+                    caption=media.nome,
+                    media=content,
+                    filename=media.nome
+                )
 
-        if is_audio:
-            if isinstance(message_client, Digisac):
-                mediatype = 'audio/mpeg'
-            else:
-                mediatype = 'audio'
-
-            assistant_db = db.query(Assistant).filter_by(assistantId=assistant.id).first()
-            if assistant_db:
-                voice = assistant_db.voice
-                if voice and company.elevenlabs_api_key:
-                    elevenlabs_client = ElevenLabs(company.elevenlabs_api_key)
-                    message = replace_abbreviations(message)
-                    base64_audio_message = await elevenlabs_client.gerar_audio(message, voice.elevenlabs_voice_id, voice.stability,
-                                                                               voice.similarity_boost, voice.style)
-        
-        if isinstance(message_client, EvolutionAPIClient):
-            message_client.send_message(
-                phone_number=contact.phone_number,
-                message_type='audio' if is_audio else 'text',
-                text_message=None if is_audio else message,
-                audio_message_base64=base64_audio_message if is_audio else None,
-                media_message=None,
-                assistant_name=assistant.nome
-            )
-        else:
-            message_client.send_message(message, base64_audio_message, mediatype,
-                                        None, contact.contact_id, None, 'bot', assistant.nome)
-
-        if media_code:
-            medias = db.query(Midia).filter_by(atalho=media_code, id_empresa=company.id).order_by(Midia.ordem).all()
-            for media in medias:
-                content = message_client.baixar_arquivo(media.url)
-                if content:
-                    message_client.enviar_mensagem(mensagem=None, base64=content, mediatype=media.mediatype, nome_arquivo=media.nome,
-                                                contact_id=contact.contact_id, userId=None, origin='bot', nome_assistente=assistant.nome)
+                await _handle_message_sending_through_client(
+                    message_client,
+                    None, 'media',
+                    None,
+                    media_message_data,
+                    contact, assistant
+                )
         return True
-    except Exception as e:
-        logger.exception(f"Error sending message: {e}")
     return False
+
+
+async def _handle_message_sending_through_client(
+        message_client: MessageClient,
+        text_message: str | None,
+        message_type: Literal['text', 'audio', 'media'],
+        base64_audio_message: str | None,
+        media_message_data: MediaMessageData | None,
+        contact: Contact,
+        assistant: AiAssistant
+) -> None:
+    if isinstance(message_client, EvolutionAPIClient):
+        message_client.send_message(
+            phone_number=contact.phone_number,
+            message_type=message_type,
+            text_message=text_message,
+            audio_message_base64=base64_audio_message,
+            media_message=media_message_data,
+            assistant_name=assistant.nome
+        )
+    elif isinstance(message_client, DigisacClient):
+        message_client.send_message(
+            text_message,
+            media_message_data.media if media_message_data else base64_audio_message or None,
+            media_message_data.mediatype if media_message_data else None,
+            media_message_data.filename if media_message_data else None,
+            contact.contact_id,
+            None,
+            'bot',
+            assistant.nome
+        )
+    else:
+        raise ValueError('Unsupported message client type') # TODO: raise custom exception

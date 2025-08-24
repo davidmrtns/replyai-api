@@ -36,7 +36,7 @@ class ExtendedTextMessage(BaseModel):
 class ImageMessage(BaseModel):
     url: str
     mimetype: str
-    caption: str
+    caption: Optional[str] = None
     fileSha256: str
     fileLength: str
     height: int

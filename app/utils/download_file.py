@@ -2,7 +2,7 @@ import base64
 import requests
 
 
-def get_file_data(url: str) -> str | None:
+def download_file(url: str) -> str | None:
         try:
             response = requests.get(url)
             response.raise_for_status()

@@ -11,7 +11,7 @@ from app.services.thread_service import execute_thread
 from app.utils.pipelines import PIPELINES
 from .reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
 from ...services.contact_service import get_or_create_contact
-from ...services.message_service import get_message, send_message
+from ...services.message_service import get_message, process_and_send_message
 
 
 router = APIRouter()
@@ -56,6 +56,6 @@ async def reply(
         if pipeline:
             reply_result = await pipeline(response, is_audio, contact, company_data, assistant, db)
     except AIResponseException as exc:
-        await send_message(company.ai_reply_error_message, False, None, contact, company, message_client, assistant, db)
+        await process_and_send_message(company.ai_reply_error_message, False, None, contact, company, message_client, assistant, db)
         raise exc
     return reply_result
