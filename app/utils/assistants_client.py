@@ -207,7 +207,7 @@ class AssistantsClient:
                 continue
             finally:
                 if error:
-                    logger.error(f'Attempt {attempt}: {error}')
+                    logger.exception(f'Attempt {attempt}: {error}')
         
         raise AIResponseException(
             thread_id=thread_id,
@@ -291,7 +291,7 @@ class AssistantsClient:
                     'output': json.dumps(result)
                 })
             except Exception as e:
-                logger.error(f'Error while executing {function_name}: {e}')
+                logger.exception(f'Error while executing {function_name}: {e}')
 
         if function_outputs:
             self.client.beta.threads.runs.submit_tool_outputs(
