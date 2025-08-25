@@ -13,7 +13,7 @@ from app.routers.assistant.assistant_helpers import get_openai_client
 from app.routers.routers_helpers import check_company_access
 from app.schemas.integrations_schemas import AssistenteSchema
 from app.schemas.empresa_schema import AssistenteSchema as AssistenteSchemaEmpresa
-from app.utils.assistant import Ferramentas
+from app.utils.assistants_client import Ferramentas
 
 
 router = APIRouter()

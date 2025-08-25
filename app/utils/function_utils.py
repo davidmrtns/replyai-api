@@ -11,7 +11,16 @@ from app.db.new_models import Assistant, Company, Contact
 from app.services.company_service import get_agenda'''
 
 
-def obter_data_hora_atual(id_assistente: str):
+FUNCTION_REGISTRY = {}
+
+
+def register(func):
+    FUNCTION_REGISTRY[func.__name__] = func
+    return func
+
+
+@register
+def get_current_datetime(id_assistente: str, **kwargs):
     timezone = "UTC"
 
     with retornar_sessao() as db:
@@ -27,7 +36,8 @@ def obter_data_hora_atual(id_assistente: str):
     return {"current_datetime": now}
 
 
-def obter_colaboradores(id_assistente: str):
+@register
+def get_employees(id_assistente: str, **kwargs):
     with retornar_sessao() as db:
         assistente_db = db.query(Assistant).filter_by(assistantId=id_assistente).first()
         if assistente_db:

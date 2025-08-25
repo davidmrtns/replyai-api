@@ -8,7 +8,7 @@ from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import MessageData
 from app.utils.download_file import download_file
-from app.utils.assistant import Assistant as AiAssistant
+from app.utils.assistants_client import AssistantsClient
 from app.utils.digisac import Digisac
 from app.utils.eleven_labs import ElevenLabs
 from app.clients.message_client import MediaMessageData, MessageClient
@@ -40,7 +40,7 @@ def create_message_client(company: Company, db: Session) -> MessageClient | None
 async def get_message(
         request: DigisacRequest | EvolutionAPIRequest,
         message_client: MessageClient,
-        assistant: AiAssistant
+        assistant: AssistantsClient
 ) -> MessageData:
     message_in_text = None
     is_audio = False
@@ -66,9 +66,10 @@ async def get_message(
             case 'audioMessage':
                 is_audio = True
 
-    file = message_client.get_file_data(request=request)
-    if file is not None:
-        message_in_text = await assistant.transcrever_audio(file) # TODO: update transcribe audio to receive FileData type
+    if is_audio:
+        file = message_client.get_file_data(request=request)
+        if file is not None:
+            message_in_text = await assistant.transcribe_audio(file)
 
     return message_in_text, is_audio, image
 
@@ -80,7 +81,7 @@ async def process_and_send_message(
         contact: Contact,
         company: Company,
         message_client: MessageClient,
-        assistant: AiAssistant,
+        assistant: AssistantsClient,
         db: Session
 ) -> None:
     base64_audio_message = await _generate_audio_message(is_audio, text_message, company, assistant, db)
@@ -101,13 +102,13 @@ async def _generate_audio_message(
         is_audio: bool,
         text_message: str,
         company: Company,
-        assistant: AiAssistant,
+        assistant: AssistantsClient,
         db: Session
 ) -> str | None:
     base64_audio_message = None
     
     if is_audio:
-        assistant_db = db.query(Assistant).filter_by(assistantId=assistant.id).first()
+        assistant_db = db.query(Assistant).filter_by(assistantId=assistant.openai_assistant_id).first()
         if assistant_db:
             voice = assistant_db.voice
             if voice and company.elevenlabs_api_key:
@@ -129,7 +130,7 @@ async def _send_medias(
         contact: Contact,
         company: Company,
         message_client: MessageClient,
-        assistant: AiAssistant,
+        assistant: AssistantsClient,
         db: Session
 ) -> bool:
     if media_code:
@@ -163,7 +164,7 @@ async def _handle_message_sending_through_client(
         base64_audio_message: str | None,
         media_message_data: MediaMessageData | None,
         contact: Contact,
-        assistant: AiAssistant
+        assistant: AssistantsClient
 ) -> None:
     if isinstance(message_client, EvolutionAPIClient):
         message_client.send_message(
@@ -172,7 +173,7 @@ async def _handle_message_sending_through_client(
             text_message=text_message,
             audio_message_base64=base64_audio_message,
             media_message=media_message_data,
-            assistant_name=assistant.nome
+            assistant_name=assistant.assistant_name
         )
     elif isinstance(message_client, DigisacClient):
         message_client.send_message(
@@ -183,7 +184,7 @@ async def _handle_message_sending_through_client(
             contact.contact_id,
             None,
             'bot',
-            assistant.nome
+            assistant.assistant_name
         )
     else:
         raise ValueError('Unsupported message client type') # TODO: raise custom exception

@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Agenda, Departamento
 from app.db.new_models import Assistant, Company, DigisacClient
-from app.utils.assistant import Assistant as AiAssistant
+from app.utils.assistants_client import AssistantsClient
 from app.services.agenda_service import create_agenda_client
 from app.services.crm_service import create_crm_client
 from app.services.message_service import create_message_client
@@ -39,7 +39,7 @@ async def get_assistant_from_company(
         else:
             assistant_db = db.query(Assistant).filter_by(company_id=company.id, shortcut=shortcut).first()
         if assistant_db:
-            assistant = AiAssistant(nome=assistant_db.assistant_name, id=assistant_db.openai_assistant_id, api_key=company.openai_api_key)
+            assistant = AssistantsClient(assistant_name=assistant_db.assistant_name, openai_assistant_id=assistant_db.openai_assistant_id, openai_api_key=company.openai_api_key)
             return assistant, assistant_db.id
     return None, None
 

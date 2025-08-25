@@ -5,7 +5,7 @@ from app.services.contact_service import change_awaiting_human_contact, end_cont
 from app.services.message_service import process_and_send_message
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
-from app.utils.assistant import Resposta, Assistant as AiAssistant
+from app.utils.assistants_client import Resposta, AssistantsClient
 from app.utils.digisac import Digisac
 from app.utils.logger import logger
 
@@ -15,7 +15,7 @@ async def _response_pipeline(
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
-        assistant: AiAssistant,
+        assistant: AssistantsClient,
         db: Session
 ) -> bool:
     try:
@@ -34,7 +34,7 @@ async def _transfer_pipeline(
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
-        assistant: AiAssistant,
+        assistant: AssistantsClient,
         db: Session
 ) -> bool:
     try:
@@ -58,7 +58,7 @@ async def _end_contact_pipeline(
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
-        assistant: AiAssistant,
+        assistant: AssistantsClient,
         db: Session
 ) -> bool:
     try:
@@ -78,7 +78,7 @@ async def _migrate_assistant_pipeline(
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
-        assistant: AiAssistant,
+        assistant: AssistantsClient,
         db: Session
 ) -> bool:
     try:

@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.db.new_models import Assistant, Company, Contact, OutlookClient, GoogleCalendarClient
 from app.utils.agenda_client import AgendaClient, EventoTituloAgenda, Schedule
-from app.utils.assistant import Instrucao
+from app.utils.assistants_client import Instrucao
 from app.utils.google_calendar import GoogleCalendar
 from app.utils.outlook import Outlook
-from app.utils.assistant import Assistant as AiAssistant, RespostaConfirmacao
+from app.utils.assistants_client import AssistantsClient, RespostaConfirmacao
 
 
 def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
@@ -86,9 +86,9 @@ async def extract_event_data(
 
     try:
         if assistente_db is not None:
-            assistente = AiAssistant(nome=assistente_db.nome, id=assistente_db.assistantId, api_key=empresa.openai_api_key)
-            assistente.adicionar_mensagens(mensagens=[instrucao.__str__()], id_arquivos=[], thread_id=None)
-            resposta, thread_id = assistente.criar_rodar_thread()
+            assistente = AssistantsClient(assistant_name=assistente_db.nome, openai_assistant_id=assistente_db.assistantId, openai_api_key=empresa.openai_api_key)
+            assistente.add_message(message=instrucao.__str__())
+            resposta, thread_id = assistente.create_or_run_thread()
             resposta_obj = RespostaConfirmacao.from_dict(json.loads(resposta))
             return resposta_obj, thread_id
     except Exception as e:

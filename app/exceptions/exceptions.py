@@ -42,3 +42,19 @@ class AssistantEditingException(AppException):
     def __init__(self, assistant_id: str, **kwargs):
         self.assistant_id = assistant_id or "Unknown assistant"
         super().__init__(**kwargs)
+
+
+class PendingRunException(Exception):
+    def __init__(self, detail: str, run_id: str, thread_id: str):
+        self.detail = detail
+        self.run_id = run_id or "Unknown run"
+        self.thread_id = thread_id or "Unknown thread"
+        super().__init__(self.detail)
+
+
+class FailedRunException(Exception):
+    def __init__(self, detail: str, run_id: str, thread_id: str):
+        self.detail = detail
+        self.run_id = run_id or "Unknown run"
+        self.thread_id = thread_id or "Unknown thread"
+        super().__init__(self.detail)

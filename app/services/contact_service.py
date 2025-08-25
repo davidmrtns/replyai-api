@@ -8,7 +8,7 @@ from app.db.new_models import Company, Contact, Assistant
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import CompanyData, ContactAndAssistant
-from app.utils.assistant import Assistant as AiAssistant
+from app.utils.assistants_client import AssistantsClient
 from app.utils.digisac import Digisac
 from app.clients.message_client import MessageClient
 
@@ -50,7 +50,7 @@ async def get_or_create_contact(
     else:
         assistant_db = company.default_assistant
         await update_current_assistant(contact, assistant_db.id, db)
-    assistant = AiAssistant(nome=assistant_db.assistant_name, id=assistant_db.openai_assistant_id, api_key=company.openai_api_key)
+    assistant = AssistantsClient(assistant_name=assistant_db.assistant_name, openai_assistant_id=assistant_db.openai_assistant_id, openai_api_key=company.openai_api_key)
 
     return contact, assistant
 

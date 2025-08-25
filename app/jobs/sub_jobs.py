@@ -136,7 +136,7 @@ async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_
                         boleto = message_client.baixar_arquivo(url_boleto)
                         if boleto:
                             mediatype = "application/pdf" if isinstance(message_client, Digisac) else "document"
-                            message_client.enviar_mensagem(mensagem="", base64=boleto, mediatype=mediatype, nome_arquivo="boleto.pdf", contact_id=contato.contactId, userId=None, origin="bot", nome_assistente=assistente.nome)
+                            message_client.enviar_mensagem(mensagem="", base64=boleto, mediatype=mediatype, nome_arquivo="boleto.pdf", contact_id=contato.contactId, userId=None, origin="bot", nome_assistente=assistente.assistant_name)
 
                 await assign_new_thread_to_contact(contato, thread_id, db)
     except Exception as e:
@@ -165,7 +165,7 @@ async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Company,
                                          assistente, db)'''
 
                         mediatype = "application/pdf" if isinstance(message_client, Digisac) else "document"
-                        message_client.enviar_mensagem(mensagem="", base64=documento, mediatype=mediatype, nome_arquivo="nota_fiscal.pdf", contact_id=contato.contactId, userId=None, origin="bot", nome_assistente=assistente.nome)
+                        message_client.enviar_mensagem(mensagem="", base64=documento, mediatype=mediatype, nome_arquivo="nota_fiscal.pdf", contact_id=contato.contactId, userId=None, origin="bot", nome_assistente=assistente.assistant_name)
 
                         await assign_new_thread_to_contact(contato, thread_id, db)
     except Exception as e:
