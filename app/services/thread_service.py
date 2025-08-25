@@ -3,7 +3,7 @@ import json
 from sqlalchemy.orm import Session
 
 from app.db.new_models import Contact, Thread
-from app.utils.assistants_client import AssistantsClient, Resposta
+from app.utils.assistants_client import AssistantsClient, AssistantReply
 
 
 async def execute_thread(
@@ -12,7 +12,7 @@ async def execute_thread(
         contact: Contact,
         assistant: AssistantsClient,
         db: Session
-) -> Resposta:
+) -> AssistantReply:
     current_thread_id = contact.current_thread.thread_id if contact.current_thread else None
 
     if message:
@@ -25,14 +25,13 @@ async def execute_thread(
         image_id = assistant.subir_imagens([image])
         assistant.adicionar_imagens(image_id, current_thread_id)
 
-    response, thread_id = assistant.create_or_run_thread(thread_id=current_thread_id)
+    result = assistant.create_or_run_thread(thread_id=current_thread_id)
 
     if not contact.current_thread:
-        await assign_new_thread_to_contact(contact, thread_id, db)
+        await assign_new_thread_to_contact(contact, result.thread_id, db)
 
-    response = json.loads(response)
-    response_obj = Resposta.from_dict(response)
-    return response_obj
+    response = AssistantReply.from_run_result(result)
+    return response
 
 
 async def assign_new_thread_to_contact(

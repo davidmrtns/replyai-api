@@ -5,13 +5,13 @@ from app.services.contact_service import change_awaiting_human_contact, end_cont
 from app.services.message_service import process_and_send_message
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
-from app.utils.assistants_client import Resposta, AssistantsClient
+from app.utils.assistants_client import AssistantReply, AssistantsClient
 from app.utils.digisac import Digisac
 from app.utils.logger import logger
 
 
 async def _response_pipeline(
-        response: Resposta,
+        response: AssistantReply,
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
@@ -19,7 +19,7 @@ async def _response_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media_code = response.mensagem, response.midia
+        message, media_code = response.message, response.media_code
         company, message_client, _, __ = company_data
 
         await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db) # TODO: add handling for HTTP errors
@@ -30,7 +30,7 @@ async def _response_pipeline(
 
 
 async def _transfer_pipeline(
-        response: Resposta,
+        response: AssistantReply,
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
@@ -38,7 +38,7 @@ async def _transfer_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media_code, department_code = response.mensagem, response.midia, response.departamento
+        message, media_code, department_code = response.message, response.media_code, response.department_code
         company, message_client, _, __ = company_data
         
         if isinstance(message_client, Digisac):
@@ -54,7 +54,7 @@ async def _transfer_pipeline(
 
 
 async def _end_contact_pipeline(
-        response: Resposta,
+        response: AssistantReply,
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
@@ -62,7 +62,7 @@ async def _end_contact_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media_code = response.mensagem, response.midia
+        message, media_code = response.message, response.media_code
         company, message_client, _, __ = company_data
 
         await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
@@ -74,7 +74,7 @@ async def _end_contact_pipeline(
 
 
 async def _migrate_assistant_pipeline(
-        response: Resposta,
+        response: AssistantReply,
         is_audio: bool,
         contact: Contact,
         company_data: CompanyData,
@@ -82,7 +82,7 @@ async def _migrate_assistant_pipeline(
         db: Session
 ) -> bool:
     try:
-        message, media_code, assistant_code = response.mensagem, response.midia, response.assistente
+        message, media_code, assistant_code = response.message, response.media_code, response.assistant_code
         company, message_client, _, __ = company_data
 
         await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
@@ -90,7 +90,7 @@ async def _migrate_assistant_pipeline(
         if assistant:
             new_response = await execute_thread(None, None, contact, assistant, db)
             await update_current_assistant(contact, assistant_id, db)
-            await process_and_send_message(new_response.mensagem, is_audio, media_code, contact, company, message_client, assistant, db)
+            await process_and_send_message(new_response.message, is_audio, media_code, contact, company, message_client, assistant, db)
             return True
     except Exception as e:
         logger.exception(f"Error in migrate assistant pipeline: {e}")

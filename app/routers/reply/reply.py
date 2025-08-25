@@ -52,7 +52,7 @@ async def reply(
 
         response = await execute_thread(message, image, contact, assistant, db)
         
-        pipeline = PIPELINES.get(response.atividade)
+        pipeline = PIPELINES.get(response.activity)
         if pipeline:
             reply_result = await pipeline(response, is_audio, contact, company_data, assistant, db)
     except AIResponseException as exc:

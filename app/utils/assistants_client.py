@@ -348,34 +348,42 @@ class AssistantsClient:
     def execute_function(self, function_name, arguments):
         func = FUNCTION_REGISTRY.get(function_name)
         if not func:
-            raise ValueError(f"Unknown function called: {function_name}")
+            raise ValueError(f'Unknown function called: {function_name}')
 
         return func(self.openai_assistant_id, **arguments)
 
 
-class Resposta:
-    def __init__(self, atividade: str, departamento: str, mensagem: str, midia: str, agenda: str, assistente: str):
-        self.atividade = atividade
-        self.departamento = departamento
-        self.mensagem = mensagem
-        self.midia = midia
-        self.agenda = agenda
-        self.assistente = assistente
+class AssistantReply:
+    def __init__(self, activity: str, department_code: str, message: str, media_code: str, assistant_code: str):
+        self.activity = activity
+        self.department_code = department_code
+        self.message = message
+        self.media_code = media_code
+        self.assistant_code = assistant_code
+
 
     @classmethod
     def from_dict(cls, data: dict):
         return cls(
-            atividade=data["atividade"],
-            departamento=data["departamento"],
-            mensagem=data["mensagem"],
-            midia=data["midia"],
-            agenda=data["agenda"],
-            assistente=data["assistente"]
+            activity=data['atividade'],
+            department_code=data['departamento'],
+            message=data['mensagem'],
+            media_code=data['midia'],
+            assistant_code=data['assistente']
         )
 
 
+    @classmethod
+    def from_run_result(cls, run_result: RunResult):
+        try:
+            data = json.loads(run_result.text_response)
+            return cls.from_dict(data)
+        except Exception as e:
+            raise ValueError(f'Error parsing AssistantReply from run result: {e}')
+
+
 class RespostaConfirmacao:
-    def __init__(self, cliente: str, telefone: str, resposta_confirmacao: Resposta):
+    def __init__(self, cliente: str, telefone: str, resposta_confirmacao: AssistantReply):
         self.cliente = cliente
         self.telefone = telefone
         self.resposta_confirmacao = resposta_confirmacao
@@ -385,12 +393,12 @@ class RespostaConfirmacao:
         return cls(
             cliente=data["cliente"],
             telefone=data["telefone"],
-            resposta_confirmacao=Resposta.from_dict(data["resposta_confirmacao"])
+            resposta_confirmacao=AssistantReply.from_dict(data["resposta_confirmacao"])
         )
 
 
 class RespostaFinanceiro:
-    def __init__(self, telefone: str, resposta: Resposta):
+    def __init__(self, telefone: str, resposta: AssistantReply):
         self.telefone = telefone
         self.resposta = resposta
 
@@ -398,7 +406,7 @@ class RespostaFinanceiro:
     def from_dict(cls, data: dict):
         return cls(
             telefone=data["telefone"],
-            resposta=Resposta.from_dict(data["resposta"])
+            resposta=AssistantReply.from_dict(data["resposta"])
         )
 
 
