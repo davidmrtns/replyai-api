@@ -45,10 +45,10 @@ def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
 
 # TODO: make this function better, and add typing
 async def get_original_event_data(
-        assistant: Assistant,
+        assistant: AssistantsClient,
         contact: Contact
 ):
-    message = assistant.obter_mensagem_thread(contact.current_thread_id, 0, "asc", 1)
+    message = assistant.get_specific_message_from_thread(contact.current_thread_id, 0, "asc", 1)
     if message:
         mensagem_dict = json.loads(message)
         data = mensagem_dict.get("dados", {})

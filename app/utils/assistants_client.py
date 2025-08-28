@@ -1,7 +1,8 @@
 import io
 import base64
 import json
-from typing import List, NamedTuple, Tuple
+import uuid
+from typing import NamedTuple
 
 from PIL import Image
 from fastapi import UploadFile
@@ -57,16 +58,29 @@ class AssistantsClient:
 
     def add_message(
             self,
-            message: str,
+            message: str | None | None,
+            is_image: bool = False,
+            image_id: str | None = None,
             attachments_ids: list | None = None,
             thread_id: str | None = None
     ) -> None:
         base_message = {
-            'role': 'user',
-            'content': [
-                { 'type': 'text', 'text': message }
-            ]
+            'role': 'user'
         }
+
+        if not is_image:
+            base_message['content'] = {
+                [{ 'type': 'text', 'text': message }]
+            }
+        else:
+            base_message['content'] = {
+                [
+                    {
+                        "type": "image_file",
+                        "image_file": { "file_id": image_id, "detail": "high" }
+                    }
+                ]
+            }
 
         if attachments_ids and len(attachments_ids) > 0:
             base_message['attachments'] = [
@@ -87,86 +101,50 @@ class AssistantsClient:
             )
 
 
-    def adicionar_imagens(self, id_imagens: list[str], thread_id: str | None):
-        for imagem in id_imagens:
-            if imagem.startswith("http"):
-                mensagem_base = {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": imagem
-                            }
-                        }
-                    ]
-                }
-            else:
-                mensagem_base = {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_file",
-                            "image_file": {
-                                "file_id": imagem,
-                                "detail": "high"
-                            }
-                        }
-                    ]
-                }
+    def upload_image(self, image: str) -> str:
+        img_data = base64.b64decode(image)
+        image = Image.open(io.BytesIO(img_data))
 
-            if thread_id is None:
-                self.messages.append(mensagem_base)
-            else:
-                self.client.beta.threads.messages.create(
-                    thread_id=thread_id,
-                    **mensagem_base
-                )
+        img_bytes = io.BytesIO()
+        image.save(img_bytes, format="PNG")
+        img_bytes.seek(0)
+        img_bytes.name = f'image_{uuid.uuid4()}.png'
 
-    def subir_imagens(self, imagens: list):
-        id_imagens = []
+        response = self.client.files.create(
+            file=img_bytes,
+            purpose="vision"
+        )
 
-        for i, imagem in enumerate(imagens):
-            if isinstance(imagem, str):
-                if imagem.startswith("http"):
-                    id_imagens.append(imagem)
-                    continue
-                else:
-                    img_data = base64.b64decode(imagem)
-                    imagem = Image.open(io.BytesIO(img_data))
-
-            img_bytes = io.BytesIO()
-            imagem.save(img_bytes, format="PNG")
-            img_bytes.seek(0)
-            img_bytes.name = f'imagem_{i+1}.png'
-
-            response = self.client.files.create(
-                file=img_bytes,
-                purpose="vision"
-            )
-
-            id_imagens.append(response.id)
-        return id_imagens
-
-    async def subir_arquivos(self, arquivos: list):
-        id_arquivos = []
-
-        for i, arquivo in enumerate(arquivos):
-            conteudo = await arquivo.read()
-            pdf_bytes = io.BytesIO(conteudo)
-            pdf_bytes.seek(0)
-            pdf_bytes.name = f'arquivo_{i+1}.pdf'
-
-            response = self.client.files.create(
-                file=pdf_bytes,
-                purpose="assistants"
-            )
-
-            id_arquivos.append(response.id)
-        return id_arquivos
+        return response.id
 
 
-    async def transcribe_audio(self, audio_file: FileData) -> str | None:
+    async def upload_pdf_file(self, file: UploadFile) -> str:
+        content = await file.read()
+        pdf_bytes = io.BytesIO(content)
+        pdf_bytes.seek(0)
+        pdf_bytes.name = f'file_{uuid.uuid4()}.pdf'
+
+        response = self.client.files.create(
+            file=pdf_bytes,
+            purpose="assistants"
+        )
+
+        return response.id
+
+
+    def download_uploaded_file(self, file_id: str):
+        try:
+            content = self.client.files.content(file_id)
+            return content
+        except:
+            raise ValueError("Couldn't download the file") # TODO: raise custom error
+
+
+    def delete_uploaded_file(self, file_id: str) -> None:
+        self.client.files.delete(file_id)
+
+
+    async def transcribe_audio(self, audio_file: FileData) -> str:
         filename, mimetype, file_stream = audio_file
         
         if mimetype in self.audio_extensions:
@@ -183,11 +161,6 @@ class AssistantsClient:
                 raise ValueError(f'Error while transcribing: {e}') # TODO: raise custom error
         else:
             raise ValueError('Audio file type not supported') # TODO: raise custom error
-
-
-    def delete_images(self, images_ids: list):
-        for image_id in images_ids:
-            self.client.files.delete(image_id)
 
 
     def create_or_run_thread(self, thread_id: str | None = None) -> RunResult:
@@ -284,7 +257,7 @@ class AssistantsClient:
             arguments = json.loads(tool_call.function.arguments)
 
             try:
-                result = self.execute_function(function_name, arguments)
+                result = self._execute_function(function_name, arguments)
 
                 function_outputs.append({
                     'tool_call_id': tool_call.id,
@@ -304,31 +277,19 @@ class AssistantsClient:
         return False
 
 
-    def listar_mensagens_thread(self, thread_id: str, ordem: str, limite: int):
-        mensagens = self.client.beta.threads.messages.list(thread_id, order=ordem, limit=limite)
-        return mensagens
+    def _execute_function(self, function_name, arguments):
+        func = FUNCTION_REGISTRY.get(function_name)
+        if not func:
+            raise ValueError(f'Unknown function called: {function_name}')
 
-    def obter_mensagem_thread(self, thread_id: str, index: int, ordem: str, limite: int):
-        try:
-            mensagens = self.listar_mensagens_thread(thread_id, ordem, limite)
-            if mensagens:
-                return mensagens.data[index].content[0].text.value
-        except Exception as e:
-            print(f"Erro ao obter mensagem da thread: {e}")
-        return None
+        return func(self.openai_assistant_id, **arguments)
 
-    def obter_arquivo(self, file_id: str):
-        try:
-            conteudo = self.client.files.content(file_id)
-            return conteudo
-        except:
-            raise ValueError("Não foi possível baixar o arquivo")
-        
-    def rodar_instrucao(self, thread_id: str, instrucoes: str):
+
+    def run_instruction(self, thread_id: str, instructions: str) -> str:
         run = self.client.beta.threads.runs.create(
             assistant_id=self.openai_assistant_id,
             thread_id=thread_id,
-            instructions=instrucoes
+            instructions=instructions
         )
 
         while run.status != "completed":
@@ -345,12 +306,19 @@ class AssistantsClient:
         return resultado.data[0].content[0].text.value
 
 
-    def execute_function(self, function_name, arguments):
-        func = FUNCTION_REGISTRY.get(function_name)
-        if not func:
-            raise ValueError(f'Unknown function called: {function_name}')
+    def list_thread_messages(self, thread_id: str, order: str, limit: int):
+        messages = self.client.beta.threads.messages.list(thread_id, order=order, limit=limit)
+        return messages
 
-        return func(self.openai_assistant_id, **arguments)
+
+    def get_specific_message_from_thread(self, thread_id: str, index: int, order: str, limit: int): # TODO: check if there's another more efficient way of getting the message
+        try:
+            messages = self.list_thread_messages(thread_id, order, limit)
+            if messages:
+                return messages.data[index].content[0].text.value
+        except Exception as e:
+            print(f"An error occurred while trying to get message from thread: {e}") # TODO: raise custom error
+        return None
 
 
 class AssistantReply:

@@ -16,14 +16,14 @@ async def execute_thread(
     current_thread_id = contact.current_thread.thread_id if contact.current_thread else None
 
     if message:
-        assistant.add_message(message, thread_id=current_thread_id)
+        assistant.add_message(message=message, thread_id=current_thread_id)
 
     '''if contact_data:
         assistente.adicionar_mensagens([contact_data.__str__()], [], contato.threadId or None)''' # TODO: check how to pass the contact data in a better way
 
     if image:
-        image_id = assistant.subir_imagens([image])
-        assistant.adicionar_imagens(image_id, current_thread_id)
+        image_id = assistant.upload_image(image)
+        assistant.add_message(is_image=True, image_id=image_id, thread_id=current_thread_id)
 
     result = assistant.create_or_run_thread(thread_id=current_thread_id)
 
