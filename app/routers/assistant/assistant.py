@@ -6,6 +6,7 @@ from openai.types import ResponseFormatJSONObject
 from sqlalchemy.orm import Session
 from typing import Annotated
 
+from app.assistant_functions.assistant_function import get_function_documentations
 from app.db.database import obter_sessao
 from app.db.new_models import Assistant, Company
 from app.exceptions.exceptions import AssistantEditingException
@@ -13,7 +14,6 @@ from app.routers.assistant.assistant_helpers import get_openai_client
 from app.routers.routers_helpers import check_company_access
 from app.schemas.integrations_schemas import AssistenteSchema
 from app.schemas.empresa_schema import AssistenteSchema as AssistenteSchemaEmpresa
-from app.utils.assistants_client import Ferramentas
 
 
 router = APIRouter()
@@ -27,7 +27,7 @@ async def create_assistant(
         openai_client: Annotated[OpenAI, Depends(get_openai_client)],
         db: Session = Depends(obter_sessao)
 ):
-    tools = Ferramentas.get_all_tools()
+    tools = get_function_documentations()
 
     assistant = openai_client.beta.assistants.create(
         model="gpt-4o",

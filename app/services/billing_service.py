@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AsaasClient
 from app.db.new_models import Assistant, Company
+from app.services import RespostaFinanceiro
 from app.types.types import BillingResponse
 from app.utils.asaas import Asaas
-from app.utils.assistants_client import AssistantsClient, Instrucao, RespostaFinanceiro
+from app.utils.assistants_client import AssistantsClient
 from app.utils.logger import logger
 
 
@@ -38,23 +39,23 @@ async def generate_billing_response(
         company: Company,
         db: Session
 )  -> BillingResponse:
-    instruction = Instrucao(
-        acao=action,
-        dados={
+    instruction = {
+        "acao": action,
+        "dados": {
             "contact_name": contact_name,
             "phone_number": phone_number,
             "due_date": due_date,
             "current_date": current_date,
             "billing_description": billing_description
         }
-    )
+    }
 
     assistant_db = db.query(Assistant).filter_by(purpose="cobrar", company_id=company.id).first()
 
     try:
         if assistant_db is not None:
             assistant = AssistantsClient(assistant_name=assistant_db.nome, openai_assistant_id=assistant_db.assistantId, openai_api_key=company.openai_api_key)
-            assistant.add_message(message=instruction.__str__())
+            assistant.add_message(message=json.dumps(instruction))
             response, thread_id = assistant.create_or_run_thread() # TODO: check if i can use the thread service here
             response_to_obj = RespostaFinanceiro.from_dict(json.loads(response))
             return response_to_obj, thread_id

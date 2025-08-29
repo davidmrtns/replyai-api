@@ -8,14 +8,13 @@ from PIL import Image
 from fastapi import UploadFile
 import httpx
 from openai import OpenAI
-from openai.types.beta import FunctionToolParam
 from openai.types.beta.threads import Run
 import time
 
+from app.assistant_functions.assistant_function import FUNCTION_REGISTRY
 from app.clients.message_client import FileData
 from app.db.new_models import Assistant
 from app.exceptions.exceptions import AIResponseException, FailedRunException, PendingRunException
-from app.utils.function_utils import FUNCTION_REGISTRY
 from app.utils.logger import logger
 
 
@@ -69,18 +68,16 @@ class AssistantsClient:
         }
 
         if not is_image:
-            base_message['content'] = {
-                [{ 'type': 'text', 'text': message }]
-            }
+            base_message['content'] = [
+                { 'type': 'text', 'text': message }
+            ]
         else:
-            base_message['content'] = {
-                [
-                    {
-                        "type": "image_file",
-                        "image_file": { "file_id": image_id, "detail": "high" }
-                    }
-                ]
-            }
+            base_message['content'] = [
+                {
+                    "type": "image_file",
+                    "image_file": { "file_id": image_id, "detail": "high" }
+                }
+            ]
 
         if attachments_ids and len(attachments_ids) > 0:
             base_message['attachments'] = [
@@ -282,6 +279,7 @@ class AssistantsClient:
         if not func:
             raise ValueError(f'Unknown function called: {function_name}')
 
+        func = func.get('function')
         return func(self.openai_assistant_id, **arguments)
 
 
@@ -333,11 +331,11 @@ class AssistantReply:
     @classmethod
     def from_dict(cls, data: dict):
         return cls(
-            activity=data['atividade'],
-            department_code=data['departamento'],
-            message=data['mensagem'],
-            media_code=data['midia'],
-            assistant_code=data['assistente']
+            activity=data['activity'],
+            department_code=data['department_code'],
+            message=data['message'],
+            media_code=data['media_code'],
+            assistant_code=data['assistant_code']
         )
 
 
@@ -350,95 +348,7 @@ class AssistantReply:
             raise ValueError(f'Error parsing AssistantReply from run result: {e}')
 
 
-class RespostaConfirmacao:
-    def __init__(self, cliente: str, telefone: str, resposta_confirmacao: AssistantReply):
-        self.cliente = cliente
-        self.telefone = telefone
-        self.resposta_confirmacao = resposta_confirmacao
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(
-            cliente=data["cliente"],
-            telefone=data["telefone"],
-            resposta_confirmacao=AssistantReply.from_dict(data["resposta_confirmacao"])
-        )
-
-
-class RespostaFinanceiro:
-    def __init__(self, telefone: str, resposta: AssistantReply):
-        self.telefone = telefone
-        self.resposta = resposta
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(
-            telefone=data["telefone"],
-            resposta=AssistantReply.from_dict(data["resposta"])
-        )
-
-
-class Instrucao:
-    def __init__(self, acao: str, dados: dict | None):
-        self.acao = acao
-        self.dados = dados
-
-    def to_dict(self):
-        obj = {"acao": self.acao}
-        if self.dados is not None:
-            obj["dados"] = self.dados
-
-        return obj
-
-    def __str__(self):
-        import json
-        return json.dumps(self.to_dict(), indent=2, ensure_ascii=False)
-
-
 class CustomHTTPClient(httpx.Client):
     def __init__(self, *args, **kwargs):
         kwargs.pop("proxies", None)
         super().__init__(*args, **kwargs)
-
-
-class Ferramentas:
-    @staticmethod
-    def get_current_datetime():
-        return FunctionToolParam(
-            function={
-                "name": "get_current_datetime",
-                "description": "A function to extract current date and time",
-                "strict": True,
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "additionalProperties": False,
-                    "required": []
-                }
-            },
-            type="function"
-        )
-
-    @staticmethod
-    def get_employees():
-        return FunctionToolParam(
-            function={
-                "name": "get_employees",
-                "description": "A function to return a list of employees",
-                "strict": True,
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "additionalProperties": False,
-                    "required": []
-                }
-            },
-            type="function"
-        )
-
-    @staticmethod
-    def get_all_tools():
-        return [
-            Ferramentas.get_employees(),
-            Ferramentas.get_current_datetime()
-        ]

@@ -3,11 +3,11 @@ import json
 from sqlalchemy.orm import Session
 
 from app.db.new_models import Assistant, Company, Contact, OutlookClient, GoogleCalendarClient
+from app.services import RespostaConfirmacao
 from app.utils.agenda_client import AgendaClient, EventoTituloAgenda, Schedule
-from app.utils.assistants_client import Instrucao
 from app.utils.google_calendar import GoogleCalendar
 from app.utils.outlook import Outlook
-from app.utils.assistants_client import AssistantsClient, RespostaConfirmacao
+from app.utils.assistants_client import AssistantsClient
 
 
 def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
@@ -70,9 +70,9 @@ async def extract_event_data(
         empresa: Company,
         db: Session
 ):
-    instrucao = Instrucao(
-        acao="extrair_dados_evento",
-        dados={
+    instrucao = {
+        "acao": "extrair_dados_evento",
+        "dados": {
             "email_agenda": agenda,
             "titulo": evento.get("subject", ""),
             "local": evento.get("location", ""),
@@ -80,40 +80,17 @@ async def extract_event_data(
             "data_hora_fim": evento.get("end").get("date_time"),
             "data_hora_atual": data_atual
         }
-    )
+    }
 
     assistente_db = db.query(Assistant).filter_by(proposito="agendar", id_empresa=empresa.id).first()
 
     try:
         if assistente_db is not None:
             assistente = AssistantsClient(assistant_name=assistente_db.nome, openai_assistant_id=assistente_db.assistantId, openai_api_key=empresa.openai_api_key)
-            assistente.add_message(message=instrucao.__str__())
+            assistente.add_message(message=json.dumps(instrucao))
             resposta, thread_id = assistente.create_or_run_thread()
             resposta_obj = RespostaConfirmacao.from_dict(json.loads(resposta))
             return resposta_obj, thread_id
     except Exception as e:
         print(e)
     return {}, None
-
-
-def schedule_to_list(
-        schedule: Schedule,
-        company: Company
-) -> list:
-    start = datetime.strptime(company.agenda_starting_time, "%H:%M:%S")
-    end = datetime.strptime(company.agenda_ending_time, "%H:%M:%S")
-    duration = timedelta(minutes=company.appointment_duration_in_minutes)
-
-    slots = []
-    current = start
-
-    for i, availability in enumerate(schedule.availability_view):
-        if current >= end:
-            break
-
-        if availability == "0": # available time slot
-            slots.append(current.strftime("%H:%M"))
-
-        current += duration
-
-    return slots
