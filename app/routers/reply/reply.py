@@ -37,7 +37,7 @@ async def reply(
         return reply_result
 
     try:
-        if not _handle_contact_can_receive_replies(contact):
+        if not await _handle_contact_can_receive_replies(contact):
             return reply_result
 
         message, is_audio, image = await get_message(request, message_client, assistant)
