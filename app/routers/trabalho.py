@@ -11,7 +11,7 @@ from app.jobs.jobs import rodar_confirmar_agendamento, rodar_avisar_vencimento, 
 from app.jobs.sub_jobs import processar_cobranca, processar_nf
 from app.schemas.asaas_schema import AsaasPaymentRequest, AsaasInvoiceRequest
 from app.services.billing_service import create_financial_clients
-from app.services.company_service import get_company
+from app.services.company_service import get_company_data
 
 
 def verificar_chave_secreta(request: Request):
@@ -60,7 +60,7 @@ async def executar_agradecer_pagamento(
         client_number: int,
         db: Session = Depends(obter_sessao)
 ):
-    dados_empresa = await get_company(slug, token, db)
+    dados_empresa = await get_company_data(slug, token, db)
     if dados_empresa is not None:
         empresa, message_client, _, __ = dados_empresa
         financial_client = create_financial_clients(empresa, db, client_number)
@@ -76,7 +76,7 @@ async def executar_enviar_nf(
         client_number: int,
         db: Session = Depends(obter_sessao)
 ):
-    dados_empresa = await get_company(slug, token, db)
+    dados_empresa = await get_company_data(slug, token, db)
     if dados_empresa is not None:
         empresa, message_client, _, __ = dados_empresa
         financial_client = create_financial_clients(empresa, db, client_number)

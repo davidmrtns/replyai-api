@@ -9,8 +9,7 @@ from app.types.types import AssistantData, CompanyData
 from app.utils.create_agenda_client import create_agenda_client
 
 
-# TODO: rename to get_company_data
-async def get_company(slug: str, token: str, db: Session) -> CompanyData:
+async def get_company_data(slug: str, token: str, db: Session) -> CompanyData:
     company = db.query(Company).filter_by(slug=slug, token=token, is_active=True).first()
 
     if company is not None:

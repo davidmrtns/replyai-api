@@ -6,7 +6,7 @@ from app.db.database import obter_sessao
 from app.exceptions.exceptions import AIResponseException
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
-from app.services.company_service import get_company
+from app.services.company_service import get_company_data
 from app.services.thread_service import execute_thread
 from app.utils.pipelines import PIPELINES
 from .reply_helpers import _handle_evolutionapi_request, _handle_digisac_request, _handle_contact_can_receive_replies
@@ -26,7 +26,7 @@ async def reply(
 ):
     reply_result = False
 
-    company_data = await get_company(slug, token, db)
+    company_data = await get_company_data(slug, token, db)
     if company_data is None:
         return reply_result
 
