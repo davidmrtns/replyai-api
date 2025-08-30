@@ -1,10 +1,11 @@
 from openai.types.beta import FunctionToolParam
 
-from app.assistant_functions import _get_variables
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import retornar_sessao
-from app.db.new_models import Contact
+from app.db.new_models import Assistant, Company, Contact
+from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.agenda_client import EventoTituloAgenda
+from app.utils.create_agenda_client import create_agenda_client
 
 
 def reschedule_event_doc():
@@ -58,7 +59,17 @@ async def reschedule_event(
     status = False
 
     with retornar_sessao() as db:
-        _, __, agenda_client, ___ = await _get_variables(assistant_id, None, db)
+        assistant = db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
+        if not assistant:
+            raise FailedFunctionRunException(detail='Assistant not found in the database', function_name=reschedule_event.__name__)
+        
+        company: Company = assistant.company
+        if not company:
+            raise FailedFunctionRunException(detail='Company not found in the database', function_name=reschedule_event.__name__)
+
+        agenda_client = create_agenda_client(company, db)
+        if agenda_client is None:
+            raise FailedFunctionRunException(detail='Could not create the agenda client', function_name=reschedule_event.__name__)
         
         original_event_data = EventoTituloAgenda(
             title=original_event_title,

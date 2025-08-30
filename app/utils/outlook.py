@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta, timezone
+from typing import Awaitable, List
 
 import msal
 from azure.core.credentials import TokenCredential, AccessToken
@@ -77,7 +78,7 @@ class Outlook(AgendaClient):
         self.hora_final_agenda = horaFinalAgenda
         self.timezone = timeZone
 
-    async def obter_horarios(self, agendas: [str], data: str):
+    async def obter_horarios(self, agendas: list[str], data: str) -> Awaitable[List[Schedule]]:
         try:
             request_config = RequestConfiguration()
 

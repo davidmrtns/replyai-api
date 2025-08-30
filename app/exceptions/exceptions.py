@@ -62,3 +62,13 @@ class PendingRunException(RunException):
 
 class FailedRunException(RunException):
     pass
+
+
+class FailedFunctionRunException(Exception):
+    def __init__(self, detail: str, function_name: str):
+        self.detail = detail
+        self.function_name = function_name or "Unknown function"
+        super().__init__(self.detail)
+
+    def __str__(self):
+        return f"[{self.__class__.__name__}] {self.detail} (Function name: {self.function_name})"

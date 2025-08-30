@@ -2,13 +2,14 @@ from sqlalchemy.orm import Session
 
 from app.db.new_models import Contact, Company
 from app.db.models import Agenda
-from app.services.agenda_service import create_agenda_client, extract_event_data
+from app.services.agenda_service import extract_event_data
 from app.services.billing_service import generate_billing_response, create_financial_clients
 from app.services.company_service import get_assistant_from_company, get_department
 from app.services.contact_service import get_or_create_contact, reset_contact, transfer_contact, update_current_assistant
 # from app.services.direcionamento_service import direcionar # pyright: ignore[reportMissingImports] #TODO: update to use the new pipelines
 from app.services.message_service import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
+from app.utils.create_agenda_client import create_agenda_client
 from app.utils.digisac import Digisac
 from app.utils.financial_client import FinancialClient
 from app.utils.message_client import MessageClient

@@ -5,7 +5,7 @@ from app.services.contact_service import change_awaiting_human_contact, end_cont
 from app.services.message_service import process_and_send_message
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
-from app.utils.assistants_client import AssistantReply, AssistantsClient
+from app.clients.assistants_client import AssistantReply, AssistantsClient
 from app.utils.digisac import Digisac
 from app.utils.logger import logger
 

@@ -8,7 +8,7 @@ from app.db.new_models import Company, Contact, Assistant
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import CompanyData, ContactAndAssistant
-from app.utils.assistants_client import AssistantsClient
+from app.clients.assistants_client import AssistantsClient
 from app.utils.digisac import Digisac
 from app.clients.message_client import MessageClient
 

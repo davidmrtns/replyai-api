@@ -8,7 +8,7 @@ from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import MessageData
 from app.utils.download_file import download_file
-from app.utils.assistants_client import AssistantsClient
+from app.clients.assistants_client import AssistantsClient
 from app.utils.digisac import Digisac
 from app.utils.eleven_labs import ElevenLabs
 from app.clients.message_client import MediaMessageData, MessageClient

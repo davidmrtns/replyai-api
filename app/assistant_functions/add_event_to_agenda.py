@@ -1,8 +1,11 @@
 from openai.types.beta import FunctionToolParam
 
-from app.assistant_functions import _create_agenda_client, _get_variables
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import retornar_sessao
+from app.db.models import Agenda
+from app.db.new_models import Assistant, Company
+from app.exceptions.exceptions import FailedFunctionRunException
+from app.utils.create_agenda_client import create_agenda_client
 
 
 def add_event_to_agenda_doc():
@@ -61,11 +64,21 @@ async def add_event_to_agenda(
     status = False
 
     with retornar_sessao() as db:
-        company, _, agenda_client, agenda = await _get_variables(assistant_id, agenda_code, db)
+        assistant = db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
+        if not assistant:
+            raise FailedFunctionRunException(detail='Assistant not found in the database', function_name=add_event_to_agenda.__name__)
         
-        agenda_client = _create_agenda_client(company, db)
+        company: Company = assistant.company
+        if not company:
+            raise FailedFunctionRunException(detail='Company not found in the database', function_name=add_event_to_agenda.__name__)
+
+        agenda = db.query(Agenda).filter_by(atalho=agenda_code, id_empresa=company.id).first()
+        if not agenda:
+            raise FailedFunctionRunException(detail='Agenda not found in the database', function_name=add_event_to_agenda.__name__)
+
+        agenda_client = create_agenda_client(company, db)
         if agenda_client is None:
-            return status
+            raise FailedFunctionRunException(detail='Could not create the agenda client', function_name=add_event_to_agenda.__name__)
         
         await agenda_client.cadastrar_evento(agenda=agenda.endereco, data=date,
                                                  titulo=title, descricao=description, localizacao=localization)

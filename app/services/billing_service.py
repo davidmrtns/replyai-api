@@ -7,7 +7,7 @@ from app.db.new_models import Assistant, Company
 from app.services import RespostaFinanceiro
 from app.types.types import BillingResponse
 from app.utils.asaas import Asaas
-from app.utils.assistants_client import AssistantsClient
+from app.clients.assistants_client import AssistantsClient
 from app.utils.logger import logger
 
 

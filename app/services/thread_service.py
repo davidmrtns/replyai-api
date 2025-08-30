@@ -3,7 +3,7 @@ import json
 from sqlalchemy.orm import Session
 
 from app.db.new_models import Contact, Thread
-from app.utils.assistants_client import AssistantsClient, AssistantReply
+from app.clients.assistants_client import AssistantsClient, AssistantReply
 
 
 async def execute_thread(

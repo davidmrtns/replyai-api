@@ -1,3 +1,5 @@
+from openai.types.beta import FunctionToolParam
+from typing import List
 from app.utils.logger import logger
 
 
@@ -15,5 +17,5 @@ def register_function(documentation):
     return decorator
 
 
-def get_function_documentations():
-    return [entry["documentation"] for entry in FUNCTION_REGISTRY.values()] # TODO: improve typing
+def get_function_documentations() -> List[FunctionToolParam]:
+    return [entry["documentation"] for entry in FUNCTION_REGISTRY.values()]

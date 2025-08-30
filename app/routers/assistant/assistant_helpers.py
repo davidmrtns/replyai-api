@@ -3,7 +3,7 @@ from openai import OpenAI
 
 from app.db.new_models import Company
 from app.routers.routers_helpers import check_company_access
-from app.utils.assistants_client import CustomHTTPClient
+from app.clients.assistants_client import CustomHTTPClient
 
 
 def get_openai_client(company: Company = Depends(check_company_access)) -> OpenAI:

@@ -1,4 +1,4 @@
-from app.utils.assistants_client import AssistantReply
+from app.clients.assistants_client import AssistantReply
 
 
 # TODO: temporary additions, remove later

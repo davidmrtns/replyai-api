@@ -14,7 +14,7 @@ from app.db.new_models import OutlookClient
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.atualizacao_empresa_schema import InformacoesFusoHorario
 from app.schemas.empresa_schema import OutlookClientSchema as OutlookClientSchemaEmpresa
-from app.services.agenda_service import create_agenda_client
+from app.utils.create_agenda_client import create_agenda_client
 
 
 router = APIRouter()

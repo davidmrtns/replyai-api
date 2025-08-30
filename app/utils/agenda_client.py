@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import List
+from datetime import datetime, timedelta
+from typing import Awaitable, List
 
 import pytz
 from msgraph.generated.models.schedule_information import ScheduleInformation
+
+from app.db.new_models import Company
 
 
 class EventoTituloAgenda:
@@ -36,28 +38,6 @@ class EventoTituloAgendaDataNova:
             start_datetime=data["start_datetime"],
             data_nova=data["data_nova"]
         )
-
-
-class AgendaClient(ABC):
-    @abstractmethod
-    def obter_horarios(self, **kwargs):
-        pass
-
-    @abstractmethod
-    def cadastrar_evento(self, **kwargs):
-        pass
-
-    @abstractmethod
-    def confirmar_evento(self, dados: EventoTituloAgenda):
-        pass
-
-    @abstractmethod
-    def reagendar_evento(self, dados: EventoTituloAgendaDataNova):
-        pass
-
-    @abstractmethod
-    def cancelar_evento(self, dados: EventoTituloAgenda, tipo_cancelamento: str):
-        pass
 
 
 class Schedule:
@@ -124,6 +104,24 @@ class Schedule:
             schedule_items=eventos
         )
 
+    def to_string_list(self, company: Company) -> list[str]:
+        start = datetime.strptime(company.agenda_starting_time, "%H:%M:%S")
+        end = datetime.strptime(company.agenda_ending_time, "%H:%M:%S")
+        duration = timedelta(minutes=company.appointment_duration_in_minutes)
+
+        slots = []
+        current = start
+
+        for i, availability in enumerate(self.availability_view):
+            if current >= end:
+                break
+
+            if availability == "0": # available time slot
+                slots.append(current.strftime("%H:%M"))
+
+            current += duration
+        return slots
+
     @staticmethod
     def gerar_availability_view(eventos: List[dict], intervalo: int, hora_inicio: str, hora_final: str, data: str, timezone: pytz.timezone):
         hora_inicio_dt = timezone.localize(datetime.strptime(f"{data} {hora_inicio}", "%Y-%m-%d %H:%M:%S"))
@@ -147,3 +145,25 @@ class Schedule:
                     blocks[i] = "2"
 
         return "".join(blocks)
+    
+
+class AgendaClient(ABC):
+    @abstractmethod
+    def obter_horarios(self, **kwargs) -> Awaitable[List[Schedule]]:
+        pass
+
+    @abstractmethod
+    def cadastrar_evento(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def confirmar_evento(self, dados: EventoTituloAgenda):
+        pass
+
+    @abstractmethod
+    def reagendar_evento(self, dados: EventoTituloAgendaDataNova):
+        pass
+
+    @abstractmethod
+    def cancelar_evento(self, dados: EventoTituloAgenda, tipo_cancelamento: str):
+        pass

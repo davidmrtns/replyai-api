@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from typing import Awaitable, List
 
 import pytz
 from googleapiclient.discovery import build
@@ -41,7 +42,7 @@ class GoogleCalendar(AgendaClient):
         self.timezone = pytz.timezone(timezone)
         self.duracao_evento = duracao_evento
 
-    async def obter_horarios(self, agendas: [str], data: str):
+    async def obter_horarios(self, agendas: list[str], data: str) -> Awaitable[List[Schedule]]:
         responses = []
 
         for agenda in agendas:

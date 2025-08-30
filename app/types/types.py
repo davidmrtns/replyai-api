@@ -3,10 +3,9 @@ from typing import Tuple
 from app.db.new_models import Contact, Company
 from app.services import RespostaFinanceiro
 from app.utils.agenda_client import AgendaClient
-from app.utils.assistants_client import AssistantsClient
+from app.clients.assistants_client import AssistantsClient
 from app.utils.crm_client import CRMClient
 from app.clients.message_client import MessageClient
-
 
 AssistantData = Tuple[AssistantsClient | None, int | None]
 BillingResponse = Tuple[RespostaFinanceiro | None, str | None]
