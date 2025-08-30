@@ -62,7 +62,7 @@ async def executar_agradecer_pagamento(
 ):
     dados_empresa = await get_company_data(slug, token, db)
     if dados_empresa is not None:
-        empresa, message_client, _, __ = dados_empresa
+        empresa, message_client = dados_empresa
         financial_client = create_financial_clients(empresa, db, client_number)
         await processar_cobranca("extrair_dados_agradecer_pagamento", request.payment.model_dump(), "", False,
                                  empresa, message_client, financial_client, db)
@@ -78,7 +78,7 @@ async def executar_enviar_nf(
 ):
     dados_empresa = await get_company_data(slug, token, db)
     if dados_empresa is not None:
-        empresa, message_client, _, __ = dados_empresa
+        empresa, message_client = dados_empresa
         financial_client = create_financial_clients(empresa, db, client_number)
         await processar_nf("extrair_dados_nf_emitida", request.invoice.model_dump(), "", empresa,
                                  message_client, financial_client, db)

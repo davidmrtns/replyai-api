@@ -20,7 +20,7 @@ async def _response_pipeline(
 ) -> bool:
     try:
         message, media_code = response.message, response.media_code
-        company, message_client, _, __ = company_data
+        company, message_client = company_data
 
         await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db) # TODO: add handling for HTTP errors
         return True
@@ -39,7 +39,7 @@ async def _transfer_pipeline(
 ) -> bool:
     try:
         message, media_code, department_code = response.message, response.media_code, response.department_code
-        company, message_client, _, __ = company_data
+        company, message_client = company_data
         
         if isinstance(message_client, Digisac):
             department = await get_department(company, department_code, False, db)
@@ -63,7 +63,7 @@ async def _end_contact_pipeline(
 ) -> bool:
     try:
         message, media_code = response.message, response.media_code
-        company, message_client, _, __ = company_data
+        company, message_client = company_data
 
         await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
         await end_contact(contact, message_client, db)
@@ -83,7 +83,7 @@ async def _migrate_assistant_pipeline(
 ) -> bool:
     try:
         message, media_code, assistant_code = response.message, response.media_code, response.assistant_code
-        company, message_client, _, __ = company_data
+        company, message_client = company_data
 
         await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
         assistant, assistant_id = await get_assistant_from_company(company, None, assistant_code, db)

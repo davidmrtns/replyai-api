@@ -30,7 +30,7 @@ async def reply(
     if company_data is None:
         return reply_result
 
-    company, message_client, _, __ = company_data
+    company, message_client = company_data
 
     contact, assistant = await get_or_create_contact(request, company_data, db)
     if contact is None:

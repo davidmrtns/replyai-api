@@ -3,10 +3,8 @@ from sqlalchemy.orm import Session
 from app.db.models import Agenda, Departamento
 from app.db.new_models import Assistant, Company, DigisacClient
 from app.clients.assistants_client import AssistantsClient
-from app.services.crm_service import create_crm_client
 from app.services.message_service import create_message_client
 from app.types.types import AssistantData, CompanyData
-from app.utils.create_agenda_client import create_agenda_client
 
 
 async def get_company_data(slug: str, token: str, db: Session) -> CompanyData:
@@ -14,9 +12,7 @@ async def get_company_data(slug: str, token: str, db: Session) -> CompanyData:
 
     if company is not None:
         message_client = create_message_client(company, db)
-        agenda_client = create_agenda_client(company, db)
-        crm_client = create_crm_client(company, db)
-        return company, message_client, agenda_client, crm_client
+        return company, message_client
     return None
 
 

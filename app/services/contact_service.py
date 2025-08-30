@@ -7,6 +7,7 @@ from app.db.models import Departamento
 from app.db.new_models import Company, Contact, Assistant
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
+from app.services.crm_service import create_crm_client
 from app.types.types import CompanyData, ContactAndAssistant
 from app.clients.assistants_client import AssistantsClient
 from app.utils.digisac import Digisac
@@ -62,11 +63,12 @@ async def create_contact(
         timezone: pytz.timezone,
         db: Session
 ) -> Contact:
-    company, message_client, _, crm_client = company_data
+    company, message_client = company_data
 
     contact_data = message_client.get_contact_data(request=request)
 
     deal_id = None
+    crm_client = create_crm_client(company, db)
     if crm_client and contact_data:
         deal_id = crm_client.criar_lead(nome_negociacao=contact_data.contact_name,
                                         nome_contato=contact_data.contact_name,
