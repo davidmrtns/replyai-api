@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.clients.digisac_client import DigisacClient
 from app.db.database import obter_sessao
 from app.db.models import Departamento
 from app.db.new_models import Company
-from app.db.new_models import DigisacClient
+from app.db.new_models import DigisacClient as DigisacClientDB
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.integrations_schemas import DigisacClientSchema, DigisacDepartmentSchema
 from app.schemas.empresa_schema import DigisacClientSchema as DigisacClientSchemaEmpresa, DepartamentoSchema as DigisacDepartmentSchemaEmpresa
-from app.utils.digisac import Digisac
 
 
 router = APIRouter()
@@ -22,9 +22,9 @@ async def listar_servicos(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client_db = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client_db = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if digisac_client_db:
-        digisac_client = Digisac(
+        digisac_client = DigisacClient(
             slug=digisac_client_db.digisacSlug,
             service_id=digisac_client_db.service_id,
             defaultUserId=digisac_client_db.digisacDefaultUser,
@@ -43,9 +43,9 @@ async def listar_usuarios(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client_db = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client_db = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if digisac_client_db:
-        digisac_client = Digisac(
+        digisac_client = DigisacClient(
             slug=digisac_client_db.digisacSlug,
             service_id=digisac_client_db.service_id,
             defaultUserId=digisac_client_db.digisacDefaultUser,
@@ -64,9 +64,9 @@ async def listar_departamentos(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client_db = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client_db = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if digisac_client_db:
-        digisac_client = Digisac(
+        digisac_client = DigisacClient(
             slug=digisac_client_db.digisacSlug,
             service_id=digisac_client_db.service_id,
             defaultUserId=digisac_client_db.digisacDefaultUser,
@@ -83,7 +83,7 @@ async def adicionar_departamento(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if not digisac_client:
         raise HTTPException(status_code=404, detail="Cliente do Digisac não encontrado para essa empresa")
 
@@ -109,7 +109,7 @@ async def editar_departamento(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if not digisac_client:
         raise HTTPException(status_code=404, detail="Cliente do Digisac não encontrado para essa empresa")
 
@@ -132,7 +132,7 @@ async def excluir_departamento(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if not digisac_client:
         raise HTTPException(status_code=404, detail="Cliente do Digisac não encontrado para essa empresa")
 
@@ -150,7 +150,7 @@ async def criar_digisac_client(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if digisac_client:
         raise HTTPException(status_code=404, detail="Essa empresa já possui um cliente do Digisac")
 
@@ -174,7 +174,7 @@ async def editar_digisac_client(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    digisac_client = db.query(DigisacClient).filter_by(id_empresa=empresa.id).first()
+    digisac_client = db.query(DigisacClientDB).filter_by(id_empresa=empresa.id).first()
     if not digisac_client:
         raise HTTPException(status_code=404, detail="Cliente do Digisac não encontrado para essa empresa")
 

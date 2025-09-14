@@ -1,15 +1,15 @@
 from typing import Literal
 from sqlalchemy.orm import Session
 
+from app.clients.digisac_client import DigisacClient
 from app.clients.evolutionapi_client import EvolutionAPIClient
 from app.db.models import Midia
-from app.db.new_models import Assistant, Company, Contact, DigisacClient, EvolutionAPIClient as EvolutionAPIClientDB
+from app.db.new_models import Assistant, Company, Contact, DigisacClient as DigisacClientDB, EvolutionAPIClient as EvolutionAPIClientDB
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import MessageData
 from app.utils.download_file import download_file
 from app.clients.assistants_client import AssistantsClient
-from app.utils.digisac import Digisac
 from app.utils.eleven_labs import ElevenLabs
 from app.clients.message_client import MediaMessageData, MessageClient
 from app.utils.string_replacements import replace_abbreviations
@@ -17,14 +17,13 @@ from app.utils.string_replacements import replace_abbreviations
 
 def create_message_client(company: Company, db: Session) -> MessageClient | None:
     if company.message_client_type == 'digisac':
-        digisac_client = db.query(DigisacClient).filter_by(company_id=company.id).first()
+        digisac_client = db.query(DigisacClientDB).filter_by(company_id=company.id).first()
         if digisac_client:
-            return Digisac(
-                slug=digisac_client.digisac_slug,
+            return DigisacClient(
+                digisac_slug=digisac_client.digisac_slug,
                 service_id=digisac_client.service_id,
-                defaultUserId=digisac_client.digisac_default_user,
-                token=digisac_client.digisac_token,
-                defaultAssistantName=company.default_assistant.assistant_name,
+                default_user_id=digisac_client.digisac_default_user,
+                digisac_token=digisac_client.digisac_token
             )
     else:
         evolutionapi_client = db.query(EvolutionAPIClientDB).filter_by(company_id=company.id).first()
@@ -53,7 +52,8 @@ async def get_message(
             case 'audio' | 'ptt':
                 is_audio = True
             case 'image':
-                image = message_client.get_file_data(request=request, is_just_url=True)
+                if isinstance(message_client, DigisacClient):
+                    image = message_client.get_file_url(request.data.message.id)
     elif isinstance(request, EvolutionAPIRequest):
         match request.data.messageType:
             case 'conversation':
@@ -175,16 +175,14 @@ async def _handle_message_sending_through_client(
             media_message=media_message_data,
             assistant_name=assistant.assistant_name
         )
-    elif isinstance(message_client, DigisacClient):
+    elif isinstance(message_client, DigisacClientDB):
         message_client.send_message(
-            text_message,
-            media_message_data.media if media_message_data else base64_audio_message or None,
-            media_message_data.mediatype if media_message_data else None,
-            media_message_data.filename if media_message_data else None,
-            contact.contact_id,
-            None,
-            'bot',
-            assistant.assistant_name
+            contact_id=contact.contact_id,
+            user_id=None,
+            text_message=text_message,
+            audio_message_base64=base64_audio_message,
+            media_message=media_message_data,
+            assistant_name=assistant.assistant_name
         )
     else:
         raise ValueError('Unsupported message client type') # TODO: raise custom exception

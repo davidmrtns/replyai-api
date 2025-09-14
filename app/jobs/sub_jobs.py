@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.clients.digisac_client import DigisacClient
 from app.db.new_models import Contact, Company
 from app.db.models import Agenda
 from app.services.agenda_service import extract_event_data
@@ -10,7 +11,6 @@ from app.services.contact_service import get_or_create_contact, reset_contact, t
 from app.services.message_service import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
 from app.utils.create_agenda_client import create_agenda_client
-from app.utils.digisac import Digisac
 from app.utils.financial_client import FinancialClient
 from app.utils.message_client import MessageClient
 
@@ -28,7 +28,7 @@ async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Sessi
             acao = "encerrar_conversa"
 
         message_client = create_message_client(empresa, db)
-        if isinstance(message_client, Digisac):
+        if isinstance(message_client, DigisacClient):
             ticket_id, last_message_id = message_client.obter_ticket_ultima_mensagem(contato.contactId)
             if ticket_id is None:
                 await reset_contact(contato, db)
@@ -75,7 +75,7 @@ async def enviar_confirmacao_consulta(data: str, data_atual: str, empresa: Compa
                                         contato.appointmentConfirmation = True
                                         db.commit()
                                         await update_current_assistant(contato, assistente_db_id, db)
-                                    if isinstance(message_client, Digisac):
+                                    if isinstance(message_client, DigisacClient):
                                         message_client.encerrar_chamado(contactId=contato.contactId, ticketTopicIds=[], comments="Chamado encerrado para confirmação de consulta", byUserId=None)
                                         departamento = await get_department(empresa, None, True, db)
                                         if departamento:
@@ -136,7 +136,7 @@ async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_
                     if url_boleto:
                         boleto = message_client.baixar_arquivo(url_boleto)
                         if boleto:
-                            mediatype = "application/pdf" if isinstance(message_client, Digisac) else "document"
+                            mediatype = "application/pdf" if isinstance(message_client, DigisacClient) else "document"
                             message_client.enviar_mensagem(mensagem="", base64=boleto, mediatype=mediatype, nome_arquivo="boleto.pdf", contact_id=contato.contactId, userId=None, origin="bot", nome_assistente=assistente.assistant_name)
 
                 await assign_new_thread_to_contact(contato, thread_id, db)
@@ -165,7 +165,7 @@ async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Company,
                         '''await direcionar(resposta_vencimento.resposta, False, message_client, None, None, empresa, contato,
                                          assistente, db)'''
 
-                        mediatype = "application/pdf" if isinstance(message_client, Digisac) else "document"
+                        mediatype = "application/pdf" if isinstance(message_client, DigisacClient) else "document"
                         message_client.enviar_mensagem(mensagem="", base64=documento, mediatype=mediatype, nome_arquivo="nota_fiscal.pdf", contact_id=contato.contactId, userId=None, origin="bot", nome_assistente=assistente.assistant_name)
 
                         await assign_new_thread_to_contact(contato, thread_id, db)

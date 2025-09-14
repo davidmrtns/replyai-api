@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from app.clients.digisac_client import DigisacClient
 from app.db.new_models import Contact
 from app.services.company_service import get_assistant_from_company, get_department
 from app.services.contact_service import change_awaiting_human_contact, end_contact, transfer_contact, update_current_assistant
@@ -6,7 +7,6 @@ from app.services.message_service import process_and_send_message
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
 from app.clients.assistants_client import AssistantReply, AssistantsClient
-from app.utils.digisac import Digisac
 from app.utils.logger import logger
 
 
@@ -41,7 +41,7 @@ async def _transfer_pipeline(
         message, media_code, department_code = response.message, response.media_code, response.department_code
         company, message_client = company_data
         
-        if isinstance(message_client, Digisac):
+        if isinstance(message_client, DigisacClient):
             department = await get_department(company, department_code, False, db)
             if department:
                 await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)

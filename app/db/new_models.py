@@ -137,6 +137,7 @@ class Contact(Base):
     current_thread = relationship("Thread", foreign_keys=[current_thread_id])
 
 
+# TODO: change name to not conflict with the utility class
 class DigisacClient(Base):
     __tablename__ = "digisac_clients"
 
@@ -144,7 +145,7 @@ class DigisacClient(Base):
     digisac_slug = Column(String)
     service_id = Column(String)
     digisac_token = Column(String)
-    digisac_default_user = Column(String)
+    digisac_default_user = Column(String) # TODO: rename to default_user_id
     company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company")

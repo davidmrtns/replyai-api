@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import pytz
 from sqlalchemy.orm import Session
 
+from app.clients.digisac_client import DigisacClient
 from app.db.models import Departamento
 from app.db.new_models import Company, Contact, Assistant
 from app.schemas.digisac_schema import DigisacRequest
@@ -10,7 +11,6 @@ from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client
 from app.types.types import CompanyData, ContactAndAssistant
 from app.clients.assistants_client import AssistantsClient
-from app.utils.digisac import Digisac
 from app.clients.message_client import MessageClient
 
 
@@ -120,13 +120,16 @@ async def change_awaiting_human_contact(
 
 
 async def transfer_contact(
-        message_client: Digisac,
+        message_client: DigisacClient,
         contact: Contact,
         department: Departamento
 ) -> None:
-    message_client.transferir(
-        contactId=contact.contact_id, departmentId=department.departmentId,
-        userId=department.userId, byUserId=None, comments=department.comentario
+    message_client.transfer_contact(
+        contact.contact_id,
+        department.departmentId,
+        department.userId,
+        byUserId=None,
+        comments=department.comentario
     )
 
 
@@ -150,6 +153,11 @@ async def reset_contact(contact: Contact, db: Session) -> None:
 
 
 async def end_contact(contact: Contact, message_client: MessageClient, db: Session) -> None:
-    if isinstance(message_client, Digisac):
-        message_client.encerrar_chamado(contactId=contact.contact_id, ticketTopicIds=[], comments='', byUserId=None)
+    if isinstance(message_client, DigisacClient):
+        message_client.close_contact_ticket(
+            contact.contact_id,
+            ticket_topic_ids=[],
+            comments='',
+            by_user_id=None
+        )
     await reset_contact(contact, db)
