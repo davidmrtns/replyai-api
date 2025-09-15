@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
+from app.clients.message_client import MessageClient
 from app.db.new_models import Contact, Company
 from app.db.models import Agenda
 from app.services.agenda_service import extract_event_data
@@ -12,7 +13,6 @@ from app.services.message_service import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
 from app.utils.create_agenda_client import create_agenda_client
 from app.utils.financial_client import FinancialClient
-from app.utils.message_client import MessageClient
 
 
 async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Session):
