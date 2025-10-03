@@ -4,7 +4,6 @@ from app.assistant_functions.assistant_function import register_function
 from app.db.database import retornar_sessao
 from app.db.new_models import Assistant, Company, Contact
 from app.exceptions.exceptions import FailedFunctionRunException
-from app.utils.agenda_client import EventoTituloAgenda
 from app.utils.create_agenda_client import create_agenda_client
 
 
@@ -70,15 +69,12 @@ async def reschedule_event(
         agenda_client = create_agenda_client(company, db)
         if agenda_client is None:
             raise FailedFunctionRunException(detail='Could not create the agenda client', function_name=reschedule_event.__name__)
-        
-        original_event_data = EventoTituloAgenda(
-            title=original_event_title,
-            start_datetime=original_event_start_datetime,
-            agenda_address=agenda_address
+
+        status = await agenda_client.reschedule_event(
+            agenda_address,
+            original_event_start_datetime,
+            original_event_title,
+            new_datetime
         )
 
-        original_event_data.start_datetime = new_datetime
-        await agenda_client.reagendar_evento(original_event_data) # TODO: update this method to accept new datetime
-        status = True # TODO: get the status from the reschedule_event method, when improved
-    
     return status

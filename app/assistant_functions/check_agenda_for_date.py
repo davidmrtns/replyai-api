@@ -65,18 +65,18 @@ async def check_agenda_for_date(
         if agenda_client is None:
             raise FailedFunctionRunException(detail='Could not create the agenda client', function_name=check_agenda_for_date.__name__)
 
-        schedules = await agenda_client.obter_horarios(agendas=[agenda.endereco], data=suggestion_date) # TODO: enhance variable names
-        if schedules.length < 1:
+        schedules = await agenda_client.get_schedules(agendas=[agenda.endereco], date=suggestion_date)
+        if len(schedules) < 1:
             return date_info
 
         first_agenda_schedule = schedules[0]
         if first_agenda_schedule is None:
             return date_info
 
-        if set(first_agenda_schedule.availability_view) == {"2"}:
-            date_info["status"] = "closed_all_day"
+        if set(first_agenda_schedule.availability_view) == {'2'}:
+            date_info['status'] = 'closed_all_day'
         else:
-            date_info["status"] = "available"
-            date_info["schedule"] = first_agenda_schedule.to_string_list(company)
+            date_info['status'] = 'available'
+            date_info['schedule'] = first_agenda_schedule.to_string_list(company)
     
     return date_info

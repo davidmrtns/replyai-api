@@ -80,8 +80,12 @@ async def add_event_to_agenda(
         if agenda_client is None:
             raise FailedFunctionRunException(detail='Could not create the agenda client', function_name=add_event_to_agenda.__name__)
         
-        await agenda_client.cadastrar_evento(agenda=agenda.endereco, data=date,
-                                                 titulo=title, descricao=description, localizacao=localization)
-        status = True # TODO: get the status from the create_event method, when improved
+        status = await agenda_client.add_event(
+            agenda_address=agenda.endereco,
+            data=date,
+            subject=title,
+            description=description,
+            localization=localization
+        )
     
     return status

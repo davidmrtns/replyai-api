@@ -1,37 +1,41 @@
 from requests import Session
 
-from app.db.new_models import Company, GoogleCalendarClient, OutlookClient
-from app.utils.agenda_client import AgendaClient
-from app.utils.google_calendar import GoogleCalendar
-from app.utils.outlook import Outlook
+from app.db.new_models import Company, GoogleCalendarClient as GoogleCalendarClientDB, OutlookClient as OutlookClientDB
+from app.clients.agenda_client import AgendaClient
+from app.clients.google.google_calendar_client import GoogleCalendar
+from app.clients.microsoft.outlook_client import OutlookClient
 
 
 def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
-    if company.agenda_client_type == "outlook":
-        outlook_client = db.query(OutlookClient).filter_by(company_id=company.id).first()
-        if outlook_client:
-            return Outlook(
-                access_token=outlook_client.access_token,
-                refresh_token=outlook_client.refresh_token,
-                expires_in=outlook_client.expires_in,
-                expires_at=outlook_client.expires_at,
-                usuarioPadrao=outlook_client.default_user,
-                duracaoEvento=company.appointment_duration_in_minutes,
-                horaInicioAgenda=company.agenda_starting_time.strftime("%H:%M:%S"),
-                horaFinalAgenda=company.agenda_ending_time.strftime("%H:%M:%S"),
-                timeZone=outlook_client.timezone,
-                client_db=outlook_client,
+    if company.agenda_client_type == 'outlook':
+        outlook_client_db: OutlookClientDB = db.query(OutlookClientDB).filter_by(company_id=company.id).first()
+        if outlook_client_db:
+            return OutlookClient(
+                credential_data=(
+                    outlook_client_db.access_token,
+                    outlook_client_db.refresh_token,
+                    outlook_client_db.expires_in,
+                    outlook_client_db.expires_at
+                ),
+                default_user_email=outlook_client_db.default_user,
+                starting_time=company.agenda_starting_time.strftime('%H:%M:%S'),
+                ending_time=company.agenda_ending_time.strftime('%H:%M:%S'),
+                event_duration=company.appointment_duration_in_minutes,
+                timezone=outlook_client_db.timezone,
+                client_db=outlook_client_db,
                 db=db
             )
-    else:
-        googlecalendar_client = db.query(GoogleCalendarClient).filter_by(company_id=company.id).first()
+    elif company.agenda_client_type == 'google_calendar':
+        googlecalendar_client: GoogleCalendarClientDB = db.query(GoogleCalendarClientDB).filter_by(company_id=company.id).first()
         if googlecalendar_client:
             return GoogleCalendar(
-                access_token=googlecalendar_client.access_token,
-                refresh_token=googlecalendar_client.refresh_token,
-                duracao_evento=company.appointment_duration_in_minutes,
-                hora_inicio_agenda=company.agenda_starting_time.strftime("%H:%M:%S"),
-                hora_final_agenda=company.agenda_ending_time.strftime("%H:%M:%S"),
+                credential_data=(
+                    googlecalendar_client.access_token,
+                    googlecalendar_client.refresh_token
+                ),
+                starting_time=company.agenda_starting_time.strftime("%H:%M:%S"),
+                ending_time=company.agenda_ending_time.strftime("%H:%M:%S"),
+                event_duration=company.appointment_duration_in_minutes,
                 timezone=googlecalendar_client.timezone,
                 client_db=googlecalendar_client,
                 db=db

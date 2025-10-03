@@ -1,43 +1,10 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Awaitable, List
-
-import pytz
+from typing import List, Literal
 from msgraph.generated.models.schedule_information import ScheduleInformation
+import pytz
 
 from app.db.new_models import Company
-
-
-class EventoTituloAgenda:
-    def __init__(self, endereco_agenda: str, titulo: str, start_datetime: str):
-        self.endereco_agenda = endereco_agenda
-        self.titulo = titulo
-        self.start_datetime = start_datetime
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(
-            endereco_agenda=data["endereco_agenda"],
-            titulo=data["titulo"],
-            start_datetime=data["start_datetime"]
-        )
-
-
-class EventoTituloAgendaDataNova:
-    def __init__(self, endereco_agenda: str, titulo: str, start_datetime: str, data_nova: str):
-        self.endereco_agenda = endereco_agenda
-        self.titulo = titulo
-        self.start_datetime = start_datetime
-        self.data_nova = data_nova
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(
-            endereco_agenda=data["endereco_agenda"],
-            titulo=data["titulo"],
-            start_datetime=data["start_datetime"],
-            data_nova=data["data_nova"]
-        )
 
 
 class Schedule:
@@ -45,6 +12,7 @@ class Schedule:
         self.availability_view = availability_view
         self.schedule_id = schedule_id
         self.schedule_items = schedule_items
+
 
     @classmethod
     def from_object(cls, data: ScheduleInformation):
@@ -71,6 +39,7 @@ class Schedule:
             schedule_id=data.schedule_id,
             schedule_items=schedule_items
         )
+
 
     @classmethod
     def from_dict(cls, data: dict, config: dict):
@@ -104,6 +73,7 @@ class Schedule:
             schedule_items=eventos
         )
 
+
     def to_string_list(self, company: Company) -> list[str]:
         start = datetime.strptime(company.agenda_starting_time, "%H:%M:%S")
         end = datetime.strptime(company.agenda_ending_time, "%H:%M:%S")
@@ -121,6 +91,7 @@ class Schedule:
 
             current += duration
         return slots
+
 
     @staticmethod
     def gerar_availability_view(eventos: List[dict], intervalo: int, hora_inicio: str, hora_final: str, data: str, timezone: pytz.timezone):
@@ -145,25 +116,49 @@ class Schedule:
                     blocks[i] = "2"
 
         return "".join(blocks)
-    
+
 
 class AgendaClient(ABC):
     @abstractmethod
-    def obter_horarios(self, **kwargs) -> Awaitable[List[Schedule]]:
+    def get_schedules(self, agendas: List[str], date: str) -> List[Schedule]:
         pass
 
-    @abstractmethod
-    def cadastrar_evento(self, **kwargs):
-        pass
 
     @abstractmethod
-    def confirmar_evento(self, dados: EventoTituloAgenda):
+    def add_event(self,
+            agenda_address: str,
+            date: str,
+            subject: str,
+            description: str | None = None,
+            location: str | None = None
+    ) -> bool:
         pass
 
-    @abstractmethod
-    def reagendar_evento(self, dados: EventoTituloAgendaDataNova):
-        pass
 
     @abstractmethod
-    def cancelar_evento(self, dados: EventoTituloAgenda, tipo_cancelamento: str):
+    def confirm_event(
+            agenda_address: str,
+            event_start_datetime: str,
+            event_subject: str
+    ) -> bool:
+        pass
+
+
+    @abstractmethod
+    def reschedule_event(
+            agenda_address: str,
+            event_start_datetime: str,
+            event_subject: str,
+            new_datetime: str
+    ) -> bool:
+        pass
+
+
+    @abstractmethod
+    def cancel_event(
+            agenda_address: str,
+            event_start_datetime: str,
+            event_subject: str,
+            event_cancellation_type: Literal['keep"', 'delete']
+    ) -> bool:
         pass

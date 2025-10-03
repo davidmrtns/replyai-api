@@ -6,7 +6,6 @@ from app.assistant_functions.assistant_function import register_function
 from app.db.database import retornar_sessao
 from app.db.new_models import Assistant, Company
 from app.exceptions.exceptions import FailedFunctionRunException
-from app.utils.agenda_client import EventoTituloAgenda
 from app.utils.create_agenda_client import create_agenda_client
 
 
@@ -71,18 +70,18 @@ async def cancel_or_confirm_event(
         agenda_client = create_agenda_client(company, db)
         if agenda_client is None:
             raise FailedFunctionRunException(detail='Could not create the agenda client', function_name=cancel_or_confirm_event.__name__)
-        
-        original_event_data = EventoTituloAgenda(
-            title=original_event_title,
-            start_datetime=original_event_start_datetime,
-            agenda_address=agenda_address
-        )
 
         if action == 'cancel':
-            await agenda_client.cancelar_evento(original_event_data, company.event_cancellation_type)
-            status = True # TODO: get the status from the cancel_event method, when improved
+            status = await agenda_client.cancel_event(
+                agenda_address,
+                original_event_start_datetime,
+                original_event_title,
+                company.event_cancellation_type
+            )
         elif action == 'confirm':
-            await agenda_client.confirmar_evento(original_event_data)
-            status = True # TODO: get the status from the confirm_event method, when improved
-    
+            status = await agenda_client.confirm_event(
+                agenda_address,
+                original_event_start_datetime,
+                original_event_title
+            )
     return status
