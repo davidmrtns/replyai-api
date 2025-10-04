@@ -69,4 +69,5 @@ async def transfer_contact_to_department(
         
         await change_awaiting_human_contact(contact, True, db)
         await transfer_contact(message_client, contact, department)
+        status = True
     return status
