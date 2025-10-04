@@ -24,7 +24,7 @@ def get_employees_doc():
 
 
 @register_function(get_employees_doc())
-def get_employees(assistant_id: str, **kwargs):
+def get_employees(assistant_id: str, thread_id: str, **kwargs):
     with retornar_sessao() as db:
         assistant_db = db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
         if assistant_db:

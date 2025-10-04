@@ -26,7 +26,7 @@ def get_current_datetime_doc():
 
 
 @register_function(get_current_datetime_doc())
-def get_current_datetime(assistant_id: str, **kwargs):
+def get_current_datetime(assistant_id: str, thread_id: str, **kwargs):
     timezone = "UTC"
 
     with retornar_sessao() as db:

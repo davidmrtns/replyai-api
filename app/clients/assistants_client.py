@@ -254,7 +254,7 @@ class AssistantsClient:
             arguments = json.loads(tool_call.function.arguments)
 
             try:
-                result = self._execute_function(function_name, arguments)
+                result = self._execute_function(function_name, run.thread_id, arguments)
 
                 function_outputs.append({
                     'tool_call_id': tool_call.id,
@@ -274,13 +274,13 @@ class AssistantsClient:
         return False
 
 
-    def _execute_function(self, function_name, arguments):
+    def _execute_function(self, function_name: str, thread_id: str, arguments):
         func = FUNCTION_REGISTRY.get(function_name)
         if not func:
             raise ValueError(f'Unknown function called: {function_name}')
 
         func = func.get('function')
-        return func(self.openai_assistant_id, **arguments)
+        return func(self.openai_assistant_id, thread_id, **arguments)
 
 
     def run_instruction(self, thread_id: str, instructions: str) -> str:

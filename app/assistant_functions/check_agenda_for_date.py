@@ -40,6 +40,7 @@ def check_agenda_for_date_doc():
 @register_function(check_agenda_for_date_doc())
 async def check_agenda_for_date(
         assistant_id: str,
+        thread_id: str,
         agenda_code: str,
         suggestion_date: str
 ): # TODO: add return typing

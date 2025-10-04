@@ -55,6 +55,7 @@ def add_event_to_agenda_doc():
 @register_function(add_event_to_agenda_doc())
 async def add_event_to_agenda(
         assistant_id: str,
+        thread_id: str,
         agenda_code: str,
         date: str,
         title: str,

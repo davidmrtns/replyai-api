@@ -51,6 +51,7 @@ def cancel_or_confirm_event_doc():
 @register_function(cancel_or_confirm_event_doc())
 async def cancel_or_confirm_event(
         assistant_id: str,
+        thread_id: str,
         agenda_address: str,
         original_event_title: str,
         original_event_start_datetime: str,
