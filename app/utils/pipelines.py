@@ -28,26 +28,6 @@ async def _response_pipeline(
     return False
 
 
-async def _end_contact_pipeline(
-        response: AssistantReply,
-        is_audio: bool,
-        contact: Contact,
-        company_data: CompanyData,
-        assistant: AssistantsClient,
-        db: Session
-) -> bool:
-    try:
-        message, media_code = response.message, response.media_code
-        company, message_client = company_data
-
-        await process_and_send_message(message, is_audio, media_code, contact, company, message_client, assistant, db)
-        await end_contact(contact, message_client, db)
-        return True
-    except Exception as e:
-        logger.exception(f"Error in end contact pipeline: {e}")
-    return False
-
-
 async def _migrate_assistant_pipeline(
         response: AssistantReply,
         is_audio: bool,
@@ -74,6 +54,5 @@ async def _migrate_assistant_pipeline(
 
 PIPELINES = {
     "R": _response_pipeline,
-    "E": _end_contact_pipeline,
     "M": _migrate_assistant_pipeline
 }
