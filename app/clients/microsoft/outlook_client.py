@@ -175,6 +175,16 @@ class OutlookClient(AgendaClient):
             return False
 
 
+    async def get_timezones(self):
+        try:
+            timezones = await self.graph_client.me.outlook.supported_time_zones.get()
+            return [{'alias': item.alias, 'display_name': item.display_name} for item in timezones.value]
+        except Exception as e:
+            # TODO: throw exception
+            print(f'Error while fetching timezones: {e}')
+            return False
+
+
     async def _select_specific_event(
             self,
             agenda_address: str,

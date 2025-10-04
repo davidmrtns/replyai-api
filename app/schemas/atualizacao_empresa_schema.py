@@ -98,8 +98,8 @@ class InformacoesAgenda(BaseModel):
         return valor if valor.strip() else None
 
 
-class InformacoesFusoHorario(BaseModel):
-    fuso_horario: str
+class TimezoneRequest(BaseModel):
+    timezone: str
 
 
 class InformacoesCRM(BaseModel):

@@ -26,15 +26,15 @@ class AgendaSchema(BaseModel):
     endereco: str
     atalho: str
 
-class GoogleCalendarClientSchema(BaseModel):
+class GoogleCalendarSchema(BaseModel):
     id: Optional[int] = None
     client_email: str
     timezone: str
 
 class OutlookClientSchema(BaseModel):
     id: Optional[int] = None
-    usuarioPadrao: str
-    timeZone: str
+    default_user: str
+    timezone: str
 
 class EvolutionAPIClientSchema(BaseModel):
     id: int
@@ -149,7 +149,7 @@ class EmpresaSchema(BaseModel):
     digisac_client: Optional[List[DigisacClientSchema]]
     evolutionapi_client: Optional[List[EvolutionAPIClientSchema]] = None
     outlook_client: Optional[List[OutlookClientSchema]]
-    googlecalendar_client: Optional[List[GoogleCalendarClientSchema]]
+    googlecalendar_client: Optional[List[GoogleCalendarSchema]]
     rdstationcrm_client: Optional[List[RDStationCRMClientSchema]]
     asaas_client: Optional[List[AsaasClientSchema]]
 

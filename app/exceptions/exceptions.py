@@ -44,6 +44,13 @@ class AssistantEditingException(AppException):
         super().__init__(**kwargs)
 
 
+class IntegrationAuthException(AppException):
+    def __init__(self, integration_name: str, company_slug: str, **kwargs):
+        self.integration_name = integration_name or "Unknown integration"
+        self.company_slug = company_slug or "Unknown company slug"
+        super().__init__(**kwargs)
+
+
 class RunException(Exception):
     def __init__(self, detail: str, run_id: str, thread_id: str):
         self.detail = detail
