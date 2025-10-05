@@ -125,7 +125,8 @@ class AgendaClient(ABC):
 
 
     @abstractmethod
-    def add_event(self,
+    def add_event(
+            self,
             agenda_address: str,
             date: str,
             subject: str,
