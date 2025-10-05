@@ -2,11 +2,11 @@ import json
 
 from sqlalchemy.orm import Session
 
-from app.db.models import AsaasClient
+from app.clients.asaas_client import AsaasClient
+from app.db.models import AsaasClient as AsaasClientDB
 from app.db.new_models import Assistant, Company
 from app.services import RespostaFinanceiro
 from app.types.types import BillingResponse
-from app.utils.asaas import Asaas
 from app.clients.assistants_client import AssistantsClient
 from app.utils.logger import logger
 
@@ -15,16 +15,16 @@ def create_financial_clients(
         company: Company,
         db: Session,
         client_number: int | None = None
-) -> list[Asaas] | Asaas:
-    if company.financial_client_type != "asaas":
+) -> list[AsaasClient] | AsaasClient:
+    if company.financial_client_type != 'asaas':
         return []
 
-    query = db.query(AsaasClient).filter_by(id_empresa=company.id)
+    query = db.query(AsaasClientDB).filter_by(id_empresa=company.id)
 
     if client_number is not None:
         query = query.filter_by(client_number=client_number)
 
-    clients = [Asaas(token=c.token) for c in query.all()]
+    clients = [AsaasClient(token=c.token) for c in query.all()]
 
     return clients[0] if client_number is not None else clients
 

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
+from app.clients.financial_client import FinancialClient
 from app.clients.message_client import MessageClient
 from app.db.new_models import Contact, Company
 from app.db.models import Agenda
@@ -12,7 +13,6 @@ from app.services.contact_service import get_or_create_contact, reset_contact, t
 from app.services.message_service import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
 from app.utils.create_agenda_client import create_agenda_client
-from app.utils.financial_client import FinancialClient
 
 
 async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Session):
@@ -114,7 +114,7 @@ async def enviar_cobranca_inadimplente(data: str, empresa: Company, db: Session)
 
 async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_boleto: bool, empresa: Company, message_client: MessageClient, financial_client: FinancialClient, db: Session):
     try:
-        cliente = financial_client.obter_cliente(id_cliente=cobranca.get("customer", ""))
+        cliente = financial_client.get_customer(id_cliente=cobranca.get("customer", ""))
         if cliente:
             telefone = cliente.get("mobilePhone", "")
             nome = cliente.get("name", "")
@@ -147,7 +147,7 @@ async def processar_cobranca(acao: str, cobranca: dict, data_atual: str, enviar_
 
 async def processar_nf(acao: str, nota: dict, data_atual: str, empresa: Company, message_client: MessageClient, financial_client: FinancialClient, db: Session):
     try:
-        cliente = financial_client.obter_cliente(id_cliente=nota.get("customer", ""))
+        cliente = financial_client.get_customer(id_cliente=nota.get("customer", ""))
         if cliente:
             telefone = cliente.get("mobilePhone", "")
             nome = cliente.get("name", "")
