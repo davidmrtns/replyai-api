@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 
+from app.clients.crm_client import CRMClient
+from app.clients.rdstation_crm import RDStationClient
 from app.db.new_models import RDStationCRMClient, RDStationCRMDealStage
 from app.db.new_models import Company, Contact
-from app.utils.crm_client import CRMClient
-from app.utils.rdstation_crm import RDStationCRM
 
 
 def create_crm_client(company: Company, db: Session) -> CRMClient | None:
@@ -12,11 +12,11 @@ def create_crm_client(company: Company, db: Session) -> CRMClient | None:
         if rdstationcrm_client:
             initial_deal_stage = db.query(RDStationCRMDealStage).filter_by(is_initial_deal_stage=True, rdstationcrm_client_id=rdstationcrm_client.id).first()
             if initial_deal_stage:
-                return RDStationCRM(
-                    token=rdstationcrm_client.token,
-                    user_id=initial_deal_stage.user_id,
-                    deal_stage_id=initial_deal_stage.deal_stage_id,
-                    deal_source_id=rdstationcrm_client.default_source_id
+                return RDStationClient(
+                    rdstationcrm_client.token,
+                    initial_deal_stage.deal_stage_id,
+                    rdstationcrm_client.default_source_id,
+                    initial_deal_stage.user_id
                 )
     return None
 
@@ -43,7 +43,7 @@ async def move_lead(
         )
 
         if deal_stage_db:
-            crm_client.mudar_etapa(deal_id=contact.deal_id, deal_stage_id=deal_stage_db.deal_stage_id, user_id=deal_stage_db.user_id)
+            crm_client.change_stage(deal_id=contact.deal_id, deal_stage_id=deal_stage_db.deal_stage_id, user_id=deal_stage_db.user_id)
             status = True
 
     return status

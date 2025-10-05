@@ -70,9 +70,7 @@ async def create_contact(
     deal_id = None
     crm_client = create_crm_client(company, db)
     if crm_client and contact_data:
-        deal_id = crm_client.criar_lead(nome_negociacao=contact_data.contact_name,
-                                        nome_contato=contact_data.contact_name,
-                                        telefone_contato=contact_data.phone_number)
+        deal_id = crm_client.create_lead(contact_data.contact_name, contact_data.contact_name, contact_data.phone_number)
 
     contact = Contact(
         contact_id=contact_id,
