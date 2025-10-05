@@ -8,7 +8,7 @@ from app.routers.media.media_helpers import get_media
 from app.routers.routers_helpers import check_company_access
 from app.schemas.atualizacao_empresa_schema import InformacoesMidia, parse_form_data_midia
 from app.schemas.empresa_schema import MidiaSchema as MidiaSchemaEmpresa
-from app.utils.azure_blob_service import AzureBlobService
+from app.clients.microsoft.azure_blob_storage_client import AzureBlobStorageClient
 
 
 router = APIRouter()
@@ -23,9 +23,9 @@ async def create_media(
         db: Session = Depends(obter_sessao)
 ):
     filename = f"{media_file.filename}"
-    azure_blob_service_client = AzureBlobService()
+    azure_blob_storage_client = AzureBlobStorageClient()
 
-    file_url, upload_filename = azure_blob_service_client.subir_arquivo(media_file.file, filename)
+    file_url, upload_filename = azure_blob_storage_client.upload_file(media_file.file, filename)
     if file_url:
         mimetype = media_file.content_type
         media = Midia(
@@ -69,8 +69,11 @@ async def delete_media(
         company: Company = Depends(check_company_access),
         db: Session = Depends(obter_sessao)
 ):
+    azure_blob_storage_client = AzureBlobStorageClient()
     media = get_media(company.id, media_id, db)
 
-    db.delete(media)
-    db.commit()
-    return True
+    if media and azure_blob_storage_client.delete_file(media.nome):
+        db.delete(media)
+        db.commit()
+        return True
+    return False
