@@ -10,7 +10,7 @@ from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import MessageData
 from app.utils.download_file import download_file
 from app.clients.assistants_client import AssistantsClient
-from app.utils.eleven_labs import ElevenLabs
+from app.clients.elevenlabs_client import ElevenLabsClient
 from app.clients.message_client import MediaMessageData, MessageClient
 from app.utils.string_replacements import replace_abbreviations
 
@@ -112,9 +112,9 @@ async def _generate_audio_message(
         if assistant_db:
             voice = assistant_db.voice
             if voice and company.elevenlabs_api_key:
-                elevenlabs_client = ElevenLabs(company.elevenlabs_api_key)
+                elevenlabs_client = ElevenLabsClient(company.elevenlabs_api_key)
                 text_message = replace_abbreviations(text_message)
-                base64_audio_message = await elevenlabs_client.gerar_audio(
+                base64_audio_message = await elevenlabs_client.generate_audio(
                     text_message,
                     voice.elevenlabs_voice_id,
                     voice.stability,

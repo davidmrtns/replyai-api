@@ -11,11 +11,11 @@ from app.db.database import obter_sessao
 from app.db.new_models import Company, Voice
 from app.routers.empresa import verificar_permissao_empresa
 from app.schemas.integrations_schemas import VozSchema, parse_form_data_voz
-from app.utils.eleven_labs import ElevenLabs
+from app.clients.elevenlabs_client import ElevenLabsClient
 
 
 def obter_elevenlabs_client(empresa: Company = Depends(verificar_permissao_empresa)):
-    return ElevenLabs(api_key=empresa.elevenlabs_api_key)
+    return ElevenLabsClient(elevenlabs_api_key=empresa.elevenlabs_api_key)
 
 
 router = APIRouter()
@@ -24,7 +24,7 @@ router = APIRouter()
 async def criar_voz(
         slug: str,
         empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
-        cliente: Annotated[ElevenLabs, Depends(obter_elevenlabs_client)],
+        cliente: Annotated[ElevenLabsClient, Depends(obter_elevenlabs_client)],
         request: VozSchema = Depends(parse_form_data_voz),
         arquivos: List[UploadFile] = File(...),
         db: Session = Depends(obter_sessao)
@@ -38,7 +38,7 @@ async def criar_voz(
             temp.close()
             temp_files.append(temp.name)
 
-        voz = cliente.criar_voz(nome=request.nome, descricao=request.descricao, arquivos=temp_files)
+        voz = cliente.add_voice(voice_name=request.nome, description=request.descricao, voice_files=temp_files)
         if voz.voice_id:
             voz_db = Voice(
                 nome=request.nome,
@@ -62,13 +62,13 @@ async def criar_voz(
 async def obter_voz(
         slug: str,
         empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
-        cliente: Annotated[ElevenLabs, Depends(obter_elevenlabs_client)],
+        cliente: Annotated[ElevenLabsClient, Depends(obter_elevenlabs_client)],
         id: int,
         db: Session = Depends(obter_sessao)
 ):
     voz_db = db.query(Voice).filter_by(id=id, id_empresa=empresa.id).first()
     if voz_db:
-        voz = cliente.obter_voz(voice_id=voz_db.voiceId)
+        voz = cliente.get_voice(voice_id=voz_db.voiceId)
         if voz:
             return {
                 "preview_url": voz.preview_url,
@@ -82,12 +82,12 @@ async def editar_voz(
         id: int,
         request: VozSchema,
         empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
-        cliente: Annotated[ElevenLabs, Depends(obter_elevenlabs_client)],
+        cliente: Annotated[ElevenLabsClient, Depends(obter_elevenlabs_client)],
         db: Session = Depends(obter_sessao)
 ):
     voz_db = db.query(Voice).filter_by(id=id, id_empresa=empresa.id).first()
     if voz_db:
-        resposta = cliente.editar_voz(voice_id=voz_db.voiceId, nome=request.nome, descricao=request.descricao)
+        resposta = cliente.edit_voice(voice_id=voz_db.voiceId, voice_name=request.nome, description=request.descricao)
 
         if resposta:
             voz_db.nome = request.nome
@@ -104,12 +104,12 @@ async def excluir_voz(
         slug: str,
         id: int,
         empresa: Annotated[Company, Depends(verificar_permissao_empresa)],
-        cliente: Annotated[ElevenLabs, Depends(obter_elevenlabs_client)],
+        cliente: Annotated[ElevenLabsClient, Depends(obter_elevenlabs_client)],
         db: Session = Depends(obter_sessao)
 ):
     voz_db = db.query(Voice).filter_by(id=id, id_empresa=empresa.id).first()
     if voz_db:
-        cliente.excluir_voz(voz_db.voiceId)
+        cliente.delete_voice(voz_db.voiceId)
         db.delete(voz_db)
         db.commit()
         return True
