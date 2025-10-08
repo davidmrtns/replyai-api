@@ -16,13 +16,6 @@ async def get_company_data(slug: str, token: str, db: Session) -> CompanyData:
     return None
 
 
-async def get_agenda(company: Company, shortcut: str, db: Session) -> Agenda | None:
-    if company:
-        agenda = db.query(Agenda).filter_by(atalho=shortcut, id_empresa=company.id).first()
-        return agenda
-    return None
-
-
 async def get_assistant_from_company(
         company: Company,
         purpose: str | None,
