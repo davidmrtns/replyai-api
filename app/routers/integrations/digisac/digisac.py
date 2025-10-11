@@ -10,6 +10,7 @@ from app.routers.integrations.digisac.digisac_helpers import get_department_from
 from app.routers.routers_helpers import check_company_access
 from app.schemas.integrations_schemas import DigisacClientSchema, DigisacDepartmentSchema
 from app.schemas.empresa_schema import DigisacClientSchema as DigisacClientSchemaEmpresa, DepartamentoSchema as DigisacDepartmentSchemaEmpresa
+from app.utils.api_key_encryption import encrypt_api_key
 
 
 router = APIRouter()
@@ -137,7 +138,7 @@ async def create_digisac_client(
     digisac_client = DigisacClientDB(
         digisac_slug=request.slug,
         service_id='',
-        digisac_token=request.token,
+        digisac_token=encrypt_api_key(request.token),
         digisac_default_user='',
         company_id=company.id
     )
@@ -158,7 +159,7 @@ async def edit_digisac_client(
     digisac_client_db = get_digisac_client_from_db(company, db)
 
     digisac_client_db.digisacSlug = request.slug
-    digisac_client_db.digisacToken = request.token
+    digisac_client_db.digisacToken = encrypt_api_key(request.token)
     digisac_client_db.digisacDefaultUser = request.user_id
     digisac_client_db.service_id = request.service_id
     

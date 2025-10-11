@@ -4,6 +4,7 @@ from requests import Response
 
 from app.db.new_models import Company, EvolutionAPIClient as EvolutionAPIClientDB
 from app.clients.evolutionapi_client import EvolutionAPIClient
+from app.utils.api_key_encryption import encrypt_api_key
 
 
 async def get_evolutionapi_client(
@@ -32,7 +33,7 @@ async def add_evolutionapi_client_to_db(response: Response, company_id: int, db:
         return None
 
     evolutionapi_client = EvolutionAPIClientDB(
-        api_key=db_api_key,
+        api_key=encrypt_api_key(db_api_key),
         instance_name=db_instance_name,
         company_id=company_id
     )

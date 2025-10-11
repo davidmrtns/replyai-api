@@ -10,6 +10,7 @@ from app.clients.microsoft.outlook_client import OutlookClient
 from app.db.database import obter_sessao
 from app.db.new_models import Company
 from app.db.new_models import OutlookClient as OutlookClientDB
+from app.utils.api_key_encryption import encrypt_api_key
 from ...routers_helpers import check_company_access
 from .microsoft_helpers import generate_microsoft_auth_credentials, get_outlook_client_from_db
 from app.schemas.atualizacao_empresa_schema import TimezoneRequest
@@ -44,14 +45,14 @@ async def auth_callback(
         outlook_client_db = await get_outlook_client_from_db(company, db, raise_error_if_not_found=False)
 
         if outlook_client_db:
-            outlook_client_db.access_token = access_token
-            outlook_client_db.refresh_token = refresh_token
+            outlook_client_db.access_token = encrypt_api_key(access_token)
+            outlook_client_db.refresh_token = encrypt_api_key(refresh_token)
             outlook_client_db.expires_at = expires_at
             outlook_client_db.default_user = user_email
         else:
             outlook_client = OutlookClientDB(
-                access_token=access_token,
-                refresh_token=refresh_token,
+                access_token=encrypt_api_key(access_token),
+                refresh_token=encrypt_api_key(refresh_token),
                 expires_in=expires_in,
                 expires_at=expires_at,
                 default_user=user_email,

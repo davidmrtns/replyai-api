@@ -2,10 +2,14 @@ import base64
 from elevenlabs import Voice, VoiceSettings
 from elevenlabs.client import ElevenLabs as el
 
+from app.utils.api_key_encryption import decrypt_api_key
+
 
 class ElevenLabsClient:
     def __init__(self, elevenlabs_api_key: str):
-        self.client = el(elevenlabs_api_key)
+        decrypted_api_key = decrypt_api_key(elevenlabs_api_key)
+
+        self.client = el(decrypted_api_key)
 
 
     async def generate_audio(

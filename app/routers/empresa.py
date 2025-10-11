@@ -15,6 +15,7 @@ from app.schemas.atualizacao_empresa_schema import InformacoesBasicas, Informaco
     InformacoesCriarEmpresa, InformacoesColaborador
 from app.schemas.empresa_schema import EmpresaSchema, RDStationCRMClientSchema, RDStationCRMDealStageSchema, AsaasClientSchema, \
     EmpresaMinSchema, ColaboradorSchema
+from app.utils.api_key_encryption import encrypt_api_key
 
 
 async def verificar_permissao_empresa(
@@ -57,8 +58,8 @@ async def criar_empresa(
                 slug=request.slug,
                 token=token,
                 fuso_horario=request.fuso_horario,
-                openai_api_key=request.openai_api_key,
-                elevenlabs_api_key=request.elevenlabs_api_key,
+                openai_api_key=encrypt_api_key(request.openai_api_key),
+                elevenlabs_api_key=encrypt_api_key(request.elevenlabs_api_key),
                 empresa_ativa=request.empresa_ativa
             )
             db.add(empresa)
@@ -85,8 +86,8 @@ async def alterar_informacoes_basicas(
     empresa.nome = request.nome
     empresa.fuso_horario = request.fuso_horario
     empresa.empresa_ativa = request.empresa_ativa
-    empresa.openai_api_key = request.openai_api_key
-    empresa.elevenlabs_api_key = request.elevenlabs_api_key
+    empresa.openai_api_key = encrypt_api_key(request.openai_api_key)
+    empresa.elevenlabs_api_key = encrypt_api_key(request.elevenlabs_api_key)
     db.commit()
     return empresa
 
@@ -212,7 +213,7 @@ async def adicionar_cliente_rdstation(
         raise HTTPException(status_code=404, detail="Essa empresa já possui um cliente do RD Station CRM")
 
     rdstationcrm_client = RDStationCRMClient(
-        token=request.token,
+        token=encrypt_api_key(request.token),
         id_fonte_padrao=request.id_fonte_padrao,
         id_empresa=empresa.id
     )
@@ -233,7 +234,7 @@ async def alterar_informacoes_rdstation(
     if not rdstationcrm_client:
         raise HTTPException(status_code=404, detail="Cliente do RD Station CRM não encontrado para essa empresa")
 
-    rdstationcrm_client.token = request.token
+    rdstationcrm_client.token = encrypt_api_key(request.token)
     rdstationcrm_client.id_fonte_padrao = request.id_fonte_padrao
     db.commit()
     return rdstationcrm_client
@@ -328,7 +329,7 @@ async def adicionar_cliente_asaas(
         raise HTTPException(status_code=409, detail="Essa empresa já possui um cliente do Asaas com esse número de cliente")
 
     asaas_client = AsaasClient(
-        token=request.token,
+        token=encrypt_api_key(request.token),
         rotulo=request.rotulo,
         client_number=request.numero_cliente,
         id_empresa=empresa.id
@@ -350,7 +351,7 @@ async def alterar_informacoes_cliente_asaas(
     if not asaas_client:
         raise HTTPException(status_code=404, detail="Cliente do Asaas não encontrado para essa empresa")
 
-    asaas_client.token = request.token
+    asaas_client.token = encrypt_api_key(request.token)
     asaas_client.rotulo = request.rotulo
     db.commit()
     return asaas_client

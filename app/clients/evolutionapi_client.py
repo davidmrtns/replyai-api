@@ -9,6 +9,7 @@ import requests
 from requests import Response
 
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
+from app.utils.api_key_encryption import decrypt_api_key
 from .message_client import ContactData, FileData, MediaMessageData, MessageClient
 
 
@@ -18,8 +19,10 @@ GLOBAL_API_KEY = os.getenv('EVOLUTIONAPI_GLOBAL_KEY')
 
 class EvolutionAPIClient(MessageClient):
     def __init__(self, api_key: str, instance_name: str, delay_amount: int):
+        decrypted_api_key = decrypt_api_key(api_key)
+
         self.headers = {
-            'apikey': api_key,
+            'apikey': decrypted_api_key,
             'Content-Type': 'application/json'
         }
         self.instance_name = instance_name

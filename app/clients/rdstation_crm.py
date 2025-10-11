@@ -1,6 +1,8 @@
 import json
 import requests
 
+from app.utils.api_key_encryption import decrypt_api_key
+
 from .crm_client import CRMClient
 
 
@@ -12,12 +14,14 @@ class RDStationClient(CRMClient):
             default_deal_source_id: str,
             initial_deal_stage_user_id: str,
     ):
+        decrypted_api_key = decrypt_api_key(rdstation_token)
+
         self.headers = {
             'Accept': 'application/json',
             "Content-Type": "application/json"
         }
         self.base_url = 'https://crm.rdstation.com/api/v1'
-        self.rdstation_token = rdstation_token
+        self.rdstation_token = decrypted_api_key
         self.initial_deal_stage_id = initial_deal_stage_id
         self.default_deal_source_id = default_deal_source_id
         self.initial_deal_stage_user_id = initial_deal_stage_user_id

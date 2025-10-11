@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from azure.core.credentials import TokenCredential, AccessToken
 
 from app.db.new_models import OutlookClient as OutlookClientDB
+from app.utils.api_key_encryption import decrypt_api_key
 
 
 class CredentialData(NamedTuple):
@@ -20,8 +21,11 @@ class OutlookAccessTokenCredential(TokenCredential):
         client_id = os.getenv('MICROSOFT_CLIENT_ID')
         client_secret = os.getenv('MICROSOFT_CLIENT_SECRET')
 
-        self.access_token = credential_data.access_token
-        self.refresh_token = credential_data.refresh_token
+        decrypted_access_token = decrypt_api_key(credential_data.access_token)
+        decrypted_refresh_token = decrypt_api_key(credential_data.refresh_token)
+
+        self.access_token = decrypted_access_token
+        self.refresh_token = decrypted_refresh_token
         self.expires_at = credential_data.expires_at
         self.expires_in = credential_data.expires_in
         self.client_db = client_db

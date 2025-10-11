@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db.database import obter_sessao
 from app.db.new_models import Company
 from app.db.new_models import GoogleCalendarClient as GoogleCalendarClientDB
+from app.utils.api_key_encryption import encrypt_api_key
 from ...routers_helpers import check_company_access
 from .google_helpers import generate_google_auth_credentials, get_google_calendar_client_from_db
 from app.schemas.atualizacao_empresa_schema import TimezoneRequest
@@ -34,14 +35,14 @@ async def auth_callback(
         google_calendar_client_db = await get_google_calendar_client_from_db(company, db, raise_error_if_not_found=False)
 
         if google_calendar_client_db:
-            google_calendar_client_db.access_token = access_token
-            google_calendar_client_db.refresh_token = refresh_token
+            google_calendar_client_db.access_token = encrypt_api_key(access_token)
+            google_calendar_client_db.refresh_token = encrypt_api_key(refresh_token)
             google_calendar_client_db.expires_in = str(expires_in)
             google_calendar_client_db.client_email = user_email
         else:
             google_calendar_client = GoogleCalendarClientDB(
-                access_token=access_token,
-                refresh_token=refresh_token,
+                access_token=encrypt_api_key(access_token),
+                refresh_token=encrypt_api_key(refresh_token),
                 expires_in=expires_in,
                 client_email=user_email,
                 timezone='', # TODO: make it optional or set a default value

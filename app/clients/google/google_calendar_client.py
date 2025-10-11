@@ -8,6 +8,8 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from sqlalchemy.orm import Session
 
+from app.utils.api_key_encryption import decrypt_api_key
+
 from ..agenda_client import AgendaClient, Schedule
 from .google_calendar_client_helpers import CredentialData
 from app.db.new_models import GoogleCalendarClient as GoogleCalendarClientDB
@@ -24,10 +26,13 @@ class GoogleCalendar(AgendaClient):
             client_db: GoogleCalendarClientDB,
             db: Session
     ):
+        decrypted_access_token = decrypt_api_key(credential_data.access_token)
+        decrypted_refresh_token = decrypt_api_key(credential_data.refresh_token)
+        
         credentials = Credentials.from_authorized_user_info(
             info={
-                'access_token': credential_data.access_token,
-                'refresh_token': credential_data.refresh_token,
+                'access_token': decrypted_access_token,
+                'refresh_token': decrypted_refresh_token,
                 'client_id': os.getenv('GOOGLE_CLIENT_ID'),
                 'client_secret': os.getenv('GOOGLE_CLIENT_SECRET'),
                 'token_uri': 'https://oauth2.googleapis.com/token',

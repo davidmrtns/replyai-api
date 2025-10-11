@@ -15,6 +15,7 @@ from app.assistant_functions.assistant_function import FUNCTION_REGISTRY
 from app.clients.message_client import FileData
 from app.db.new_models import Assistant
 from app.exceptions.exceptions import AIResponseException, FailedRunException, PendingRunException
+from app.utils.api_key_encryption import decrypt_api_key
 from app.utils.logger import logger
 
 
@@ -30,7 +31,9 @@ class RunResult(NamedTuple):
 
 class AssistantsClient:
     def __init__(self, assistant_name: str, openai_assistant_id: str, openai_api_key: str):
-        self.client = OpenAI(http_client=CustomHTTPClient(), api_key=openai_api_key)
+        decrypted_api_key = decrypt_api_key(openai_api_key)
+
+        self.client = OpenAI(http_client=CustomHTTPClient(), api_key=decrypted_api_key)
         self.assistant_name = assistant_name
         self.openai_assistant_id = openai_assistant_id
         self.messages = []

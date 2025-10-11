@@ -1,14 +1,18 @@
 import requests
 from requests import Response
 
+from app.utils.api_key_encryption import decrypt_api_key
+
 from .financial_client import FinancialClient
 
 
 class AsaasClient(FinancialClient):
     def __init__(self, token: str):
+        decrypted_api_key = decrypt_api_key(token)
+
         self.headers = {
             'accept': 'application/json',
-            'access_token': token
+            'access_token': decrypted_api_key
         }
         self.base_url = 'https://api.asaas.com/v3'
 

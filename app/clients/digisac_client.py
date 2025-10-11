@@ -8,12 +8,15 @@ import requests
 from requests import Response
 from app.clients.message_client import ContactData, FileData, MediaMessageData, MessageClient
 from app.schemas.digisac_schema import DigisacRequest
+from app.utils.api_key_encryption import decrypt_api_key
 
 
 class DigisacClient(MessageClient):
     def __init__(self, digisac_slug: str, service_id: str, default_user_id: str, digisac_token: str):
+        decrypted_api_key = decrypt_api_key(digisac_token)
+
         self.headers = {
-            'Authorization': f'Bearer {digisac_token}',
+            'Authorization': f'Bearer {decrypted_api_key}',
             'Content-Type': 'application/json'
         }
         self.digisac_slug = digisac_slug
