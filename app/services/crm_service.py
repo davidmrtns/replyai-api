@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.clients.crm_client import CRMClient
-from app.clients.rdstation_crm import RDStationClient
+from app.clients.rdstation_client import RDStationClient
 from app.db.new_models import RDStationCRMClient, RDStationCRMDealStage
 from app.db.new_models import Company, Contact
 
