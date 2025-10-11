@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.db.new_models import Contact
 from app.services.company_service import get_assistant_from_company
-from app.services.contact_service import end_contact, update_current_assistant
+from app.services.contact_service import update_current_assistant
 from app.services.message_service import process_and_send_message
 from app.services.thread_service import execute_thread
 from app.types.types import CompanyData
