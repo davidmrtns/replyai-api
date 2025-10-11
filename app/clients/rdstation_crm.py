@@ -55,7 +55,7 @@ class RDStationClient(CRMClient):
         }
 
         response = requests.post(endpoint, headers=self.headers, json=request)
-        response_obj: dict = json.loads(response.content)
+        response_obj: dict = json.loads(response.content) # TODO: rename to response_json
         return response_obj.get('id', None)
 
 

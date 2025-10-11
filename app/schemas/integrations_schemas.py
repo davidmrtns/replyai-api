@@ -40,9 +40,9 @@ async def parse_form_data_voz(
 class EvolutionInstanceSchema(BaseModel):
     nome_instancia: str
 
-class EvolutionWebhookSchema(BaseModel):
+class EvolutionAPIWebhookSchema(BaseModel):
     webhook_url: str
-    habilitado: bool
+    is_enabled: bool
 
 
 class DigisacClientSchema(BaseModel):

@@ -12,6 +12,10 @@ from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from .message_client import ContactData, FileData, MediaMessageData, MessageClient
 
 
+BASE_URL = os.getenv('EVOLUTIONAPI_SERVER_URL')
+GLOBAL_API_KEY = os.getenv('EVOLUTIONAPI_GLOBAL_KEY')
+
+
 class EvolutionAPIClient(MessageClient):
     def __init__(self, api_key: str, instance_name: str, delay_amount: int):
         self.headers = {
@@ -20,7 +24,6 @@ class EvolutionAPIClient(MessageClient):
         }
         self.instance_name = instance_name
         self.delay_amount = delay_amount
-        self.base_url = os.getenv('EVOLUTIONAPI_SERVER_URL')
 
 
     def send_message(
@@ -33,9 +36,9 @@ class EvolutionAPIClient(MessageClient):
             assistant_name: str
     ) -> Response:
         endpoint = (
-            f'{self.base_url}/message/sendText/{self.instance_name}' if message_type == 'text' else
-            f'{self.base_url}/message/sendWhatsAppAudio/{self.instance_name}' if message_type == 'audio' else
-            f'{self.base_url}/message/sendMedia/{self.instance_name}' if message_type == 'media' else
+            f'{BASE_URL}/message/sendText/{self.instance_name}' if message_type == 'text' else
+            f'{BASE_URL}/message/sendWhatsAppAudio/{self.instance_name}' if message_type == 'audio' else
+            f'{BASE_URL}/message/sendMedia/{self.instance_name}' if message_type == 'media' else
             None
         )
 
@@ -71,7 +74,7 @@ class EvolutionAPIClient(MessageClient):
             phone_number: str,
             presence_type: Literal['composing', 'recording']
     ) -> None:
-        endpoint = f'{self.base_url}/chat/sendPresence/{self.instance_name}'
+        endpoint = f'{BASE_URL}/chat/sendPresence/{self.instance_name}'
         payload = {
             'number': phone_number,
             'options': {
@@ -114,19 +117,18 @@ class EvolutionAPIClient(MessageClient):
         return filename, mimetype, file_stream
 
 
+    @staticmethod
     def create_instance(
-            self,
-            global_api_key: str,
             instance_name: str
     ) -> Response:
-        endpoint = f'{self.base_url}/instance/create'
+        endpoint = f'{BASE_URL}/instance/create'
         payload = {
             'instanceName': instance_name,
             'integration': 'WHATSAPP-BAILEYS'
         }
 
         custom_headers = {
-            'apikey': global_api_key,
+            'apikey': GLOBAL_API_KEY,
             'Content-Type': 'application/json'
         }
 
@@ -135,7 +137,7 @@ class EvolutionAPIClient(MessageClient):
 
 
     def fetch_instance(self) -> Response:
-        endpoint = f'{self.base_url}/instance/fetchInstances'
+        endpoint = f'{BASE_URL}/instance/fetchInstances'
         response = requests.get(endpoint, headers=self.headers, params={
             'instanceName': self.instance_name
         })
@@ -143,32 +145,33 @@ class EvolutionAPIClient(MessageClient):
 
 
     def connect_instance(self) -> Response:
-        endpoint = f'{self.base_url}/instance/connect/{self.instance_name}'
+        endpoint = f'{BASE_URL}/instance/connect/{self.instance_name}'
         response = requests.get(endpoint, headers=self.headers)
         return response
     
 
     def check_instance_connection_state(self) -> Response:
-        endpoint = f'{self.base_url}/instance/connectionState/{self.instance_name}'
+        endpoint = f'{BASE_URL}/instance/connectionState/{self.instance_name}'
         response = requests.get(endpoint, headers=self.headers)
         return response
     
 
     def restart_instance(self) -> Response:
-        endpoint = f'{self.base_url}/instance/restart/{self.instance_name}'
+        endpoint = f'{BASE_URL}/instance/restart/{self.instance_name}'
         response = requests.put(endpoint, headers=self.headers)
         return response
     
 
     def logout_instance(self) -> Response:
-        endpoint = f'{self.base_url}/instance/logout/{self.instance_name}'
+        endpoint = f'{BASE_URL}/instance/logout/{self.instance_name}'
         response = requests.delete(endpoint, headers=self.headers)
         return response
-    
 
-    def check_evolutionapi_connection(self) -> Response:
-        endpoint = f"{self.base_url}/"
-        response = requests.get(endpoint, headers=self.headers)
+
+    @staticmethod
+    def check_evolutionapi_connection() -> Response:
+        endpoint = f'{BASE_URL}/'
+        response = requests.get(endpoint)
         return response
     
 
@@ -177,7 +180,7 @@ class EvolutionAPIClient(MessageClient):
             is_enabled: bool,
             webhook_url: str
     ) -> Response:
-        endpoint = f'{self.base_url}/webhook/set/{self.instance_name}'
+        endpoint = f'{BASE_URL}/webhook/set/{self.instance_name}'
 
         payload = {
             'enabled': is_enabled,
@@ -192,6 +195,6 @@ class EvolutionAPIClient(MessageClient):
     
 
     def list_webhooks(self) -> Response:
-        endpoint = f"{self.base_url}/webhook/find/{self.instance}"
+        endpoint = f"{BASE_URL}/webhook/find/{self.instance_name}"
         response = requests.get(endpoint, headers=self.headers)
         return response

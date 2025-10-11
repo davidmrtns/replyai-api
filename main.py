@@ -5,10 +5,11 @@ from fastapi import FastAPI
 
 from app.exceptions.exception_handler import exception_handler
 from app.exceptions.exceptions import AppException
-from app.routers import trabalho, empresa, usuario, voz, evolutionapi, exemplo
+from app.routers import trabalho, empresa, usuario, voz, exemplo
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+from app.routers.integrations.evolutionapi import evolutionapi
 from app.routers.integrations.google import google
 from app.routers.integrations.microsoft import microsoft
 from app.routers.reply import reply
@@ -55,6 +56,7 @@ app.include_router(agenda.router, prefix="/agenda", tags=["Agendas"])
 app.include_router(assistant.router, prefix="/assistant", tags=["Assistants"])
 app.include_router(media.router, prefix="/media", tags=["Medias"])
 app.include_router(digisac.router, prefix="/digisac", tags=["Integrations", "Digisac"])
+app.include_router(evolutionapi.router, prefix="/evolutionapi", tags=["Integrations", "EvolutionAPI"])
 app.include_router(microsoft.router, prefix="/microsoft", tags=["Integrations", "Microsoft"])
 app.include_router(google.router, prefix="/google", tags=["Integrations", "Google"]) # TODO: maybe add 'integrations' prefix to routers
 
@@ -63,4 +65,3 @@ app.include_router(empresa.router, prefix="/empresa", tags=["Empresas"])
 app.include_router(usuario.router, prefix="/usuario", tags=["Usuarios"])
 app.include_router(exemplo.router, prefix="/exemplo", tags=["Exemplos"])
 app.include_router(voz.router, prefix="/voz", tags=["Vozes"])
-app.include_router(evolutionapi.router, prefix="/evolutionapi", tags=["EvolutionAPI"])
