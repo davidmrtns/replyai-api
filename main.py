@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from app.exceptions.exception_handler import exception_handler
 from app.exceptions.exceptions import AppException
-from app.routers import trabalho, empresa, usuario, voz, exemplo
+from app.routers import trabalho, empresa, usuario, exemplo
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
@@ -17,6 +17,7 @@ from app.routers.agenda import agenda
 from app.routers.assistant import assistant
 from app.routers.media import media
 from app.routers.integrations.digisac import digisac
+from app.routers.voice import voice
 
 
 app = FastAPI()
@@ -55,6 +56,7 @@ app.include_router(reply.router, prefix="/reply", tags=["Replies"])
 app.include_router(agenda.router, prefix="/agenda", tags=["Agendas"])
 app.include_router(assistant.router, prefix="/assistant", tags=["Assistants"])
 app.include_router(media.router, prefix="/media", tags=["Medias"])
+app.include_router(voice.router, prefix="/voice", tags=["Voices"])
 app.include_router(digisac.router, prefix="/digisac", tags=["Integrations", "Digisac"])
 app.include_router(evolutionapi.router, prefix="/evolutionapi", tags=["Integrations", "EvolutionAPI"])
 app.include_router(microsoft.router, prefix="/microsoft", tags=["Integrations", "Microsoft"])
@@ -64,4 +66,3 @@ app.include_router(trabalho.router, prefix="/trabalho",tags=["Trabalhos"])
 app.include_router(empresa.router, prefix="/empresa", tags=["Empresas"])
 app.include_router(usuario.router, prefix="/usuario", tags=["Usuarios"])
 app.include_router(exemplo.router, prefix="/exemplo", tags=["Exemplos"])
-app.include_router(voz.router, prefix="/voz", tags=["Vozes"])
