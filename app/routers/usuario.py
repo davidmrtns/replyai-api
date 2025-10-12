@@ -11,7 +11,7 @@ from app.db.models import Usuario
 from app.db.new_models import Company
 from app.schemas.atualizacao_empresa_schema import InformacoesUsuario
 from app.schemas.empresa_schema import ListaUsuariosSchema, UsuarioSchema
-from app.utils.password_utils import verificar_senha, criar_token, hash_senha
+from app.utils.password_utils import verify_password, create_access_token, hash_password
 from app.utils.password_utils import SECRET_KEY, ALGORITHM
 
 
@@ -56,7 +56,7 @@ async def criar_usuario(
 ):
     if usuario_logado.admin:
         if request.senha == request.confirmacao_senha and request.senha is not None:
-            senha_hash = hash_senha(request.senha)
+            senha_hash = hash_password(request.senha)
 
             if not usuario_logado.id_empresa:
                 id_empresa = request.id_empresa
@@ -108,7 +108,7 @@ async def alterar_usuario(
 
         if request.senha is not None:
             if request.senha == request.confirmacao_senha:
-                senha_hash = hash_senha(request.senha)
+                senha_hash = hash_password(request.senha)
                 usuario_alterar.senha = senha_hash
             else:
                 raise HTTPException(status_code=400, detail="As senhas inseridas não conferem")
@@ -183,10 +183,10 @@ async def login(
         if not empresa.empresa_ativa:
             raise HTTPException(status_code=401, detail="Não foi possível fazer login pois a empresa à qual você faz parte está desativada. Entre em contato com um administrador do sistema")
 
-    if not verificar_senha(form_data.password, usuario.senha):
+    if not verify_password(form_data.password, usuario.senha):
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
 
-    access_token = criar_token(data={"sub": usuario.email})
+    access_token = create_access_token(data={"sub": usuario.email})
 
     response.set_cookie(
         key="access_token",
