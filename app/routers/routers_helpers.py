@@ -15,7 +15,7 @@ async def get_logged_in_user(
         db: Session = Depends(obter_sessao)
 ) -> Usuario:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise UserLoginException(

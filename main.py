@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from app.exceptions.exception_handler import exception_handler
 from app.exceptions.exceptions import AppException
-from app.routers import trabalho, empresa, usuario, exemplo
+from app.routers import trabalho, empresa, exemplo
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
@@ -17,6 +17,7 @@ from app.routers.agenda import agenda
 from app.routers.assistant import assistant
 from app.routers.media import media
 from app.routers.integrations.digisac import digisac
+from app.routers.user import user
 from app.routers.voice import voice
 
 
@@ -52,6 +53,7 @@ async def save_request_body(request: dict):
 
 app.add_exception_handler(AppException, exception_handler)
 
+app.include_router(user.router, prefix="/user", tags=["Users"])
 app.include_router(reply.router, prefix="/reply", tags=["Replies"])
 app.include_router(agenda.router, prefix="/agenda", tags=["Agendas"])
 app.include_router(assistant.router, prefix="/assistant", tags=["Assistants"])
@@ -64,5 +66,4 @@ app.include_router(google.router, prefix="/google", tags=["Integrations", "Googl
 
 app.include_router(trabalho.router, prefix="/trabalho",tags=["Trabalhos"])
 app.include_router(empresa.router, prefix="/empresa", tags=["Empresas"])
-app.include_router(usuario.router, prefix="/usuario", tags=["Usuarios"])
 app.include_router(exemplo.router, prefix="/exemplo", tags=["Exemplos"])

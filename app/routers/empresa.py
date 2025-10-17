@@ -9,7 +9,7 @@ from app.db.database import obter_sessao
 from app.db.models import AsaasClient, Usuario, Colaborador
 from app.db.new_models import RDStationCRMClient, RDStationCRMDealStage
 from app.db.new_models import Company, Assistant
-from app.routers.usuario import obter_usuario_logado
+from .routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesBasicas, InformacoesMensagens, InformacoesAgenda, InformacoesAssistentes, \
     InformacoesCRM, InformacoesRDStationCRMClient, InformacoesRDStationDealStage, InformacoesFinanceiras, InformacoesAsaas, \
     InformacoesCriarEmpresa, InformacoesColaborador
@@ -21,7 +21,7 @@ from app.utils.api_key_encryption import encrypt_api_key
 async def verificar_permissao_empresa(
     slug: str,
     db: Session = Depends(obter_sessao),
-    usuario: Usuario = Depends(obter_usuario_logado)
+    usuario: Usuario = Depends(get_logged_in_user)
 ):
     empresa = db.query(Company).filter_by(slug=slug).first()
     if not empresa:
@@ -33,10 +33,10 @@ async def verificar_permissao_empresa(
     return empresa
 
 
-router = APIRouter(dependencies=[Depends(obter_usuario_logado)])
+router = APIRouter(dependencies=[Depends(get_logged_in_user)])
 
 @router.get("/", response_model=List[EmpresaMinSchema])
-async def obter_todas_empresas(usuario: Usuario = Depends(obter_usuario_logado), db: Session = Depends(obter_sessao)):
+async def obter_todas_empresas(usuario: Usuario = Depends(get_logged_in_user), db: Session = Depends(obter_sessao)):
     if not usuario.id_empresa:
         empresas = db.query(Company).all()
     else:
@@ -46,7 +46,7 @@ async def obter_todas_empresas(usuario: Usuario = Depends(obter_usuario_logado),
 @router.post("/")
 async def criar_empresa(
         request: InformacoesCriarEmpresa,
-        usuario: Usuario = Depends(obter_usuario_logado),
+        usuario: Usuario = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     if not usuario.id_empresa:

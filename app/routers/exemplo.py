@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
 from app.db.models import Usuario, ExemploPrompt
-from app.routers.usuario import obter_usuario_logado
+from .routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesExemploPrompt
 from app.schemas.empresa_schema import ExemploPromptSchema
 
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.post("/")
 async def criar_exemplo_prompt(
         request: InformacoesExemploPrompt,
-        usuario_logado: Usuario = Depends(obter_usuario_logado),
+        usuario_logado: Usuario = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     if usuario_logado.admin and not usuario_logado.id_empresa:
@@ -34,7 +34,7 @@ async def criar_exemplo_prompt(
 @router.get("/{tipo_assistente}")
 async def obter_exemplo_prompt(
         tipo_assistente: str,
-        usuario_logado: Usuario = Depends(obter_usuario_logado),
+        usuario_logado: Usuario = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     exemplo = db.query(ExemploPrompt).filter_by(tipo_assistente=tipo_assistente).first()
@@ -46,7 +46,7 @@ async def obter_exemplo_prompt(
 async def editar_exemplo_prompt(
         tipo_assistente: str,
         request: InformacoesExemploPrompt,
-        usuario_logado: Usuario = Depends(obter_usuario_logado),
+        usuario_logado: Usuario = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     if usuario_logado.admin and not usuario_logado.id_empresa:
@@ -61,7 +61,7 @@ async def editar_exemplo_prompt(
 @router.delete("/{tipo_assistente}")
 async def excluir_exemplo_prompt(
         tipo_assistente: str,
-        usuario_logado: Usuario = Depends(obter_usuario_logado),
+        usuario_logado: Usuario = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     if usuario_logado.admin and not usuario_logado.id_empresa:
