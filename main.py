@@ -3,7 +3,7 @@ from pathlib import Path
 import uuid
 from fastapi import FastAPI
 
-from app.exceptions.exception_handler import exception_handler
+from app.exceptions.exception_handler import exception_handler, generic_exception_handler
 from app.exceptions.exceptions import AppException
 from app.routers import trabalho, empresa, exemplo
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,6 +52,7 @@ async def save_request_body(request: dict):
 
 
 app.add_exception_handler(AppException, exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
 
 app.include_router(user.router, prefix="/user", tags=["Users"])
 app.include_router(reply.router, prefix="/reply", tags=["Replies"])
