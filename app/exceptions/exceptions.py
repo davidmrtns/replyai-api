@@ -33,7 +33,7 @@ class ResourceNotFoundException(AppException):
         super().__init__(**kwargs)
 
 
-class UserLoginException(AppException):
+class UserAccessException(AppException):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

@@ -7,7 +7,7 @@ from typing import Optional
 from app.db.database import obter_sessao
 from app.db.models import Usuario
 from app.db.new_models import Company
-from app.exceptions.exceptions import UserLoginException
+from app.exceptions.exceptions import UserAccessException
 from ..routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesUsuario
 from app.schemas.empresa_schema import ListaUsuariosSchema, UsuarioSchema
@@ -52,12 +52,12 @@ async def create_user(
             db.commit()
             db.refresh(new_user)
             return new_user
-        raise UserLoginException(
+        raise UserAccessException(
             detail="Password does not exist or is different than confirmation.",
             user_friendly_detail="The inputted passwords do not match. Try again.",
             http_status_code=400
         )
-    raise UserLoginException(
+    raise UserAccessException(
         detail="The logged in user is not an admin.",
         user_friendly_detail="You don't have permission to perform this action.",
         http_status_code=403
@@ -85,7 +85,7 @@ async def edit_user(
         user = query.first()
 
         if not user:
-            raise UserLoginException(
+            raise UserAccessException(
                 detail="User to edit was not found in the database.",
                 user_friendly_detail="The user was not found, or you don't have permission to edit it.",
                 http_status_code=404
@@ -100,7 +100,7 @@ async def edit_user(
             hashed_password = hash_password(request.senha)
             user.senha = hashed_password
         else:
-            raise UserLoginException(
+            raise UserAccessException(
                 detail="Password does not exist or is different than confirmation.",
                 user_friendly_detail="The inputted passwords do not match. Try again.",
                 http_status_code=400
@@ -108,7 +108,7 @@ async def edit_user(
 
         db.commit()
         return user
-    raise UserLoginException(
+    raise UserAccessException(
         detail="The logged in user is not an admin, or is trying to edit another user.",
         user_friendly_detail="You don't have permission to edit this user.",
         http_status_code=403
@@ -133,7 +133,7 @@ async def delete_user(
             db.commit()
             return True
         return False
-    raise UserLoginException(
+    raise UserAccessException(
         detail="The logged in user is not an admin.",
         user_friendly_detail="You don't have permission to edit this user.",
         http_status_code=403
@@ -148,7 +148,7 @@ async def get_all_users(
         limit: int = Query(10, alias='limit', ge=1, le=50, description='Número de registros por página')
 ):
     if not logged_in_user.admin:
-        raise UserLoginException(
+        raise UserAccessException(
             detail="The logged in user is not an admin.",
             user_friendly_detail="You don't have permission to perform this action.",
             http_status_code=403
@@ -185,7 +185,7 @@ async def login(
     user = db.query(Usuario).filter(Usuario.email == form_data.username, Usuario.ativo == True).first()
 
     if not user:
-        raise UserLoginException(
+        raise UserAccessException(
             detail='User not found with this email.',
             user_friendly_detail='No user was found with this email.',
             http_status_code=404
@@ -194,14 +194,14 @@ async def login(
     if user.id_empresa:
         empresa = db.query(Company).filter_by(id=user.id_empresa).first()
         if not empresa.is_active:
-            raise UserLoginException(
+            raise UserAccessException(
                 detail='The user company is deactivated.',
                 user_friendly_detail="You can't log in because the company associated with your account is deactivated. Contact the system admin.",
                 http_status_code=401
             )
 
     if not verify_password(form_data.password, user.senha):
-        raise UserLoginException(
+        raise UserAccessException(
             detail='The password is incorrect.',
             user_friendly_detail='Incorret credentials.',
             http_status_code=401

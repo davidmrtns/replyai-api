@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import obter_sessao
 from app.db.models import Usuario
 from app.db.new_models import Company
-from app.exceptions.exceptions import NoAccessToCompanyException, UserLoginException
+from app.exceptions.exceptions import NoAccessToCompanyException, UserAccessException
 from app.utils.password_utils import SECRET_KEY, ALGORITHM
 
 
@@ -18,13 +18,13 @@ async def get_logged_in_user(
         payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            raise UserLoginException(
+            raise UserAccessException(
                 detail="No email provided.",
                 user_friendly_detail="Your email is not present in the request. Try logging in again.",
                 http_status_code=403
             )
     except:
-        raise UserLoginException(
+        raise UserAccessException(
             detail="Not authenticated.",
             user_friendly_detail="You are not logged in. Try again.",
             http_status_code=401
@@ -32,7 +32,7 @@ async def get_logged_in_user(
 
     user = db.query(Usuario).filter(Usuario.email == email).first()
     if user is None:
-        raise UserLoginException(
+        raise UserAccessException(
             detail="User not found.",
             user_friendly_detail="No user found with this email.",
             http_status_code=404
