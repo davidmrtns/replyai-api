@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models import Agenda, Departamento
+from app.db.models import Departamento
 from app.db.new_models import Assistant, Company, DigisacClient
 from app.clients.assistants_client import AssistantsClient
 from app.services.message_service import create_message_client

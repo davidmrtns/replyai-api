@@ -4,8 +4,7 @@ from fastapi.params import Depends, Cookie
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Usuario
-from app.db.new_models import Company
+from app.db.new_models import Company, User
 from app.exceptions.exceptions import NoAccessToCompanyException, UserAccessException
 from app.utils.password_utils import SECRET_KEY, ALGORITHM
 
@@ -13,7 +12,7 @@ from app.utils.password_utils import SECRET_KEY, ALGORITHM
 async def get_logged_in_user(
         token: str = Cookie(None, alias="access_token"),
         db: Session = Depends(obter_sessao)
-) -> Usuario:
+) -> User:
     try:
         payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
@@ -30,7 +29,7 @@ async def get_logged_in_user(
             http_status_code=401
         )
 
-    user = db.query(Usuario).filter(Usuario.email == email).first()
+    user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise UserAccessException(
             detail="User not found.",
@@ -44,7 +43,7 @@ async def get_logged_in_user(
 async def check_company_access(
     company_slug: str,
     db: Session = Depends(obter_sessao),
-    usuario: Usuario = Depends(get_logged_in_user)
+    usuario: User = Depends(get_logged_in_user)
 ) -> Company:
     company = db.query(Company).filter_by(slug=company_slug).first()
     if not company:

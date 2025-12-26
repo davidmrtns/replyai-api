@@ -5,8 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.db.database import obter_sessao
-from app.db.models import Usuario
-from app.db.new_models import Company
+from app.db.new_models import Company, User
 from app.exceptions.exceptions import UserAccessException
 from ..routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesUsuario
@@ -19,14 +18,14 @@ router = APIRouter()
 
 
 @router.get('/')
-async def get_logged_in_user(logged_in_user: Usuario = Depends(get_logged_in_user)):
+async def get_logged_in_user(logged_in_user: User = Depends(get_logged_in_user)):
     return logged_in_user
 
 
 @router.post('/')
 async def create_user(
         request: InformacoesUsuario,
-        logged_in_user: Usuario = Depends(get_logged_in_user),
+        logged_in_user: User = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     if logged_in_user.admin:
@@ -39,7 +38,7 @@ async def create_user(
             else:
                 id_empresa = logged_in_user.id_empresa
 
-            new_user = Usuario(
+            new_user = User(
                 nome=request.nome,
                 email=request.email,
                 senha=hashed_password,
@@ -67,7 +66,7 @@ async def create_user(
 @router.put('/', response_model=UsuarioSchema)
 async def edit_user(
         request: InformacoesUsuario,
-        logged_in_user: Usuario = Depends(get_logged_in_user),
+        logged_in_user: User = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     # If the logged-in user is an admin, they can edit any user
@@ -79,7 +78,7 @@ async def edit_user(
         user_to_edit_id = None
 
     if user_to_edit_id:
-        query = db.query(Usuario).filter_by(id=request.id)
+        query = db.query(User).filter_by(id=request.id)
         if logged_in_user.id_empresa:
             query = query.filter_by(id_empresa=logged_in_user.id_empresa)
         user = query.first()
@@ -118,12 +117,12 @@ async def edit_user(
 @router.delete('/{id}')
 async def delete_user(
         id: int,
-        logged_in_user: Usuario = Depends(get_logged_in_user),
+        logged_in_user: User = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     # Only admins can delete users
     if logged_in_user.admin:
-        query = db.query(Usuario).filter_by(id=id)
+        query = db.query(User).filter_by(id=id)
         if logged_in_user.id_empresa:
             query = query.filter_by(id_empresa=logged_in_user.id_empresa)
         user = query.first()
@@ -142,7 +141,7 @@ async def delete_user(
 
 @router.get('/all', response_model=ListaUsuariosSchema)
 async def get_all_users(
-        logged_in_user: Usuario = Depends(get_logged_in_user),
+        logged_in_user: User = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao),
         cursor: Optional[int] = Query(None, alias='cursor', description='ID do último item carregado'),
         limit: int = Query(10, alias='limit', ge=1, le=50, description='Número de registros por página')
@@ -154,11 +153,11 @@ async def get_all_users(
             http_status_code=403
         )
 
-    query = db.query(Usuario).order_by(Usuario.id.asc())
+    query = db.query(User).order_by(User.id.asc())
     if logged_in_user.id_empresa:
-        query = query.filter(Usuario.id_empresa == logged_in_user.id_empresa)
+        query = query.filter(User.id_empresa == logged_in_user.id_empresa)
     if cursor:
-        query = query.filter(Usuario.id > cursor)
+        query = query.filter(User.id > cursor)
 
     users = query.limit(limit + 1).all()
     has_more = len(users) > limit
@@ -182,7 +181,7 @@ async def login(
         form_data: OAuth2PasswordRequestForm = Depends(),
         db: Session = Depends(obter_sessao)
 ):
-    user = db.query(Usuario).filter(Usuario.email == form_data.username, Usuario.ativo == True).first()
+    user = db.query(User).filter(User.email == form_data.username, User.ativo == True).first()
 
     if not user:
         raise UserAccessException(

@@ -2,8 +2,7 @@ from openai.types.beta import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import retornar_sessao
-from app.db.models import Colaborador
-from app.db.new_models import Assistant
+from app.db.new_models import Assistant, Employee
 
 
 def get_employees_doc():
@@ -29,9 +28,9 @@ def get_employees(assistant_id: str, thread_id: str, **kwargs):
         assistant_db = db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
         if assistant_db:
             company = assistant_db.company
-            employees = db.query(Colaborador).filter_by(id_empresa=company.id).all()
+            employees = db.query(Employee).filter_by(company_id=company.id).all()
             data = [
-                {"name": employee.nome, "nickname": employee.apelido, "department": employee.departamento}
+                {"name": employee.name, "nickname": employee.nickname, "department": employee.department_name}
                 for employee in employees
             ]
 

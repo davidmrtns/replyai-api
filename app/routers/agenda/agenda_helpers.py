@@ -2,7 +2,7 @@ from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Agenda
+from app.db.new_models import Agenda
 from app.exceptions.exceptions import ResourceNotFoundException
 
 

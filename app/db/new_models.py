@@ -76,6 +76,43 @@ class Company(Base):
     default_assistant = relationship("Assistant", foreign_keys=[default_assistant_id])
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="users")
+
+
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    nickname = Column(String)
+    department_name = Column(String) # TODO: change to department_id and add direct relationship to department (so companies without Digisac will have a similar department transfer feature)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="employees")
+
+
+class Agenda(Base):
+    __tablename__ = "agendas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    address = Column(String)
+    shortcut = Column(String)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="agendas")
+
+
 class Voice(Base):
     __tablename__ = "voices"
 
@@ -192,7 +229,19 @@ class GoogleCalendarClient(Base):
     company = relationship("Company")
 
 
-class RDStationCRMClient(Base):
+class AsaasClient(Base):
+    __tablename__ = "asaas_clients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String)
+    label = Column(String)
+    client_number = Column(Integer)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="asaas_clients")
+
+
+class RDStationCRMClient(Base): # TODO: remove CRM from the name
     __tablename__ = "rdstationcrm_clients"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -203,7 +252,7 @@ class RDStationCRMClient(Base):
     company = relationship("Company")
 
 
-class RDStationCRMDealStage(Base):
+class RDStationCRMDealStage(Base): # TODO: remove CRM from the name
     __tablename__ = "rdstationcrm_deal_stages"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -6,9 +6,7 @@ from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import AsaasClient, Usuario, Colaborador
-from app.db.new_models import RDStationCRMClient, RDStationCRMDealStage
-from app.db.new_models import Company, Assistant
+from app.db.new_models import RDStationCRMClient, RDStationCRMDealStage, AsaasClient, User, Employee, Company, Assistant
 from .routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesBasicas, InformacoesMensagens, InformacoesAgenda, InformacoesAssistentes, \
     InformacoesCRM, InformacoesRDStationCRMClient, InformacoesRDStationDealStage, InformacoesFinanceiras, InformacoesAsaas, \
@@ -21,7 +19,7 @@ from app.utils.api_key_encryption import encrypt_api_key
 async def verificar_permissao_empresa(
     slug: str,
     db: Session = Depends(obter_sessao),
-    usuario: Usuario = Depends(get_logged_in_user)
+    usuario: User = Depends(get_logged_in_user)
 ):
     empresa = db.query(Company).filter_by(slug=slug).first()
     if not empresa:
@@ -36,7 +34,7 @@ async def verificar_permissao_empresa(
 router = APIRouter(dependencies=[Depends(get_logged_in_user)])
 
 @router.get("/", response_model=List[EmpresaMinSchema])
-async def obter_todas_empresas(usuario: Usuario = Depends(get_logged_in_user), db: Session = Depends(obter_sessao)):
+async def obter_todas_empresas(usuario: User = Depends(get_logged_in_user), db: Session = Depends(obter_sessao)):
     if not usuario.id_empresa:
         empresas = db.query(Company).all()
     else:
@@ -46,7 +44,7 @@ async def obter_todas_empresas(usuario: Usuario = Depends(get_logged_in_user), d
 @router.post("/")
 async def criar_empresa(
         request: InformacoesCriarEmpresa,
-        usuario: Usuario = Depends(get_logged_in_user),
+        usuario: User = Depends(get_logged_in_user),
         db: Session = Depends(obter_sessao)
 ):
     if not usuario.id_empresa:
@@ -98,11 +96,11 @@ async def adicionar_colaborador(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    colaborador = Colaborador(
-        nome=request.nome,
-        apelido=request.apelido,
-        departamento=request.departamento,
-        id_empresa=empresa.id
+    colaborador = Employee(
+        name=request.name,
+        nickname=request.nickname,
+        department_name=request.department,
+        company_id=empresa.id
     )
 
     db.add(colaborador)
@@ -117,13 +115,13 @@ async def alterar_colaborador(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    colaborador = db.query(Colaborador).filter_by(id=request.id, id_empresa=empresa.id).first()
+    colaborador = db.query(Employee).filter_by(id=request.id, company_id=empresa.id).first()
     if not colaborador:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado para essa empresa")
 
-    colaborador.nome = request.nome
-    colaborador.apelido = request.apelido
-    colaborador.departamento = request.departamento
+    colaborador.name = request.name
+    colaborador.nickname = request.nickname
+    colaborador.department_name = request.department
     db.commit()
     return colaborador
 
@@ -134,7 +132,7 @@ async def remover_colaborador(
         empresa: Company = Depends(verificar_permissao_empresa),
         db: Session = Depends(obter_sessao)
 ):
-    colaborador = db.query(Colaborador).filter_by(id=id, id_empresa=empresa.id).first()
+    colaborador = db.query(Employee).filter_by(id=id, company_id=empresa.id).first()
     if colaborador:
         db.delete(colaborador)
         db.commit()
