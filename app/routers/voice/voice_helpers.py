@@ -5,11 +5,7 @@ from app.db.new_models import Company, Voice
 from app.exceptions.exceptions import ResourceNotFoundException
 
 
-def get_voice_from_db(
-        company_id: int,
-        voice_id: int,
-        db: Session
-) -> Voice:
+def get_voice_from_db(company_id: int, voice_id: int, db: Session) -> Voice:
     voice_db = db.query(Voice).filter_by(id=voice_id, id_empresa=company_id).first()
     if not voice_db:
         raise ResourceNotFoundException(
@@ -17,9 +13,9 @@ def get_voice_from_db(
             resource_id=voice_id,
             detail="Voice not found for the specified company and ID.",
             user_friendly_detail="Voice not found.",
-            http_status_code=404
+            http_status_code=404,
         )
-    
+
     return voice_db
 
 

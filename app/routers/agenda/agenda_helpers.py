@@ -18,7 +18,7 @@ async def get_agenda(
             resource_id=id,
             detail="Agenda not found for the specified company and ID.",
             user_friendly_detail="Agenda not found.",
-            http_status_code=404
+            http_status_code=404,
         )
-    
+
     return agenda

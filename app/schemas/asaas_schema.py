@@ -8,13 +8,16 @@ class Discount(BaseModel):
     dueDateLimitDays: int
     type: str
 
+
 class Fine(BaseModel):
     value: float
     type: str
 
+
 class Interest(BaseModel):
     value: float
     type: str
+
 
 class Payment(BaseModel):
     object: str
@@ -58,6 +61,7 @@ class Payment(BaseModel):
     custody: Optional[str]
     refunds: Optional[str]
 
+
 class Taxes(BaseModel):
     retainIss: bool = Field(..., alias="retainIss")
     iss: float
@@ -66,6 +70,7 @@ class Taxes(BaseModel):
     inss: float
     ir: float
     pis: float
+
 
 class Invoice(BaseModel):
     object: str
@@ -92,11 +97,13 @@ class Invoice(BaseModel):
     municipalServiceCode: str
     municipalServiceName: str
 
+
 class AsaasPaymentRequest(BaseModel):
     id: str
     event: str
     dateCreated: str
     payment: Payment
+
 
 class AsaasInvoiceRequest(BaseModel):
     id: str

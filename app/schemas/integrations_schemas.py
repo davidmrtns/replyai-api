@@ -9,7 +9,9 @@ class AssistenteSchema(BaseModel):
     id_openai: Optional[str] = None
     nome: str
     instrucoes: str
-    proposito: Literal["responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"]
+    proposito: Literal[
+        "responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"
+    ]
     atalho: str
     voz: int
 
@@ -21,24 +23,26 @@ class VozSchema(BaseModel):
     similarity_boost: float
     style: float
 
+
 async def parse_form_data_voz(
-        nome: str = Form(...),
-        descricao: Optional[str] = Form(None),
-        stability: float = Form(...),
-        similarity_boost: float = Form(...),
-        style: float = Form(...)
+    nome: str = Form(...),
+    descricao: Optional[str] = Form(None),
+    stability: float = Form(...),
+    similarity_boost: float = Form(...),
+    style: float = Form(...),
 ) -> VozSchema:
     return VozSchema(
         nome=nome,
         descricao=descricao,
         stability=stability,
         similarity_boost=similarity_boost,
-        style=style
+        style=style,
     )
 
 
 class EvolutionInstanceSchema(BaseModel):
     nome_instancia: str
+
 
 class EvolutionAPIWebhookSchema(BaseModel):
     webhook_url: str
@@ -50,6 +54,7 @@ class DigisacClientSchema(BaseModel):
     token: str
     user_id: Optional[str] = None
     service_id: Optional[str] = None
+
 
 class DigisacDepartmentSchema(BaseModel):
     atalho: str

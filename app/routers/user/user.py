@@ -13,20 +13,20 @@ from app.schemas.empresa_schema import ListaUsuariosSchema, UsuarioSchema
 from app.utils.password_utils import verify_password, create_access_token, hash_password
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/user/login')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
 router = APIRouter()
 
 
-@router.get('/')
+@router.get("/")
 async def get_logged_in_user(logged_in_user: User = Depends(get_logged_in_user)):
     return logged_in_user
 
 
-@router.post('/')
+@router.post("/")
 async def create_user(
-        request: InformacoesUsuario,
-        logged_in_user: User = Depends(get_logged_in_user),
-        db: Session = Depends(obter_sessao)
+    request: InformacoesUsuario,
+    logged_in_user: User = Depends(get_logged_in_user),
+    db: Session = Depends(obter_sessao),
 ):
     if logged_in_user.admin:
         if request.senha is not None and request.senha == request.confirmacao_senha:
@@ -44,7 +44,7 @@ async def create_user(
                 senha=hashed_password,
                 ativo=request.usuario_ativo,
                 admin=request.admin,
-                id_empresa=id_empresa
+                id_empresa=id_empresa,
             )
 
             db.add(new_user)
@@ -54,20 +54,20 @@ async def create_user(
         raise UserAccessException(
             detail="Password does not exist or is different than confirmation.",
             user_friendly_detail="The inputted passwords do not match. Try again.",
-            http_status_code=400
+            http_status_code=400,
         )
     raise UserAccessException(
         detail="The logged in user is not an admin.",
         user_friendly_detail="You don't have permission to perform this action.",
-        http_status_code=403
+        http_status_code=403,
     )
 
 
-@router.put('/', response_model=UsuarioSchema)
+@router.put("/", response_model=UsuarioSchema)
 async def edit_user(
-        request: InformacoesUsuario,
-        logged_in_user: User = Depends(get_logged_in_user),
-        db: Session = Depends(obter_sessao)
+    request: InformacoesUsuario,
+    logged_in_user: User = Depends(get_logged_in_user),
+    db: Session = Depends(obter_sessao),
 ):
     # If the logged-in user is an admin, they can edit any user
     if logged_in_user.admin:
@@ -87,7 +87,7 @@ async def edit_user(
             raise UserAccessException(
                 detail="User to edit was not found in the database.",
                 user_friendly_detail="The user was not found, or you don't have permission to edit it.",
-                http_status_code=404
+                http_status_code=404,
             )
 
         user.nome = request.nome
@@ -102,7 +102,7 @@ async def edit_user(
             raise UserAccessException(
                 detail="Password does not exist or is different than confirmation.",
                 user_friendly_detail="The inputted passwords do not match. Try again.",
-                http_status_code=400
+                http_status_code=400,
             )
 
         db.commit()
@@ -110,15 +110,15 @@ async def edit_user(
     raise UserAccessException(
         detail="The logged in user is not an admin, or is trying to edit another user.",
         user_friendly_detail="You don't have permission to edit this user.",
-        http_status_code=403
+        http_status_code=403,
     )
 
 
-@router.delete('/{id}')
+@router.delete("/{id}")
 async def delete_user(
-        id: int,
-        logged_in_user: User = Depends(get_logged_in_user),
-        db: Session = Depends(obter_sessao)
+    id: int,
+    logged_in_user: User = Depends(get_logged_in_user),
+    db: Session = Depends(obter_sessao),
 ):
     # Only admins can delete users
     if logged_in_user.admin:
@@ -135,22 +135,26 @@ async def delete_user(
     raise UserAccessException(
         detail="The logged in user is not an admin.",
         user_friendly_detail="You don't have permission to edit this user.",
-        http_status_code=403
+        http_status_code=403,
     )
 
 
-@router.get('/all', response_model=ListaUsuariosSchema)
+@router.get("/all", response_model=ListaUsuariosSchema)
 async def get_all_users(
-        logged_in_user: User = Depends(get_logged_in_user),
-        db: Session = Depends(obter_sessao),
-        cursor: Optional[int] = Query(None, alias='cursor', description='ID do último item carregado'),
-        limit: int = Query(10, alias='limit', ge=1, le=50, description='Número de registros por página')
+    logged_in_user: User = Depends(get_logged_in_user),
+    db: Session = Depends(obter_sessao),
+    cursor: Optional[int] = Query(
+        None, alias="cursor", description="ID do último item carregado"
+    ),
+    limit: int = Query(
+        10, alias="limit", ge=1, le=50, description="Número de registros por página"
+    ),
 ):
     if not logged_in_user.admin:
         raise UserAccessException(
             detail="The logged in user is not an admin.",
             user_friendly_detail="You don't have permission to perform this action.",
-            http_status_code=403
+            http_status_code=403,
         )
 
     query = db.query(User).order_by(User.id.asc())
@@ -168,57 +172,58 @@ async def get_all_users(
     next_cursor = users[-1].id if has_more else None
 
     return ListaUsuariosSchema(
-        has_more=has_more,
-        next_cursor=next_cursor,
-        limit=limit,
-        data=users
+        has_more=has_more, next_cursor=next_cursor, limit=limit, data=users
     )
 
 
-@router.post('/login')
+@router.post("/login")
 async def login(
-        response: Response,
-        form_data: OAuth2PasswordRequestForm = Depends(),
-        db: Session = Depends(obter_sessao)
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(obter_sessao),
 ):
-    user = db.query(User).filter(User.email == form_data.username, User.ativo == True).first()
+    user = (
+        db.query(User)
+        .filter(User.email == form_data.username, User.ativo == True)
+        .first()
+    )
 
     if not user:
         raise UserAccessException(
-            detail='User not found with this email.',
-            user_friendly_detail='No user was found with this email.',
-            http_status_code=404
+            detail="User not found with this email.",
+            user_friendly_detail="No user was found with this email.",
+            http_status_code=404,
         )
 
     if user.id_empresa:
         empresa = db.query(Company).filter_by(id=user.id_empresa).first()
         if not empresa.is_active:
             raise UserAccessException(
-                detail='The user company is deactivated.',
+                detail="The user company is deactivated.",
                 user_friendly_detail="You can't log in because the company associated with your account is deactivated. Contact the system admin.",
-                http_status_code=401
+                http_status_code=401,
             )
 
     if not verify_password(form_data.password, user.senha):
         raise UserAccessException(
-            detail='The password is incorrect.',
-            user_friendly_detail='Incorret credentials.',
-            http_status_code=401
+            detail="The password is incorrect.",
+            user_friendly_detail="Incorret credentials.",
+            http_status_code=401,
         )
 
-    access_token = create_access_token(data={'sub': user.email})
+    access_token = create_access_token(data={"sub": user.email})
 
     response.set_cookie(
-        key='access_token',
+        key="access_token",
         value=access_token,
         httponly=True,
         secure=True,
-        samesite='none'
+        samesite="none",
     )
     return True
 
 
-@router.post('/logout')
+@router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(key='access_token')
+    response.delete_cookie(key="access_token")
     return True

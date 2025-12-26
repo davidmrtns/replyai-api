@@ -95,7 +95,9 @@ class Message(BaseModel):
     audioMessage: Optional[AudioMessage] = None
     documentMessage: Optional[DocumentMessage] = None
     reactionMessage: Optional[ReactionMessage] = None
-    base64: Optional[str] = None # TODO: check if EvolutionAPI V.2 provides base64 directly
+    base64: Optional[str] = (
+        None  # TODO: check if EvolutionAPI V.2 provides base64 directly
+    )
     senderKeyDistributionMessage: Optional[SenderKeyDistributionMessage] = None
     messageContextInfo: Optional[MessageContextInfo] = None
 
@@ -106,13 +108,13 @@ class Data(BaseModel):
     status: str
     message: Message
     messageType: Literal[
-        'conversation',
-        'extendedTextMessage',
-        'imageMessage',
-        'audioMessage',
-        'videoMessage',
-        'documentMessage',
-        'reactionMessage'
+        "conversation",
+        "extendedTextMessage",
+        "imageMessage",
+        "audioMessage",
+        "videoMessage",
+        "documentMessage",
+        "reactionMessage",
     ]
     messageTimestamp: int
     instanceId: str

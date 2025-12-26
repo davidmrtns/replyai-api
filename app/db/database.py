@@ -29,17 +29,17 @@ if CERTIFICADO_SSL:
         print(f"Erro ao salvar o certificado: {e}")
 
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv("DATABASE_URL")
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 
 engine = create_engine(
     DATABASE_URL,
-    #connect_args={"sslmode": "verify-full"},
+    # connect_args={"sslmode": "verify-full"},
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
-    pool_recycle=600
+    pool_recycle=600,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -54,13 +54,17 @@ def obter_sessao():
             return
         except (psycopg2.OperationalError, OperationalError) as e:
             db.rollback()
-            print(f"Erro de conexão com o banco: {e}. Tentativa {tentativas + 1} de {MAX_RETRIES}")
+            print(
+                f"Erro de conexão com o banco: {e}. Tentativa {tentativas + 1} de {MAX_RETRIES}"
+            )
             tentativas += 1
             time.sleep(RETRY_DELAY)
             engine.dispose()
         finally:
             db.close()
-    raise Exception("Não foi possível estabelecer conexão com o banco após várias tentativas.")
+    raise Exception(
+        "Não foi possível estabelecer conexão com o banco após várias tentativas."
+    )
 
 
 @contextmanager
@@ -73,10 +77,14 @@ def retornar_sessao():
             return
         except (psycopg2.OperationalError, OperationalError) as e:
             db.rollback()
-            print(f"Erro de conexão com o banco: {e}. Tentativa {tentativas + 1} de {MAX_RETRIES}")
+            print(
+                f"Erro de conexão com o banco: {e}. Tentativa {tentativas + 1} de {MAX_RETRIES}"
+            )
             tentativas += 1
             time.sleep(RETRY_DELAY)
             engine.dispose()
         finally:
             db.close()
-    raise Exception("Não foi possível estabelecer conexão com o banco após várias tentativas.")
+    raise Exception(
+        "Não foi possível estabelecer conexão com o banco após várias tentativas."
+    )

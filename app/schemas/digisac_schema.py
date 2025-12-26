@@ -8,6 +8,7 @@ class MessageData(BaseModel):
     isNew: Optional[bool] = None
     isFirst: Optional[bool] = None
 
+
 class Message(BaseModel):
     id: Optional[str] = None
     isFromMe: Optional[bool] = None
@@ -42,6 +43,7 @@ class Message(BaseModel):
     quotedMessage: Optional[dict] = None
     isFromBot: Optional[bool] = None
 
+
 class Data(BaseModel):
     id: str
     contactId: str
@@ -49,6 +51,7 @@ class Data(BaseModel):
     accountId: str
     command: str
     message: Optional[Message]
+
 
 class DigisacRequest(BaseModel):
     event: str

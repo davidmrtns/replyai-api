@@ -31,7 +31,7 @@ class Departamento(Base):
     digisac_client = relationship("DigisacClient", backref="departamentos")
 
 
-class ExemploPrompt(Base): # TODO: check if it's necessary
+class ExemploPrompt(Base):  # TODO: check if it's necessary
     __tablename__ = "exemplos_prompt"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -16,19 +16,21 @@ from app.schemas.integrations_schemas import VozSchema, parse_form_data_voz
 router = APIRouter()
 
 
-@router.post('/{company_slug}')
+@router.post("/{company_slug}")
 async def create_voice(
-        company_slug: str,
-        company: Annotated[Company, Depends(check_company_access)],
-        request: VozSchema = Depends(parse_form_data_voz),
-        files: List[UploadFile] = File(...),
-        db: Session = Depends(obter_sessao)
+    company_slug: str,
+    company: Annotated[Company, Depends(check_company_access)],
+    request: VozSchema = Depends(parse_form_data_voz),
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(obter_sessao),
 ):
     temp_files = []
 
     try:
         for file in files:
-            temp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1])
+            temp = tempfile.NamedTemporaryFile(
+                delete=False, suffix=os.path.splitext(file.filename)[1]
+            )
             temp.write(await file.read())
             temp.close()
             temp_files.append(temp.name)
@@ -43,7 +45,7 @@ async def create_voice(
                 stability=request.stability,
                 similarity_boost=request.similarity_boost,
                 style=request.style,
-                id_empresa=company.id
+                id_empresa=company.id,
             )
 
             db.add(voz_db)
@@ -59,12 +61,12 @@ async def create_voice(
             os.remove(temp_file)
 
 
-@router.get('/{company_slug}/{voice_id}')
+@router.get("/{company_slug}/{voice_id}")
 async def get_voice(
-        slug: str,
-        voice_id: int,
-        company: Annotated[Company, Depends(check_company_access)],
-        db: Session = Depends(obter_sessao)
+    slug: str,
+    voice_id: int,
+    company: Annotated[Company, Depends(check_company_access)],
+    db: Session = Depends(obter_sessao),
 ):
     voice_db = get_voice_from_db(company.id, voice_id, db)
     elevenlabs_client = get_elevenlabs_client(company)
@@ -72,24 +74,26 @@ async def get_voice(
     voice = elevenlabs_client.get_voice(voice_db.elevenlabs_voice_id)
     if voice:
         return {
-            'preview_url': voice.preview_url,
-            'description': voice.description
-        } # TODO: beautify response
+            "preview_url": voice.preview_url,
+            "description": voice.description,
+        }  # TODO: beautify response
     return None
 
 
-@router.put('/{company_slug}/{voice_id}')
+@router.put("/{company_slug}/{voice_id}")
 async def edit_voice(
-        company_slug: str,
-        voice_id: int,
-        request: VozSchema,
-        company: Annotated[Company, Depends(check_company_access)],
-        db: Session = Depends(obter_sessao)
+    company_slug: str,
+    voice_id: int,
+    request: VozSchema,
+    company: Annotated[Company, Depends(check_company_access)],
+    db: Session = Depends(obter_sessao),
 ):
     voice_db = get_voice_from_db(company.id, voice_id, db)
     elevenlabs_client = get_elevenlabs_client(company)
 
-    response = elevenlabs_client.edit_voice(voice_db.elevenlabs_voice_id, request.nome, request.descricao)
+    response = elevenlabs_client.edit_voice(
+        voice_db.elevenlabs_voice_id, request.nome, request.descricao
+    )
 
     if response:
         voice_db.voice_name = request.nome
@@ -102,12 +106,12 @@ async def edit_voice(
     return None
 
 
-@router.delete('/{company_slug}/{voice_id}')
+@router.delete("/{company_slug}/{voice_id}")
 async def delete_voice(
-        company_slug: str,
-        voice_id: int,
-        company: Annotated[Company, Depends(check_company_access)],
-        db: Session = Depends(obter_sessao)
+    company_slug: str,
+    voice_id: int,
+    company: Annotated[Company, Depends(check_company_access)],
+    db: Session = Depends(obter_sessao),
 ):
     voice_db = get_voice_from_db(company.id, voice_id, db)
     elevenlabs_client = get_elevenlabs_client(company)

@@ -48,14 +48,11 @@ class InformacoesMidia(BaseModel):
     atalho: str
     ordem: int
 
+
 async def parse_form_data_midia(
-        atalho: str = Form(...),
-        ordem: int = Form(...)
+    atalho: str = Form(...), ordem: int = Form(...)
 ) -> InformacoesMidia:
-    return InformacoesMidia(
-        atalho=atalho,
-        ordem=ordem
-    )
+    return InformacoesMidia(atalho=atalho, ordem=ordem)
 
 
 class InformacoesAssistentes(BaseModel):
@@ -171,5 +168,7 @@ class InformacoesUsuario(BaseModel):
 
 
 class InformacoesExemploPrompt(BaseModel):
-    tipo_assistente: Optional[Literal["responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"]] = None
+    tipo_assistente: Optional[
+        Literal["responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"]
+    ] = None
     prompt: str

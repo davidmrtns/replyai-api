@@ -3,7 +3,10 @@ from pathlib import Path
 import uuid
 from fastapi import FastAPI
 
-from app.exceptions.exception_handler import exception_handler, generic_exception_handler
+from app.exceptions.exception_handler import (
+    exception_handler,
+    generic_exception_handler,
+)
 from app.exceptions.exceptions import AppException
 from app.routers import trabalho, empresa, exemplo
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,8 +33,9 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
+
 
 @app.get("/")
 def root():
@@ -45,7 +49,7 @@ async def save_request_body(request: dict):
     folder_path.mkdir(parents=True, exist_ok=True)
     file_name = f"request_{uuid.uuid4().hex}.json"
     file_path = folder_path / file_name
-    
+
     with file_path.open("w", encoding="utf-8") as f:
         json.dump(request, f, ensure_ascii=False, indent=4)
     return {"message": "Request saved successfully"}
@@ -61,10 +65,16 @@ app.include_router(assistant.router, prefix="/assistant", tags=["Assistants"])
 app.include_router(media.router, prefix="/media", tags=["Medias"])
 app.include_router(voice.router, prefix="/voice", tags=["Voices"])
 app.include_router(digisac.router, prefix="/digisac", tags=["Integrations", "Digisac"])
-app.include_router(evolutionapi.router, prefix="/evolutionapi", tags=["Integrations", "EvolutionAPI"])
-app.include_router(microsoft.router, prefix="/microsoft", tags=["Integrations", "Microsoft"])
-app.include_router(google.router, prefix="/google", tags=["Integrations", "Google"]) # TODO: maybe add 'integrations' prefix to routers
+app.include_router(
+    evolutionapi.router, prefix="/evolutionapi", tags=["Integrations", "EvolutionAPI"]
+)
+app.include_router(
+    microsoft.router, prefix="/microsoft", tags=["Integrations", "Microsoft"]
+)
+app.include_router(
+    google.router, prefix="/google", tags=["Integrations", "Google"]
+)  # TODO: maybe add 'integrations' prefix to routers
 
-app.include_router(trabalho.router, prefix="/trabalho",tags=["Trabalhos"])
+app.include_router(trabalho.router, prefix="/trabalho", tags=["Trabalhos"])
 app.include_router(empresa.router, prefix="/empresa", tags=["Empresas"])
 app.include_router(exemplo.router, prefix="/exemplo", tags=["Exemplos"])

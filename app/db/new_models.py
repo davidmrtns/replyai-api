@@ -1,6 +1,16 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Enum, Time, Float
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    Boolean,
+    Enum,
+    Time,
+    Float,
+)
 from sqlalchemy.orm import relationship
 
 from app.db.database import Base
@@ -96,7 +106,9 @@ class Employee(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     nickname = Column(String)
-    department_name = Column(String) # TODO: change to department_id and add direct relationship to department (so companies without Digisac will have a similar department transfer feature)
+    department_name = Column(
+        String
+    )  # TODO: change to department_id and add direct relationship to department (so companies without Digisac will have a similar department transfer feature)
     company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company", backref="employees")
@@ -135,8 +147,12 @@ class Assistant(Base):
     assistant_name = Column(String, nullable=False)
     purpose = Column(Enum(AssistantPurposeEnum), nullable=False)
     shortcut = Column(String)
-    voice_id = Column(Integer, ForeignKey("voices.id", ondelete="SET NULL"), nullable=True)
-    company_id = Column(Integer, ForeignKey("companies.id")) # TODO: check table order with company
+    voice_id = Column(
+        Integer, ForeignKey("voices.id", ondelete="SET NULL"), nullable=True
+    )
+    company_id = Column(
+        Integer, ForeignKey("companies.id")
+    )  # TODO: check table order with company
 
     company = relationship("Company", backref="assistants", foreign_keys=[company_id])
     voice = relationship("Voice", foreign_keys=[voice_id])
@@ -160,8 +176,12 @@ class Contact(Base):
     contact_id = Column(String, index=True)
     phone_number = Column(String)
     contact_name = Column(String)
-    current_thread_id = Column(Integer, ForeignKey("threads.id"), nullable=True, default=None)
-    current_assistant = Column(Integer, ForeignKey("assistants.id"), nullable=True, default=None) # TODO: change to current_assistant_id and add direct reference to assistant
+    current_thread_id = Column(
+        Integer, ForeignKey("threads.id"), nullable=True, default=None
+    )
+    current_assistant = Column(
+        Integer, ForeignKey("assistants.id"), nullable=True, default=None
+    )  # TODO: change to current_assistant_id and add direct reference to assistant
     last_message_at = Column(DateTime)
     recall_count = Column(Integer, default=0)
     under_appointment_confirmation = Column(Boolean, default=False)
@@ -182,7 +202,7 @@ class DigisacClient(Base):
     digisac_slug = Column(String)
     service_id = Column(String)
     digisac_token = Column(String)
-    digisac_default_user = Column(String) # TODO: rename to default_user_id
+    digisac_default_user = Column(String)  # TODO: rename to default_user_id
     company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company")
@@ -241,7 +261,7 @@ class AsaasClient(Base):
     company = relationship("Company", backref="asaas_clients")
 
 
-class RDStationCRMClient(Base): # TODO: remove CRM from the name
+class RDStationCRMClient(Base):  # TODO: remove CRM from the name
     __tablename__ = "rdstationcrm_clients"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -252,7 +272,7 @@ class RDStationCRMClient(Base): # TODO: remove CRM from the name
     company = relationship("Company")
 
 
-class RDStationCRMDealStage(Base): # TODO: remove CRM from the name
+class RDStationCRMDealStage(Base):  # TODO: remove CRM from the name
     __tablename__ = "rdstationcrm_deal_stages"
 
     id = Column(Integer, primary_key=True, index=True)

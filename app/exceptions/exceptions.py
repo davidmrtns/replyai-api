@@ -1,13 +1,17 @@
 class AppException(Exception):
-    def __init__(self, detail: str, user_friendly_detail: str = None, http_status_code: int = 500):
+    def __init__(
+        self, detail: str, user_friendly_detail: str = None, http_status_code: int = 500
+    ):
         self.detail = detail
-        self.user_friendly_detail = user_friendly_detail or "An unexpected error occurred."
+        self.user_friendly_detail = (
+            user_friendly_detail or "An unexpected error occurred."
+        )
         self.http_status_code = http_status_code
         super().__init__(self.detail)
 
     def __str__(self):
         return f"{self.__class__.__name__}: {self.detail}"
-    
+
     def detailed(self):
         data = vars(self).copy()
         return data
@@ -57,7 +61,6 @@ class RunException(Exception):
         self.run_id = run_id or "Unknown run"
         self.thread_id = thread_id or "Unknown thread"
         super().__init__(self.detail)
-
 
     def __str__(self):
         return f"[{self.__class__.__name__}] {self.detail} (Run ID: {self.run_id}, Thread ID: {self.thread_id})"

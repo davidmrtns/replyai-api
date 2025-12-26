@@ -11,11 +11,9 @@ from app.utils.logger import logger
 
 
 def create_financial_clients(
-        company: Company,
-        db: Session,
-        client_number: int | None = None
+    company: Company, db: Session, client_number: int | None = None
 ) -> list[AsaasClient] | AsaasClient:
-    if company.financial_client_type != 'asaas':
+    if company.financial_client_type != "asaas":
         return []
 
     query = db.query(AsaasClientDB).filter_by(id_empresa=company.id)
@@ -29,15 +27,15 @@ def create_financial_clients(
 
 
 async def generate_billing_response(
-        action: str,
-        contact_name: str,
-        phone_number: str,
-        current_date: str,
-        due_date: str,
-        billing_description: str,
-        company: Company,
-        db: Session
-)  -> BillingResponse:
+    action: str,
+    contact_name: str,
+    phone_number: str,
+    current_date: str,
+    due_date: str,
+    billing_description: str,
+    company: Company,
+    db: Session,
+) -> BillingResponse:
     instruction = {
         "acao": action,
         "dados": {
@@ -45,17 +43,25 @@ async def generate_billing_response(
             "phone_number": phone_number,
             "due_date": due_date,
             "current_date": current_date,
-            "billing_description": billing_description
-        }
+            "billing_description": billing_description,
+        },
     }
 
-    assistant_db = db.query(Assistant).filter_by(purpose="cobrar", company_id=company.id).first()
+    assistant_db = (
+        db.query(Assistant).filter_by(purpose="cobrar", company_id=company.id).first()
+    )
 
     try:
         if assistant_db is not None:
-            assistant = AssistantsClient(assistant_name=assistant_db.nome, openai_assistant_id=assistant_db.assistantId, openai_api_key=company.openai_api_key)
+            assistant = AssistantsClient(
+                assistant_name=assistant_db.nome,
+                openai_assistant_id=assistant_db.assistantId,
+                openai_api_key=company.openai_api_key,
+            )
             assistant.add_message(message=json.dumps(instruction))
-            response, thread_id = assistant.create_or_run_thread() # TODO: check if i can use the thread service here
+            response, thread_id = (
+                assistant.create_or_run_thread()
+            )  # TODO: check if i can use the thread service here
             response_to_obj = RespostaFinanceiro.from_dict(json.loads(response))
             return response_to_obj, thread_id
     except Exception as e:

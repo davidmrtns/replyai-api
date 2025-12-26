@@ -17,9 +17,11 @@ class CredentialData(NamedTuple):
 
 
 class OutlookAccessTokenCredential(TokenCredential):
-    def __init__(self, credential_data: CredentialData, client_db: OutlookClientDB, db: Session):
-        client_id = os.getenv('MICROSOFT_CLIENT_ID')
-        client_secret = os.getenv('MICROSOFT_CLIENT_SECRET')
+    def __init__(
+        self, credential_data: CredentialData, client_db: OutlookClientDB, db: Session
+    ):
+        client_id = os.getenv("MICROSOFT_CLIENT_ID")
+        client_secret = os.getenv("MICROSOFT_CLIENT_SECRET")
 
         decrypted_access_token = decrypt_api_key(credential_data.access_token)
         decrypted_refresh_token = decrypt_api_key(credential_data.refresh_token)
@@ -34,13 +36,11 @@ class OutlookAccessTokenCredential(TokenCredential):
         self.app = msal.ConfidentialClientApplication(
             client_id=client_id,
             client_credential=client_secret,
-            authority=f'https://login.microsoftonline.com/common'
+            authority=f"https://login.microsoftonline.com/common",
         )
-
 
     def is_token_expired(self):
         return datetime.now(timezone.utc).timestamp() >= self.client_db.expires_at - 60
-
 
     def get_token(self):
         if not self.is_token_expired():
@@ -48,22 +48,25 @@ class OutlookAccessTokenCredential(TokenCredential):
 
         result = self.app.acquire_token_by_refresh_token(
             refresh_token=self.refresh_token,
-            scopes=['https://graph.microsoft.com/.default']
+            scopes=["https://graph.microsoft.com/.default"],
         )
 
-        if 'access_token' in result:
-            access_token: str = result.get('access_token')
-            refresh_token = result.get('refresh_token', self.refresh_token)
-            expires_in = result.get('expires_in')
+        if "access_token" in result:
+            access_token: str = result.get("access_token")
+            refresh_token = result.get("refresh_token", self.refresh_token)
+            expires_in = result.get("expires_in")
 
             self.client_db.access_token = access_token
             self.client_db.refresh_token = refresh_token
             self.client_db.expires_in = expires_in
-            self.client_db.expires_at = datetime.now(timezone.utc).timestamp() + expires_in
+            self.client_db.expires_at = (
+                datetime.now(timezone.utc).timestamp() + expires_in
+            )
             self.db_session.commit()
 
-            return AccessToken(self.access_token, result['expires_in'])
+            return AccessToken(self.access_token, result["expires_in"])
         else:
             # TODO: raise custom exception
-            raise Exception(f"Error while renewing token: {result.get('error_description', 'Unknown error')}")
-
+            raise Exception(
+                f"Error while renewing token: {result.get('error_description', 'Unknown error')}"
+            )

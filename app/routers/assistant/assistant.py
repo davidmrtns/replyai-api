@@ -21,11 +21,11 @@ router = APIRouter()
 
 @router.post("/{company_slug}")
 async def create_assistant(
-        company_slug: str,
-        request: AssistenteSchema,
-        company: Annotated[Company, Depends(check_company_access)],
-        openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-        db: Session = Depends(obter_sessao)
+    company_slug: str,
+    request: AssistenteSchema,
+    company: Annotated[Company, Depends(check_company_access)],
+    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    db: Session = Depends(obter_sessao),
 ):
     tools = get_function_documentations()
 
@@ -36,7 +36,7 @@ async def create_assistant(
         response_format=ResponseFormatJSONObject(type="json_object"),
         temperature=1.0,
         tools=tools,
-        top_p=1.0
+        top_p=1.0,
     )
 
     if assistant:
@@ -46,7 +46,7 @@ async def create_assistant(
             purpose=request.proposito,
             shortcut=request.atalho,
             voice_id=request.voz,
-            company_id=company.id
+            company_id=company.id,
         )
 
         db.add(assistant_db)
@@ -58,15 +58,21 @@ async def create_assistant(
 
 @router.get("/{company_slug}/{assistant_id}")
 async def get_instructions_from_assistant(
-        company_slug: str,
-        assistant_id: int,
-        company: Annotated[Company, Depends(check_company_access)],
-        openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-        db: Session = Depends(obter_sessao)
+    company_slug: str,
+    assistant_id: int,
+    company: Annotated[Company, Depends(check_company_access)],
+    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    db: Session = Depends(obter_sessao),
 ):
-    assistant_db = db.query(Assistant).filter_by(openai_assistant_id=assistant_id, company_id=company.id).first()
+    assistant_db = (
+        db.query(Assistant)
+        .filter_by(openai_assistant_id=assistant_id, company_id=company.id)
+        .first()
+    )
     if assistant_db:
-        assistant = openai_client.beta.assistants.retrieve(assistant_id=assistant_db.assistantId)
+        assistant = openai_client.beta.assistants.retrieve(
+            assistant_id=assistant_db.assistantId
+        )
         if assistant:
             return assistant.instructions
     return None
@@ -74,19 +80,23 @@ async def get_instructions_from_assistant(
 
 @router.put("/{company_slug}/{assistant_id}", response_model=AssistenteSchemaEmpresa)
 async def edit_assistant(
-        company_slug: str,
-        assistant_id: int,
-        request: AssistenteSchema,
-        company: Annotated[Company, Depends(check_company_access)],
-        openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-        db: Session = Depends(obter_sessao)
+    company_slug: str,
+    assistant_id: int,
+    request: AssistenteSchema,
+    company: Annotated[Company, Depends(check_company_access)],
+    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    db: Session = Depends(obter_sessao),
 ):
-    assistant_db = db.query(Assistant).filter_by(openai_assistant_id=assistant_id, company_id=company.id).first()
+    assistant_db = (
+        db.query(Assistant)
+        .filter_by(openai_assistant_id=assistant_id, company_id=company.id)
+        .first()
+    )
     if assistant_db:
         openai_client.beta.assistants.update(
             assistant_id=assistant_db.openai_assistant_id,
             name=f"{request.nome} - {request.proposito}",
-            instructions=request.instrucoes
+            instructions=request.instrucoes,
         )
 
         assistant_db.assistant_name = request.nome
@@ -101,21 +111,25 @@ async def edit_assistant(
 
 @router.delete("/{company_slug}/{assistant_id}")
 async def delete_assistente(
-        company_slug: str,
-        assistant_id: int,
-        company: Annotated[Company, Depends(check_company_access)],
-        openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-        db: Session = Depends(obter_sessao)
+    company_slug: str,
+    assistant_id: int,
+    company: Annotated[Company, Depends(check_company_access)],
+    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    db: Session = Depends(obter_sessao),
 ):
     if company.default_assistant_id == assistant_id:
         raise AssistantEditingException(
             assistant_id=assistant_id,
             detail="User tried to delete the default assistant of the company.",
             user_friendly_detail="You cannot delete the default assistant of the company. Please change the default assistant and try again.",
-            http_status_code=403
+            http_status_code=403,
         )
 
-    assistant_db = db.query(Assistant).filter_by(openai_assistant_id=assistant_id, company_id=company.id).first()
+    assistant_db = (
+        db.query(Assistant)
+        .filter_by(openai_assistant_id=assistant_id, company_id=company.id)
+        .first()
+    )
     if assistant_db:
         try:
             assistant = openai_client.beta.assistants.delete(
@@ -133,6 +147,6 @@ async def delete_assistente(
                 assistant_id=assistant_id,
                 detail="Assistant not found in OpenAI, but was removed from the database.",
                 user_friendly_detail="The assistant was not found in OpenAI, but it has been removed from the database.",
-                http_status_code=410
+                http_status_code=410,
             )
     return False

@@ -8,6 +8,7 @@ class AsaasClientSchema(BaseModel):
     rotulo: str
     client_number: int
 
+
 class RDStationCRMDealStageSchema(BaseModel):
     id: int
     atalho: str
@@ -15,31 +16,37 @@ class RDStationCRMDealStageSchema(BaseModel):
     user_id: Optional[str]
     deal_stage_inicial: bool
 
+
 class RDStationCRMClientSchema(BaseModel):
     id: int
     token: str
     id_fonte_padrao: str
     estagios: Optional[List[RDStationCRMDealStageSchema]]
 
+
 class AgendaSchema(BaseModel):
     id: int
     endereco: str
     atalho: str
+
 
 class GoogleCalendarSchema(BaseModel):
     id: Optional[int] = None
     client_email: str
     timezone: str
 
+
 class OutlookClientSchema(BaseModel):
     id: Optional[int] = None
     default_user: str
     timezone: str
 
+
 class EvolutionAPIClientSchema(BaseModel):
     id: int
     apiKey: str
     instanceName: str
+
 
 class DepartamentoSchema(BaseModel):
     id: int
@@ -48,6 +55,7 @@ class DepartamentoSchema(BaseModel):
     departmentId: str
     userId: Optional[str]
     departamento_confirmacao: bool
+
 
 class DigisacClientSchema(BaseModel):
     id: int
@@ -60,6 +68,7 @@ class DigisacClientSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class VozSchema(BaseModel):
     id: int
     nome: str
@@ -71,16 +80,20 @@ class VozSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class AssistenteSchema(BaseModel):
     id: int
     assistantId: str
     nome: str
-    proposito: Literal["responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"]
+    proposito: Literal[
+        "responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"
+    ]
     atalho: str
     voz: Optional[VozSchema]
 
     class Config:
         from_attributes = True
+
 
 class ColaboradorSchema(BaseModel):
     id: int
@@ -90,6 +103,7 @@ class ColaboradorSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class MidiaSchema(BaseModel):
     id: int
@@ -102,6 +116,7 @@ class MidiaSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class UsuarioSchema(BaseModel):
     id: int
     nome: str
@@ -112,6 +127,7 @@ class UsuarioSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class EmpresaSchema(BaseModel):
     id: int
@@ -156,6 +172,7 @@ class EmpresaSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class EmpresaMinSchema(BaseModel):
     id: int
     slug: str
@@ -164,14 +181,18 @@ class EmpresaMinSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class ListaUsuariosSchema(BaseModel):
     has_more: bool
     next_cursor: Optional[int] = None
     limit: int
     data: List[UsuarioSchema]
 
+
 class ExemploPromptSchema(BaseModel):
-    tipo_assistente: Literal["responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"]
+    tipo_assistente: Literal[
+        "responder", "agendar", "retomar", "confirmar", "reescrever", "cobrar"
+    ]
     prompt: str
 
     class Config:
