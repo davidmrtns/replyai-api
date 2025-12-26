@@ -311,11 +311,3 @@ class RDStationCRMDealStage(Base):  # TODO: remove CRM from the name
     rdstationcrm_client_id = Column(Integer, ForeignKey("rdstationcrm_clients.id"))
 
     rdstationcrm_client = relationship("RDStationCRMClient", backref="stages")
-
-
-class PromptExample(Base):  # TODO: check if it's necessary
-    __tablename__ = "prompt_examples"
-
-    id = Column(Integer, primary_key=True, index=True)
-    assistant_type = Column(String)
-    prompt = Column(String)
