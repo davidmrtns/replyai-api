@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 
-from app.db.models import Midia
+from app.db.new_models import Media
 from app.exceptions.exceptions import ResourceNotFoundException
 
 
-async def get_media_from_db(company_id: int, media_id: int, db: Session) -> Midia:
-    media_db = db.query(Midia).filter_by(id=media_id, id_empresa=company_id).first()
+async def get_media_from_db(company_id: int, media_id: int, db: Session) -> Media:
+    media_db = db.query(Media).filter_by(id=media_id, company_id=company_id).first()
     if not media_db:
         raise ResourceNotFoundException(
             resource_type="Media",

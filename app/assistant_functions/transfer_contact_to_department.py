@@ -3,8 +3,7 @@ from openai.types.beta import FunctionToolParam
 from app.assistant_functions.assistant_function import register_function
 from app.clients.digisac_client import DigisacClient
 from app.db.database import retornar_sessao
-from app.db.models import Departamento
-from app.db.new_models import Assistant, Company, Thread
+from app.db.new_models import Assistant, Company, Department, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.services.contact_service import change_awaiting_human_contact, transfer_contact
 from app.services.message_service import create_message_client
@@ -77,8 +76,8 @@ async def transfer_contact_to_department(
             )
 
         department = (
-            db.query(Departamento)
-            .filter_by(codigo=department_code, id_empresa=company.id)
+            db.query(Department)
+            .filter_by(code=department_code, company_id=company.id)
             .first()
         )
         if not department:

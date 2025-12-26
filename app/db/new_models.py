@@ -194,6 +194,34 @@ class Contact(Base):
     current_thread = relationship("Thread", foreign_keys=[current_thread_id])
 
 
+class Media(Base):
+    __tablename__ = "midias"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String)
+    mediatype = Column(String)  # TODO: maybe change to mimetype
+    media_name = Column(String)
+    shortcut = Column(String)
+    order = Column(Integer)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="medias")
+
+
+class Department(Base):
+    __tablename__ = "departamentos"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    shortcut = Column(String)
+    contact_transfer_comment = Column(String)
+    digisac_department_id = Column(String)
+    digisac_user_id = Column(String)
+    is_confirmation_department = Column(Boolean)
+    digisac_client_id = Column(Integer, ForeignKey("digisac_clients.id"))
+
+    digisac_client = relationship("DigisacClient", backref="departments")
+
+
 # TODO: change name to not conflict with the utility class
 class DigisacClient(Base):
     __tablename__ = "digisac_clients"
@@ -283,3 +311,11 @@ class RDStationCRMDealStage(Base):  # TODO: remove CRM from the name
     rdstationcrm_client_id = Column(Integer, ForeignKey("rdstationcrm_clients.id"))
 
     rdstationcrm_client = relationship("RDStationCRMClient", backref="stages")
+
+
+class PromptExample(Base):  # TODO: check if it's necessary
+    __tablename__ = "prompt_examples"
+
+    id = Column(Integer, primary_key=True, index=True)
+    assistant_type = Column(String)
+    prompt = Column(String)

@@ -4,8 +4,7 @@ import pytz
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.models import Departamento
-from app.db.new_models import Company, Contact, Assistant
+from app.db.new_models import Company, Contact, Department, Assistant
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client
@@ -132,13 +131,13 @@ async def change_awaiting_human_contact(
 
 
 async def transfer_contact(
-    message_client: DigisacClient, contact: Contact, department: Departamento
+    message_client: DigisacClient, contact: Contact, department: Department
 ) -> None:
     message_client.transfer_contact(
         contact.contact_id,
-        department.departmentId,
-        department.userId,
-        byUserId=None,
+        department.digisac_department_id,
+        department.digisac_user_id,
+        by_user_id=None,
         comments=department.comentario,
     )
 

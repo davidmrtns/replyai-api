@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Departamento
-from app.db.new_models import Company
+from app.db.new_models import Company, Department
 from app.db.new_models import DigisacClient as DigisacClientDB
 from app.routers.empresa import verificar_permissao_empresa
 from app.routers.integrations.digisac.digisac_helpers import (
@@ -83,13 +82,13 @@ async def create_department(
 ):
     digisac_client_db = get_digisac_client_from_db(company, db)
 
-    department = Departamento(
-        atalho=request.atalho,
-        comentario=request.comentario,
-        departmentId=request.department_id,
-        userId=request.user_id,
-        departamento_confirmacao=request.departamento_confirmacao,
-        id_digisac_client=digisac_client_db.id,
+    department = Department(
+        shortcut=request.atalho,
+        contact_transfer_comment=request.comentario,
+        digisac_department_id=request.department_id,
+        digisac_user_id=request.user_id,
+        is_confirmation_department=request.departamento_confirmacao,
+        digisac_client_id=digisac_client_db.id,
     )
 
     db.add(department)

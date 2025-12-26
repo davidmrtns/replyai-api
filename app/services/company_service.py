@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models import Departamento
-from app.db.new_models import Assistant, Company, DigisacClient
+from app.db.new_models import Assistant, Company, DigisacClient, Department
 from app.clients.assistants_client import AssistantsClient
 from app.services.message_service import create_message_client
 from app.types.types import AssistantData, CompanyData
@@ -49,7 +48,7 @@ async def get_department(
     shortcut: str | None,
     is_confirmation_department: bool,
     db: Session,
-) -> Departamento | None:
+) -> Department | None:
     if company:
         digisac_client = (
             db.query(DigisacClient).filter_by(company_id=company.id).first()
@@ -58,7 +57,7 @@ async def get_department(
         if digisac_client:
             if is_confirmation_department:
                 department = (
-                    db.query(Departamento)
+                    db.query(Department)
                     .filter_by(
                         departamento_confirmacao=True,
                         id_digisac_client=digisac_client.id,
@@ -67,8 +66,8 @@ async def get_department(
                 )
             else:
                 department = (
-                    db.query(Departamento)
-                    .filter_by(atalho=shortcut, id_digisac_client=digisac_client.id)
+                    db.query(Department)
+                    .filter_by(shortcut=shortcut, digisac_client_id=digisac_client.id)
                     .first()
                 )
             if department:

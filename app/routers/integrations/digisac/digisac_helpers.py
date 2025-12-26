@@ -2,8 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.models import Departamento
-from app.db.new_models import Company, DigisacClient as DigisacClientDB
+from app.db.new_models import Company, Department, DigisacClient as DigisacClientDB
 
 
 async def get_digisac_client_from_db(
@@ -24,7 +23,7 @@ def get_department_from_db(
     digisac_client: DigisacClientDB, department_id: int, db: Session
 ):
     department = (
-        db.query(Departamento)
+        db.query(Department)
         .filter_by(id=department_id, digisac_client_id=digisac_client.id)
         .first()
     )

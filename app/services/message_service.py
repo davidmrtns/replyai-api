@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
 from app.clients.evolutionapi_client import EvolutionAPIClient
-from app.db.models import Midia
 from app.db.new_models import (
     Assistant,
     Company,
     Contact,
+    Media,
     DigisacClient as DigisacClientDB,
     EvolutionAPIClient as EvolutionAPIClientDB,
 )
@@ -153,9 +153,9 @@ async def _send_medias(
 ) -> bool:
     if media_code:
         medias = (
-            db.query(Midia)
-            .filter_by(atalho=media_code, id_empresa=company.id)
-            .order_by(Midia.ordem)
+            db.query(Media)
+            .filter_by(shortcut=media_code, company_id=company.id)
+            .order_by(Media.order)
             .all()
         )
         for media in medias:

@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import ExemploPrompt
-from app.db.new_models import User
+from app.db.new_models import PromptExample, User
 from .routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesExemploPrompt
 from app.schemas.empresa_schema import ExemploPromptSchema
@@ -20,8 +19,8 @@ async def criar_exemplo_prompt(
 ):
     if usuario_logado.admin and not usuario_logado.id_empresa:
         exemplo = (
-            db.query(ExemploPrompt)
-            .filter_by(tipo_assistente=request.tipo_assistente)
+            db.query(PromptExample)
+            .filter_by(assistant_type=request.tipo_assistente)
             .first()
         )
         if exemplo:
@@ -30,8 +29,8 @@ async def criar_exemplo_prompt(
                 detail="Já existe um exemplo de prompt desse tipo de assistente",
             )
         else:
-            exemplo = ExemploPrompt(
-                tipo_assistente=request.tipo_assistente, prompt=request.prompt
+            exemplo = PromptExample(
+                assistant_type=request.tipo_assistente, prompt=request.prompt
             )
             db.add(exemplo)
             db.commit()
@@ -48,7 +47,7 @@ async def obter_exemplo_prompt(
     usuario_logado: User = Depends(get_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    exemplo = db.query(ExemploPrompt).filter_by(tipo_assistente=tipo_assistente).first()
+    exemplo = db.query(PromptExample).filter_by(assistant_type=tipo_assistente).first()
     if exemplo:
         return exemplo
     return None
@@ -63,7 +62,7 @@ async def editar_exemplo_prompt(
 ):
     if usuario_logado.admin and not usuario_logado.id_empresa:
         exemplo = (
-            db.query(ExemploPrompt).filter_by(tipo_assistente=tipo_assistente).first()
+            db.query(PromptExample).filter_by(assistant_type=tipo_assistente).first()
         )
         if exemplo:
             exemplo.prompt = request.prompt
@@ -83,7 +82,7 @@ async def excluir_exemplo_prompt(
 ):
     if usuario_logado.admin and not usuario_logado.id_empresa:
         exemplo = (
-            db.query(ExemploPrompt).filter_by(tipo_assistente=tipo_assistente).first()
+            db.query(PromptExample).filter_by(assistant_type=tipo_assistente).first()
         )
         if exemplo:
             db.delete(exemplo)
