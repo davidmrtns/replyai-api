@@ -1,7 +1,7 @@
 import json
 from sqlalchemy.orm import Session
 
-from app.db.new_models import Assistant, Company
+from app.db.models import Assistant, Company
 from app.services import RespostaConfirmacao
 from app.clients.assistants_client import AssistantsClient
 

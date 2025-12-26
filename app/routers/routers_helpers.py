@@ -4,7 +4,7 @@ from fastapi.params import Depends, Cookie
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company, User
+from app.db.models import Company, User
 from app.exceptions.exceptions import NoAccessToCompanyException, UserAccessException
 from app.utils.password_utils import SECRET_KEY, ALGORITHM
 

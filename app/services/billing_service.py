@@ -3,7 +3,7 @@ import json
 from sqlalchemy.orm import Session
 
 from app.clients.asaas_client import AsaasClient
-from app.db.new_models import Assistant, Company, AsaasClient as AsaasClientDB
+from app.db.models import Assistant, Company, AsaasClient as AsaasClientDB
 from app.services import RespostaFinanceiro
 from app.types.types import BillingResponse
 from app.clients.assistants_client import AssistantsClient

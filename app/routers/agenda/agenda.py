@@ -4,7 +4,7 @@ import pytz
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company, Agenda
+from app.db.models import Company, Agenda
 from app.routers.agenda.agenda_helpers import get_agenda
 from app.routers.routers_helpers import check_company_access
 from app.schemas.atualizacao_empresa_schema import InformacoesAgendaUnica

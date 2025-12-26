@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from app.db.new_models import Contact, Company
+from app.db.models import Contact, Company
 from app.services import RespostaFinanceiro
 from app.clients.assistants_client import AssistantsClient
 from app.clients.message_client import MessageClient

@@ -4,7 +4,7 @@ import pytz
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.new_models import Company, Contact, Department, Assistant
+from app.db.models import Company, Contact, Department, Assistant
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client

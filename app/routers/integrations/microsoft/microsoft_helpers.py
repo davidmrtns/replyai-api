@@ -4,7 +4,7 @@ from fastapi import HTTPException
 import requests
 from sqlalchemy.orm import Session
 
-from app.db.new_models import Company, OutlookClient as OutlookClientDB
+from app.db.models import Company, OutlookClient as OutlookClientDB
 from app.exceptions.exceptions import IntegrationAuthException
 
 

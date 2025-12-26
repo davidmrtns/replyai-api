@@ -1,6 +1,6 @@
 from requests import Session
 
-from app.db.new_models import (
+from app.db.models import (
     Company,
     GoogleCalendarClient as GoogleCalendarClientDB,
     OutlookClient as OutlookClientDB,

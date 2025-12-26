@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import PromptExample, User
+from app.db.models import PromptExample, User
 from .routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesExemploPrompt
 from app.schemas.empresa_schema import ExemploPromptSchema

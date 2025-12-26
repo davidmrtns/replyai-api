@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.new_models import Media
+from app.db.models import Media
 from app.exceptions.exceptions import ResourceNotFoundException
 
 

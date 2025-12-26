@@ -8,7 +8,7 @@ from typing import Annotated
 
 from app.assistant_functions.assistant_function import get_function_documentations
 from app.db.database import obter_sessao
-from app.db.new_models import Assistant, Company
+from app.db.models import Assistant, Company
 from app.exceptions.exceptions import AssistantEditingException
 from app.routers.assistant.assistant_helpers import get_openai_client
 from app.routers.routers_helpers import check_company_access

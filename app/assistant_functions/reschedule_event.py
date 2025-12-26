@@ -2,7 +2,7 @@ from openai.types.beta import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import retornar_sessao
-from app.db.new_models import Assistant, Company, Contact
+from app.db.models import Assistant, Company, Contact
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_agenda_client import create_agenda_client
 

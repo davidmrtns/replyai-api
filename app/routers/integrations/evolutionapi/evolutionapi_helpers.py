@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from requests import Response
 
-from app.db.new_models import Company, EvolutionAPIClient as EvolutionAPIClientDB
+from app.db.models import Company, EvolutionAPIClient as EvolutionAPIClientDB
 from app.clients.evolutionapi_client import EvolutionAPIClient
 from app.utils.api_key_encryption import encrypt_api_key
 

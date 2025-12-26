@@ -6,7 +6,7 @@ from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import (
+from app.db.models import (
     RDStationCRMClient,
     RDStationCRMDealStage,
     AsaasClient,

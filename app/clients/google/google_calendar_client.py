@@ -12,7 +12,7 @@ from app.utils.api_key_encryption import decrypt_api_key
 
 from ..agenda_client import AgendaClient, Schedule
 from .google_calendar_client_helpers import CredentialData
-from app.db.new_models import GoogleCalendarClient as GoogleCalendarClientDB
+from app.db.models import GoogleCalendarClient as GoogleCalendarClientDB
 
 
 class GoogleCalendar(AgendaClient):

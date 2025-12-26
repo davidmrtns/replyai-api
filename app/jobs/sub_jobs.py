@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.clients.digisac_client import DigisacClient
 from app.clients.financial_client import FinancialClient
 from app.clients.message_client import MessageClient
-from app.db.new_models import Contact, Company, Agenda
+from app.db.models import Contact, Company, Agenda
 from app.services.agenda_service import extract_event_data
 from app.services.billing_service import (
     generate_billing_response,

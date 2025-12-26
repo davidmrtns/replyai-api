@@ -2,7 +2,7 @@ import json
 
 from sqlalchemy.orm import Session
 
-from app.db.new_models import Contact, Thread
+from app.db.models import Contact, Thread
 from app.clients.assistants_client import AssistantsClient, AssistantReply
 
 

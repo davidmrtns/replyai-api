@@ -4,7 +4,7 @@ import pytz
 from sqlalchemy import or_, and_
 
 from app.db.database import retornar_sessao
-from app.db.new_models import Company, Contact
+from app.db.models import Company, Contact
 from app.jobs.sub_jobs import (
     enviar_retomada_conversa,
     enviar_confirmacao_consulta,

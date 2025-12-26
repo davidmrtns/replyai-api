@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company, Voice
+from app.db.models import Company, Voice
 from ..routers_helpers import check_company_access
 from .voice_helpers import get_elevenlabs_client, get_voice_from_db
 from app.schemas.integrations_schemas import VozSchema, parse_form_data_voz

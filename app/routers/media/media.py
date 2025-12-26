@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company, Media
+from app.db.models import Company, Media
 from app.routers.media.media_helpers import get_media_from_db
 from app.routers.routers_helpers import check_company_access
 from app.schemas.atualizacao_empresa_schema import (

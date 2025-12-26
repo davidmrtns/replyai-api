@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.clients.elevenlabs_client import ElevenLabsClient
-from app.db.new_models import Company, Voice
+from app.db.models import Company, Voice
 from app.exceptions.exceptions import ResourceNotFoundException
 
 

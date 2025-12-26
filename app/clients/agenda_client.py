@@ -4,7 +4,7 @@ from typing import List, Literal
 from msgraph.generated.models.schedule_information import ScheduleInformation
 import pytz
 
-from app.db.new_models import Company
+from app.db.models import Company
 
 
 class Schedule:

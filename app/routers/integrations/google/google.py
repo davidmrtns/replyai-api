@@ -6,8 +6,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company
-from app.db.new_models import GoogleCalendarClient as GoogleCalendarClientDB
+from app.db.models import Company
+from app.db.models import GoogleCalendarClient as GoogleCalendarClientDB
 from app.utils.api_key_encryption import encrypt_api_key
 from ...routers_helpers import check_company_access
 from .google_helpers import (

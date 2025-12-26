@@ -2,7 +2,7 @@ from openai.types.beta import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import retornar_sessao
-from app.db.new_models import Assistant, Employee
+from app.db.models import Assistant, Employee
 
 
 def get_employees_doc():

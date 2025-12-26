@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company, User
+from app.db.models import Company, User
 from app.exceptions.exceptions import UserAccessException
 from ..routers_helpers import get_logged_in_user
 from app.schemas.atualizacao_empresa_schema import InformacoesUsuario

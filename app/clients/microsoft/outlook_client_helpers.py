@@ -5,7 +5,7 @@ from typing import NamedTuple
 from sqlalchemy.orm import Session
 from azure.core.credentials import TokenCredential, AccessToken
 
-from app.db.new_models import OutlookClient as OutlookClientDB
+from app.db.models import OutlookClient as OutlookClientDB
 from app.utils.api_key_encryption import decrypt_api_key
 
 

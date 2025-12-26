@@ -1,5 +1,5 @@
 from app.clients.message_client import MessageClient
-from app.db.new_models import Company, Contact
+from app.db.models import Company, Contact
 from app.schemas.digisac_schema import DigisacRequest
 from app.schemas.evolutionapi_schema import EvolutionAPIRequest
 from app.services.contact_service import change_ai_reply_reception, reset_contact

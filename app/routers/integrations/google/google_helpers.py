@@ -3,7 +3,7 @@ from fastapi import HTTPException
 import requests
 from sqlalchemy.orm import Session
 
-from app.db.new_models import Company, GoogleCalendarClient as GoogleCalendarClientDB
+from app.db.models import Company, GoogleCalendarClient as GoogleCalendarClientDB
 from app.exceptions.exceptions import IntegrationAuthException
 
 

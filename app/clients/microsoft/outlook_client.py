@@ -18,7 +18,7 @@ from msgraph.generated.models.free_busy_status import FreeBusyStatus
 
 from ..agenda_client import AgendaClient, Schedule
 from .outlook_client_helpers import CredentialData, OutlookAccessTokenCredential
-from app.db.new_models import OutlookClient as OutlookClientDB
+from app.db.models import OutlookClient as OutlookClientDB
 
 
 class OutlookClient(AgendaClient):

@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.new_models import Company, Department, DigisacClient as DigisacClientDB
+from app.db.models import Company, Department, DigisacClient as DigisacClientDB
 
 
 async def get_digisac_client_from_db(

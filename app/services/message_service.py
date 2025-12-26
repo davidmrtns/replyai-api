@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
 from app.clients.evolutionapi_client import EvolutionAPIClient
-from app.db.new_models import (
+from app.db.models import (
     Assistant,
     Company,
     Contact,

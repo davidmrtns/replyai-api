@@ -3,7 +3,7 @@ from openai.types.beta import FunctionToolParam
 from app.assistant_functions.assistant_function import register_function
 from app.clients.digisac_client import DigisacClient
 from app.db.database import retornar_sessao
-from app.db.new_models import Assistant, Company, Thread
+from app.db.models import Assistant, Company, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.services.contact_service import end_contact
 from app.services.message_service import create_message_client

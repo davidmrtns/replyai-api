@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company, Department
-from app.db.new_models import DigisacClient as DigisacClientDB
+from app.db.models import Company, Department
+from app.db.models import DigisacClient as DigisacClientDB
 from app.routers.empresa import verificar_permissao_empresa
 from app.routers.integrations.digisac.digisac_helpers import (
     get_department_from_db,

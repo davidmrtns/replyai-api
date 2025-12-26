@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 
 from app.clients.crm_client import CRMClient
 from app.clients.rdstation_client import RDStationClient
-from app.db.new_models import RDStationCRMClient, RDStationCRMDealStage
-from app.db.new_models import Company, Contact
+from app.db.models import RDStationCRMClient, RDStationCRMDealStage
+from app.db.models import Company, Contact
 
 
 def create_crm_client(company: Company, db: Session) -> CRMClient | None:

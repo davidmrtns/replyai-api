@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.new_models import Company
+from app.db.models import Company
 from .evolutionapi_helpers import add_evolutionapi_client_to_db, get_evolutionapi_client
 from ...routers_helpers import check_company_access
 from app.schemas.integrations_schemas import (

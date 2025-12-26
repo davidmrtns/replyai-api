@@ -13,7 +13,7 @@ import time
 
 from app.assistant_functions.assistant_function import FUNCTION_REGISTRY
 from app.clients.message_client import FileData
-from app.db.new_models import Assistant
+from app.db.models import Assistant
 from app.exceptions.exceptions import (
     AIResponseException,
     FailedRunException,
