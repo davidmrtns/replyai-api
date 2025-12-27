@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
 from app.db.models import Company, Contact, Department, Assistant
-from app.schemas.digisac_schema import DigisacRequest
-from app.schemas.evolutionapi_schema import EvolutionAPIRequest
+from app.schemas.integrations.digisac_schema import DigisacRequest
+from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client
 from app.types.types import CompanyData, ContactAndAssistant
 from app.clients.assistants_client import AssistantsClient

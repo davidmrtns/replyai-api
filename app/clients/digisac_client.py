@@ -12,7 +12,7 @@ from app.clients.message_client import (
     MediaMessageData,
     MessageClient,
 )
-from app.schemas.digisac_schema import DigisacRequest
+from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.utils.api_key_encryption import decrypt_api_key
 
 

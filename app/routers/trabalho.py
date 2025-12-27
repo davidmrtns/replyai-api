@@ -13,7 +13,10 @@ from app.jobs.jobs import (
     rodar_retomar_conversa,
 )
 from app.jobs.sub_jobs import processar_cobranca, processar_nf
-from app.schemas.asaas_schema import AsaasPaymentRequest, AsaasInvoiceRequest
+from app.schemas.integrations.asaas_schema import (
+    AsaasPaymentRequest,
+    AsaasInvoiceRequest,
+)
 from app.services.billing_service import create_financial_clients
 from app.services.company_service import get_company_data
 

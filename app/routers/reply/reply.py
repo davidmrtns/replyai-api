@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
 from app.exceptions.exceptions import AIResponseException
-from app.schemas.digisac_schema import DigisacRequest
-from app.schemas.evolutionapi_schema import EvolutionAPIRequest
+from app.schemas.integrations.digisac_schema import DigisacRequest
+from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.services.company_service import get_company_data
 from app.services.thread_service import execute_thread
 from app.utils.pipelines import PIPELINES

@@ -11,8 +11,8 @@ from app.db.models import (
     DigisacClient as DigisacClientDB,
     EvolutionAPIClient as EvolutionAPIClientDB,
 )
-from app.schemas.digisac_schema import DigisacRequest
-from app.schemas.evolutionapi_schema import EvolutionAPIRequest
+from app.schemas.integrations.digisac_schema import DigisacRequest
+from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.types.types import MessageData
 from app.utils.download_file import download_file
 from app.clients.assistants_client import AssistantsClient
