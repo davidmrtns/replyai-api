@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from app.db.database import obter_sessao
 from app.db.models import Company, Department
 from app.db.models import DigisacClient as DigisacClientDB
-from app.routers.empresa import verificar_permissao_empresa
 from app.routers.integrations.digisac.digisac_helpers import (
     get_department_from_db,
     get_digisac_client,
@@ -140,7 +139,7 @@ async def delete_department(
 async def create_digisac_client(
     company_slug: str,
     request: DigisacClientSchema,
-    company: Company = Depends(verificar_permissao_empresa),
+    company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):
     digisac_client_db = get_digisac_client_from_db(company, db)
@@ -168,7 +167,7 @@ async def create_digisac_client(
 async def edit_digisac_client(
     company_slug: str,
     request: DigisacClientSchema,
-    company: Company = Depends(verificar_permissao_empresa),
+    company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):
     digisac_client_db = get_digisac_client_from_db(company, db)

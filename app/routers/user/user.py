@@ -28,23 +28,23 @@ async def create_user(
     logged_in_user: User = Depends(get_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    if logged_in_user.admin:
+    if logged_in_user.is_admin:
         if request.senha is not None and request.senha == request.confirmacao_senha:
             hashed_password = hash_password(request.senha)
 
             # If the logged-in user is an admin but not tied to a company, they can specify the company for the new user
-            if not logged_in_user.id_empresa:
-                id_empresa = request.id_empresa
+            if not logged_in_user.company_id:
+                company_id = request.company_id
             else:
-                id_empresa = logged_in_user.id_empresa
+                company_id = logged_in_user.company_id
 
             new_user = User(
-                nome=request.nome,
+                name=request.name,
                 email=request.email,
-                senha=hashed_password,
-                ativo=request.usuario_ativo,
-                admin=request.admin,
-                id_empresa=id_empresa,
+                password=hashed_password,
+                is_active=request.is_active,
+                is_admin=request.is_admin,
+                company_id=company_id,
             )
 
             db.add(new_user)
@@ -70,7 +70,7 @@ async def edit_user(
     db: Session = Depends(obter_sessao),
 ):
     # If the logged-in user is an admin, they can edit any user
-    if logged_in_user.admin:
+    if logged_in_user.is_admin:
         user_to_edit_id = request.id
     elif request.id == logged_in_user.id:
         user_to_edit_id = logged_in_user.id
@@ -79,8 +79,8 @@ async def edit_user(
 
     if user_to_edit_id:
         query = db.query(User).filter_by(id=request.id)
-        if logged_in_user.id_empresa:
-            query = query.filter_by(id_empresa=logged_in_user.id_empresa)
+        if logged_in_user.company_id:
+            query = query.filter_by(company_id=logged_in_user.company_id)
         user = query.first()
 
         if not user:
@@ -90,14 +90,14 @@ async def edit_user(
                 http_status_code=404,
             )
 
-        user.nome = request.nome
+        user.name = request.name
         user.email = request.email
-        user.ativo = request.usuario_ativo
-        user.admin = request.admin
+        user.is_active = request.is_active
+        user.is_admin = request.is_admin
 
         if request.senha is not None and request.senha == request.confirmacao_senha:
             hashed_password = hash_password(request.senha)
-            user.senha = hashed_password
+            user.password = hashed_password
         else:
             raise UserAccessException(
                 detail="Password does not exist or is different than confirmation.",
@@ -121,10 +121,10 @@ async def delete_user(
     db: Session = Depends(obter_sessao),
 ):
     # Only admins can delete users
-    if logged_in_user.admin:
+    if logged_in_user.is_admin:
         query = db.query(User).filter_by(id=id)
-        if logged_in_user.id_empresa:
-            query = query.filter_by(id_empresa=logged_in_user.id_empresa)
+        if logged_in_user.company_id:
+            query = query.filter_by(company_id=logged_in_user.company_id)
         user = query.first()
 
         if user:
@@ -150,7 +150,7 @@ async def get_all_users(
         10, alias="limit", ge=1, le=50, description="Número de registros por página"
     ),
 ):
-    if not logged_in_user.admin:
+    if not logged_in_user.is_admin:
         raise UserAccessException(
             detail="The logged in user is not an admin.",
             user_friendly_detail="You don't have permission to perform this action.",
@@ -158,8 +158,8 @@ async def get_all_users(
         )
 
     query = db.query(User).order_by(User.id.asc())
-    if logged_in_user.id_empresa:
-        query = query.filter(User.id_empresa == logged_in_user.id_empresa)
+    if logged_in_user.company_id:
+        query = query.filter(User.company_id == logged_in_user.company_id)
     if cursor:
         query = query.filter(User.id > cursor)
 
@@ -184,7 +184,7 @@ async def login(
 ):
     user = (
         db.query(User)
-        .filter(User.email == form_data.username, User.ativo == True)
+        .filter(User.email == form_data.username, User.is_active == True)
         .first()
     )
 
@@ -195,16 +195,16 @@ async def login(
             http_status_code=404,
         )
 
-    if user.id_empresa:
-        empresa = db.query(Company).filter_by(id=user.id_empresa).first()
-        if not empresa.is_active:
+    if user.company_id:
+        company = db.query(Company).filter_by(id=user.company_id).first()
+        if not company.is_active:
             raise UserAccessException(
                 detail="The user company is deactivated.",
                 user_friendly_detail="You can't log in because the company associated with your account is deactivated. Contact the system admin.",
                 http_status_code=401,
             )
 
-    if not verify_password(form_data.password, user.senha):
+    if not verify_password(form_data.password, user.password):
         raise UserAccessException(
             detail="The password is incorrect.",
             user_friendly_detail="Incorret credentials.",

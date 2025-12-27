@@ -8,10 +8,12 @@ from app.exceptions.exception_handler import (
     generic_exception_handler,
 )
 from app.exceptions.exceptions import AppException
-from app.routers import trabalho, empresa, exemplo
+from app.routers import trabalho
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+from app.routers.company import company
+from app.routers.employee import employee
 from app.routers.integrations.evolutionapi import evolutionapi
 from app.routers.integrations.google import google
 from app.routers.integrations.microsoft import microsoft
@@ -58,7 +60,9 @@ async def save_request_body(request: dict):
 app.add_exception_handler(AppException, exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
+app.include_router(company.router, prefix="/company", tags=["Companies"])
 app.include_router(user.router, prefix="/user", tags=["Users"])
+app.include_router(employee.router, prefix="/employee", tags=["Employees"])
 app.include_router(reply.router, prefix="/reply", tags=["Replies"])
 app.include_router(agenda.router, prefix="/agenda", tags=["Agendas"])
 app.include_router(assistant.router, prefix="/assistant", tags=["Assistants"])
@@ -76,5 +80,3 @@ app.include_router(
 )  # TODO: maybe add 'integrations' prefix to routers
 
 app.include_router(trabalho.router, prefix="/trabalho", tags=["Trabalhos"])
-app.include_router(empresa.router, prefix="/empresa", tags=["Empresas"])
-app.include_router(exemplo.router, prefix="/exemplo", tags=["Exemplos"])

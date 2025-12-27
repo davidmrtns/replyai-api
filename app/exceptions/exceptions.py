@@ -30,6 +30,16 @@ class NoAccessToCompanyException(AppException):
         super().__init__(**kwargs)
 
 
+class ConflictingRequestException(AppException):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
+class MalformedRequestException(AppException):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
 class ResourceNotFoundException(AppException):
     def __init__(self, resource_name: str, resource_id: str, **kwargs):
         self.resource_name = resource_name or "Unknown resource"
