@@ -84,7 +84,7 @@ def get_company_id_from_user_or_request(
     logged_in_user: User = Depends(get_logged_in_user),
 ) -> int:
     """
-    Retrieves the company ID either from the logged in user or from the request body.
+    Retrieves the company ID either from the logged-in user or from the request body.
 
     Raises MalformedRequestException if neither is provided.
     """
@@ -94,8 +94,8 @@ def get_company_id_from_user_or_request(
         return request.company_id
     else:
         raise MalformedRequestException(
-            detail="The logged in user doesn't have a company ID and it was not provided in the request body.",
-            user_friendly_detail="You must specify a company for the employee if the logged in user is not tied to a company.",
+            detail="The logged-in user doesn't have a company ID and it was not provided in the request body.",
+            user_friendly_detail="You must specify a company for the employee if the logged-in user is not tied to a company.",
             http_status_code=400,
         )
 
@@ -104,7 +104,7 @@ def get_company_id_from_logged_in_user(
     logged_in_user: User = Depends(get_logged_in_user),
 ) -> int | None:
     """
-    Retrieves the company ID from the logged in user.
+    Retrieves the company ID from the logged-in user.
 
     Returns None if the user is not tied to any company.
     """

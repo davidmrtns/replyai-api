@@ -7,9 +7,14 @@ from typing import Optional
 from app.db.database import obter_sessao
 from app.db.models import Company, User
 from app.exceptions.exceptions import UserAccessException
+from app.schemas.user_schema import (
+    CreateUserSchema,
+    UpdateUserSchema,
+    UserListSchema,
+    UserSchema,
+)
+from app.utils.model_utils import apply_model_update, get_resource_from_db
 from ..routers_helpers import get_logged_in_user
-from app.schemas.atualizacao_empresa_schema import InformacoesUsuario
-from app.schemas.empresa_schema import ListaUsuariosSchema, UsuarioSchema
 from app.utils.password_utils import verify_password, create_access_token, hash_password
 
 
@@ -17,69 +22,58 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
 router = APIRouter()
 
 
-# TODO: check if it's necessary to have this endpoint
-# @router.get("/")
-# async def get_logged_in_user(logged_in_user: User = Depends(get_logged_in_user)):
-#     return logged_in_user
-
-
-@router.post("/")
+@router.post("/", response_model=UserSchema)
 async def create_user(
-    request: InformacoesUsuario,
+    request: CreateUserSchema,
     logged_in_user: User = Depends(get_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
     if logged_in_user.is_admin:
-        if request.senha is not None and request.senha == request.confirmacao_senha:
-            hashed_password = hash_password(request.senha)
+        hashed_password = hash_password(request.password)
 
-            # If the logged-in user is an admin but not tied to a company, they can specify the company for the new user
-            if not logged_in_user.company_id:
-                company_id = request.company_id
-            else:
-                company_id = logged_in_user.company_id
+        # If the logged-in user is an admin but not tied to a company, they can specify the company for the new user
+        if not logged_in_user.company_id:
+            company_id = request.company_id
+        else:
+            company_id = logged_in_user.company_id
 
-            new_user = User(
-                name=request.name,
-                email=request.email,
-                password=hashed_password,
-                is_active=request.is_active,
-                is_admin=request.is_admin,
-                company_id=company_id,
-            )
-
-            db.add(new_user)
-            db.commit()
-            db.refresh(new_user)
-            return new_user
-        raise UserAccessException(
-            detail="Password does not exist or is different than confirmation.",
-            user_friendly_detail="The inputted passwords do not match. Try again.",
-            http_status_code=400,
+        new_user = User(
+            name=request.name,
+            email=request.email,
+            password=hashed_password,
+            is_active=request.is_active,
+            is_admin=request.is_admin,
+            company_id=company_id,
         )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
     raise UserAccessException(
-        detail="The logged in user is not an admin.",
+        detail="The logged-in user is not an admin.",
         user_friendly_detail="You don't have permission to perform this action.",
         http_status_code=403,
     )
 
 
-@router.put("/", response_model=UsuarioSchema)
-async def edit_user(
-    request: InformacoesUsuario,
+@router.patch("/{user_id}", response_model=UserSchema)
+async def update_user(
+    user_id: int,
+    request: UpdateUserSchema,
     logged_in_user: User = Depends(get_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
     # If the logged-in user is an admin, they can edit any user
     if logged_in_user.is_admin:
-        user_to_edit_id = request.id
-    elif request.id == logged_in_user.id:
+        user_to_edit_id = user_id
+    elif user_id == logged_in_user.id:
         user_to_edit_id = logged_in_user.id
     else:
         user_to_edit_id = None
 
     if user_to_edit_id:
-        query = db.query(User).filter_by(id=request.id)
+        query = db.query(User).filter_by(id=user_to_edit_id)
         if logged_in_user.company_id:
             query = query.filter_by(company_id=logged_in_user.company_id)
         user = query.first()
@@ -91,42 +85,31 @@ async def edit_user(
                 http_status_code=404,
             )
 
-        user.name = request.name
-        user.email = request.email
-        user.is_active = request.is_active
-        user.is_admin = request.is_admin
+        update_data = request.model_dump(exclude_unset=True)
 
-        if request.senha is not None and request.senha == request.confirmacao_senha:
-            hashed_password = hash_password(request.senha)
-            user.password = hashed_password
-        else:
-            raise UserAccessException(
-                detail="Password does not exist or is different than confirmation.",
-                user_friendly_detail="The inputted passwords do not match. Try again.",
-                http_status_code=400,
-            )
+        if "new_password" in update_data:
+            update_data.pop("new_password_confirmation")
+            update_data["password"] = hash_password(update_data.pop("new_password"))
 
+        apply_model_update(user, update_data)
         db.commit()
         return user
     raise UserAccessException(
-        detail="The logged in user is not an admin, or is trying to edit another user.",
+        detail="The logged-in user is not an admin, or is trying to edit another user.",
         user_friendly_detail="You don't have permission to edit this user.",
         http_status_code=403,
     )
 
 
-@router.delete("/{id}")
+@router.delete("/{user_id}")
 async def delete_user(
-    id: int,
+    user_id: int,
     logged_in_user: User = Depends(get_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
     # Only admins can delete users
     if logged_in_user.is_admin:
-        query = db.query(User).filter_by(id=id)
-        if logged_in_user.company_id:
-            query = query.filter_by(company_id=logged_in_user.company_id)
-        user = query.first()
+        user = get_resource_from_db(User, user_id, db, logged_in_user.company_id)
 
         if user:
             db.delete(user)
@@ -134,32 +117,32 @@ async def delete_user(
             return True
         return False
     raise UserAccessException(
-        detail="The logged in user is not an admin.",
+        detail="The logged-in user is not an admin.",
         user_friendly_detail="You don't have permission to edit this user.",
         http_status_code=403,
     )
 
 
-@router.get("/all", response_model=ListaUsuariosSchema)
+@router.get("/all", response_model=UserListSchema)
 async def get_all_users(
     logged_in_user: User = Depends(get_logged_in_user),
     db: Session = Depends(obter_sessao),
     cursor: Optional[int] = Query(
-        None, alias="cursor", description="ID do último item carregado"
+        None, alias="cursor", description="Last user ID from the previous page"
     ),
     limit: int = Query(
-        10, alias="limit", ge=1, le=50, description="Número de registros por página"
+        10, alias="limit", ge=1, le=50, description="NNumber of records per page"
     ),
 ):
     if not logged_in_user.is_admin:
         raise UserAccessException(
-            detail="The logged in user is not an admin.",
+            detail="The logged-in user is not an admin.",
             user_friendly_detail="You don't have permission to perform this action.",
             http_status_code=403,
         )
 
     query = db.query(User).order_by(User.id.asc())
-    if logged_in_user.company_id:
+    if logged_in_user.company_id:  # if user is tied to a company, filter by it
         query = query.filter(User.company_id == logged_in_user.company_id)
     if cursor:
         query = query.filter(User.id > cursor)
@@ -172,7 +155,7 @@ async def get_all_users(
 
     next_cursor = users[-1].id if has_more else None
 
-    return ListaUsuariosSchema(
+    return UserListSchema(
         has_more=has_more, next_cursor=next_cursor, limit=limit, data=users
     )
 

@@ -59,34 +59,3 @@ class AssistenteSchema(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class MidiaSchema(BaseModel):
-    id: int
-    url: str
-    mediatype: str
-    nome: str
-    atalho: str
-    ordem: int
-
-    class Config:
-        from_attributes = True
-
-
-class UsuarioSchema(BaseModel):
-    id: int
-    nome: str
-    email: str
-    ativo: bool
-    admin: bool
-    id_empresa: Optional[int] = None
-
-    class Config:
-        from_attributes = True
-
-
-class ListaUsuariosSchema(BaseModel):
-    has_more: bool
-    next_cursor: Optional[int] = None
-    limit: int
-    data: List[UsuarioSchema]
