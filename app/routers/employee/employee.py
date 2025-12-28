@@ -3,19 +3,20 @@ from fastapi.params import Depends
 from requests import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Employee, User
-from .employee_helpers import get_employee_from_db
-from app.routers.routers_helpers import require_auth, validate_company_id
-from app.routers.user.user import get_logged_in_user
+from app.db.models import Employee
+from app.utils.model_utils import get_resource_from_db, apply_model_update
+from app.routers.routers_helpers import (
+    get_company_id_from_logged_in_user,
+    get_company_id_from_user_or_request,
+)
 from app.schemas.employee_schema import (
     CreateEmployeeSchema,
     EmployeeSchema,
     UpdateEmployeeSchema,
 )
-from app.utils.apply_model_update import apply_model_update
 
 
-router = APIRouter(dependencies=[Depends(require_auth)])
+router = APIRouter()
 
 
 # TODO: maybe add a GET endpoint to list employees, or get one by ID
@@ -24,16 +25,14 @@ router = APIRouter(dependencies=[Depends(require_auth)])
 @router.post("/", response_model=EmployeeSchema)
 async def create_employee(
     request: CreateEmployeeSchema,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(obter_sessao),
 ):
-    validate_company_id(logged_in_user, request)
-
     employee = Employee(
         name=request.name,
         nickname=request.nickname,
         department_name=request.department_name,
-        company_id=logged_in_user.company_id or request.company_id,
+        company_id=company_id,
     )
 
     db.add(employee)
@@ -47,10 +46,10 @@ async def create_employee(
 async def update_employee(
     employee_id: int,
     request: UpdateEmployeeSchema,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    employee = await get_employee_from_db(employee_id, logged_in_user, db)
+    employee = await get_resource_from_db(Employee, employee_id, db, company_id)
 
     apply_model_update(employee, request)
     db.commit()
@@ -60,10 +59,10 @@ async def update_employee(
 @router.delete("/{employee_id}")
 async def delete_employee(
     employee_id: int,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    employee = await get_employee_from_db(employee_id, logged_in_user, db)
+    employee = await get_resource_from_db(Employee, employee_id, db, company_id)
 
     if employee:
         db.delete(employee)

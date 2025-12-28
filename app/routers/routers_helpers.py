@@ -1,5 +1,5 @@
 import jwt
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.params import Depends, Cookie
 from sqlalchemy.orm import Session
 
@@ -46,13 +46,6 @@ async def get_logged_in_user(
     return user
 
 
-async def require_auth(_: User = Depends(get_logged_in_user)):
-    """
-    Ensures the request can only be made by an authenticated user.
-    """
-    return None
-
-
 async def check_company_access(
     company_slug: str,
     db: Session = Depends(obter_sessao),
@@ -86,14 +79,33 @@ async def check_company_access(
     return company
 
 
-def validate_company_id(logged_in_user: User, request):
+def get_company_id_from_user_or_request(
+    request: Request,
+    logged_in_user: User = Depends(get_logged_in_user),
+) -> int:
     """
-    Validates if the logged user has a company ID or if the request provides one.
+    Retrieves the company ID either from the logged in user or from the request body.
+
     Raises MalformedRequestException if neither is provided.
     """
-    if not logged_in_user.company_id and not request.company_id:
+    if logged_in_user.company_id:
+        return logged_in_user.company_id
+    elif request.company_id:
+        return request.company_id
+    else:
         raise MalformedRequestException(
-            detail="The logged user doesn't have a company ID and it was not provided in the request body.",
+            detail="The logged in user doesn't have a company ID and it was not provided in the request body.",
             user_friendly_detail="You must specify a company for the employee if the logged in user is not tied to a company.",
             http_status_code=400,
         )
+
+
+def get_company_id_from_logged_in_user(
+    logged_in_user: User = Depends(get_logged_in_user),
+) -> int | None:
+    """
+    Retrieves the company ID from the logged in user.
+
+    Returns None if the user is not tied to any company.
+    """
+    return logged_in_user.company_id

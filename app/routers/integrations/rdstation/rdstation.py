@@ -3,14 +3,13 @@ from fastapi.params import Depends
 from requests import Session
 
 from app.db.database import obter_sessao
-from app.db.models import RDStationCRMClient, RDStationCRMDealStage, User
+from app.db.models import RDStationCRMClient, RDStationCRMDealStage
 from app.exceptions.exceptions import ConflictingRequestException
-from app.utils.apply_model_update import apply_model_update
-from .rdstation_helpers import get_deal_stage_from_db, get_rdstation_client_from_db
+from app.utils.model_utils import apply_model_update, get_resource_from_db
+from .rdstation_helpers import get_deal_stage_from_db
 from app.routers.routers_helpers import (
-    get_logged_in_user,
-    require_auth,
-    validate_company_id,
+    get_company_id_from_logged_in_user,
+    get_company_id_from_user_or_request,
 )
 from app.schemas.rdstation_client_schema import (
     CreateDealStageSchema,
@@ -23,7 +22,7 @@ from app.schemas.rdstation_client_schema import (
 from app.utils.api_key_encryption import encrypt_api_key
 
 
-router = APIRouter(dependencies=[Depends(require_auth)])
+router = APIRouter()
 
 
 # TODO: maybe add a GET endpoint to get rdstation client
@@ -32,15 +31,11 @@ router = APIRouter(dependencies=[Depends(require_auth)])
 @router.post("/", response_model=RDStationClientSchema)
 async def create_rdstation_client(
     request: CreateRDStationClientSchema,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(obter_sessao),
 ):
-    validate_company_id(logged_in_user, request)
-
     rdstationcrm_client = (
-        db.query(RDStationCRMClient)
-        .filter_by(company_id=logged_in_user.company_id or request.company_id)
-        .first()
+        db.query(RDStationCRMClient).filter_by(company_id=company_id).first()
     )
     if rdstationcrm_client:
         raise ConflictingRequestException(
@@ -52,7 +47,7 @@ async def create_rdstation_client(
     rdstationcrm_client = RDStationCRMClient(
         token=encrypt_api_key(request.token),
         default_source_id=request.default_source_id,
-        company_id=logged_in_user.company_id or request.company_id,
+        company_id=company_id,
     )
 
     db.add(rdstationcrm_client)
@@ -65,7 +60,7 @@ async def create_rdstation_client(
 async def update_rdstation_client(
     rdstation_client_id: int,
     request: UpdateRDStationClientSchema,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
     update_data = request.model_dump(exclude_unset=True)
@@ -73,8 +68,8 @@ async def update_rdstation_client(
     if "token" in update_data:
         update_data["token"] = encrypt_api_key(update_data["token"])
 
-    rdstation_client = await get_rdstation_client_from_db(
-        rdstation_client_id, logged_in_user, db
+    rdstation_client = await get_resource_from_db(
+        RDStationCRMClient, rdstation_client_id, db, company_id
     )
 
     apply_model_update(rdstation_client, update_data)
@@ -85,11 +80,11 @@ async def update_rdstation_client(
 @router.delete("/{rdstation_client_id}")
 async def delete_rdstation_client(
     rdstation_client_id: int,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    rdstation_client = await get_rdstation_client_from_db(
-        rdstation_client_id, logged_in_user, db
+    rdstation_client = await get_resource_from_db(
+        RDStationCRMClient, rdstation_client_id, db, company_id
     )
     if rdstation_client:
         # TODO: check if there are dependent deal stages before deleting
@@ -103,11 +98,11 @@ async def delete_rdstation_client(
 async def create_deal_stage(
     rdstation_client_id: int,
     request: CreateDealStageSchema,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    rdstation_client = await get_rdstation_client_from_db(
-        rdstation_client_id, logged_in_user, db
+    rdstation_client = await get_resource_from_db(
+        RDStationCRMClient, rdstation_client_id, db, company_id
     )
 
     deal_stage = RDStationCRMDealStage(
@@ -132,11 +127,11 @@ async def update_deal_stage(
     rdstation_client_id: int,
     deal_stage_id: int,
     request: UpdateDealStageSchema,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
     deal_stage = await get_deal_stage_from_db(
-        rdstation_client_id, deal_stage_id, logged_in_user, db
+        rdstation_client_id, deal_stage_id, company_id, db
     )
 
     apply_model_update(deal_stage, request)
@@ -148,11 +143,11 @@ async def update_deal_stage(
 async def delete_deal_stage(
     rdstation_client_id: int,
     deal_stage_id: int,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
     deal_stage = await get_deal_stage_from_db(
-        rdstation_client_id, deal_stage_id, logged_in_user, db
+        rdstation_client_id, deal_stage_id, company_id, db
     )
     if deal_stage:
         db.delete(deal_stage)

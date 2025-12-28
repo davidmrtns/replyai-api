@@ -2,12 +2,6 @@ from pydantic import BaseModel
 from typing import List, Optional, Literal
 
 
-class AgendaSchema(BaseModel):
-    id: int
-    endereco: str
-    atalho: str
-
-
 class GoogleCalendarSchema(BaseModel):
     id: Optional[int] = None
     client_email: str

@@ -17,9 +17,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
 router = APIRouter()
 
 
-@router.get("/")
-async def get_logged_in_user(logged_in_user: User = Depends(get_logged_in_user)):
-    return logged_in_user
+# TODO: check if it's necessary to have this endpoint
+# @router.get("/")
+# async def get_logged_in_user(logged_in_user: User = Depends(get_logged_in_user)):
+#     return logged_in_user
 
 
 @router.post("/")

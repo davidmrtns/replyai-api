@@ -4,25 +4,32 @@ import pytz
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Company, Agenda
-from app.routers.agenda.agenda_helpers import get_agenda
-from app.routers.routers_helpers import check_company_access
-from app.schemas.atualizacao_empresa_schema import InformacoesAgendaUnica
-from app.schemas.empresa_schema import AgendaSchema as AgendaSchemaEmpresa
+from app.db.models import Agenda
+from ..routers_helpers import (
+    get_company_id_from_logged_in_user,
+    get_company_id_from_user_or_request,
+)
+from app.schemas.agenda_schema import (
+    AgendaSchema,
+    CreateAgendaSchema,
+    UpdateAgendaSchema,
+)
+from app.utils.model_utils import get_resource_from_db, apply_model_update
 
 
 router = APIRouter()
 
 
-@router.post("/{company_slug}")
+@router.post("/", response_model=AgendaSchema)
 async def create_agenda(
-    company_slug: str,
-    request: InformacoesAgendaUnica,
-    company: Company = Depends(check_company_access),
+    request: CreateAgendaSchema,
+    company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(obter_sessao),
 ):
     agenda = Agenda(
-        endereco=request.endereco, atalho=request.atalho, id_empresa=company.id
+        endereco=request.address,
+        atalho=request.shortcut,
+        id_empresa=company_id,
     )
 
     db.add(agenda)
@@ -31,36 +38,34 @@ async def create_agenda(
     return agenda
 
 
-@router.put("/{company_slug}/{agenda_id}", response_model=AgendaSchemaEmpresa)
-async def edit_agenda(
-    company_slug: str,
+@router.patch("/{agenda_id}", response_model=AgendaSchema)
+async def update_agenda(
     agenda_id: int,
-    request: InformacoesAgendaUnica,
-    company: Company = Depends(check_company_access),
+    request: UpdateAgendaSchema,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    agenda = get_agenda(company.id, agenda_id, db)
+    agenda = await get_resource_from_db(Agenda, agenda_id, db, company_id)
 
-    agenda.endereco = request.endereco
-    agenda.atalho = request.atalho
-
+    apply_model_update(agenda, request)
     db.commit()
     db.refresh(agenda)
     return agenda
 
 
-@router.delete("/{company_slug}/{agenda_id}")
+@router.delete("/{agenda_id}")
 async def delete_agenda(
-    company_slug: str,
     agenda_id: int,
-    company: Company = Depends(check_company_access),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    agenda = get_agenda(company.id, agenda_id, db)
+    agenda = await get_resource_from_db(Agenda, agenda_id, db, company_id)
 
-    db.delete(agenda)
-    db.commit()
-    return True
+    if agenda:
+        db.delete(agenda)
+        db.commit()
+        return True
+    return False
 
 
 @router.get("/timezones")

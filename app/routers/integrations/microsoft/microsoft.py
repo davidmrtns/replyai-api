@@ -10,13 +10,13 @@ from app.clients.microsoft.outlook_client import OutlookClient
 from app.db.database import obter_sessao
 from app.db.models import Company
 from app.db.models import OutlookClient as OutlookClientDB
+from app.schemas.agenda_schema import UpdateTimezoneSchema
 from app.utils.api_key_encryption import encrypt_api_key
 from ...routers_helpers import check_company_access
 from .microsoft_helpers import (
     generate_microsoft_auth_credentials,
     get_outlook_client_from_db,
 )
-from app.schemas.atualizacao_empresa_schema import TimezoneRequest
 from app.schemas.empresa_schema import OutlookClientSchema as OutlookClientSchemaEmpresa
 from app.utils.create_agenda_client import create_agenda_client
 
@@ -107,7 +107,7 @@ async def get_timezones(
 @router.put("/{company_slug}/timezone", response_model=OutlookClientSchemaEmpresa)
 async def update_outlook_timezone(
     company_slug: str,
-    request: TimezoneRequest,
+    request: UpdateTimezoneSchema,
     company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):

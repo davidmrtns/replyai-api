@@ -1,26 +1,5 @@
-from fastapi import Form
 from pydantic import BaseModel, field_validator
 from typing import Optional
-
-
-class InformacoesAgendaUnica(BaseModel):
-    endereco: str
-    atalho: str
-
-
-class InformacoesMidia(BaseModel):
-    atalho: str
-    ordem: int
-
-
-async def parse_form_data_midia(
-    atalho: str = Form(...), ordem: int = Form(...)
-) -> InformacoesMidia:
-    return InformacoesMidia(atalho=atalho, ordem=ordem)
-
-
-class TimezoneRequest(BaseModel):
-    timezone: str
 
 
 class InformacoesUsuario(BaseModel):

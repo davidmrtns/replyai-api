@@ -8,13 +8,13 @@ from sqlalchemy.orm import Session
 from app.db.database import obter_sessao
 from app.db.models import Company
 from app.db.models import GoogleCalendarClient as GoogleCalendarClientDB
+from app.schemas.agenda_schema import UpdateTimezoneSchema
 from app.utils.api_key_encryption import encrypt_api_key
 from ...routers_helpers import check_company_access
 from .google_helpers import (
     generate_google_auth_credentials,
     get_google_calendar_client_from_db,
 )
-from app.schemas.atualizacao_empresa_schema import TimezoneRequest
 from app.schemas.empresa_schema import GoogleCalendarSchema
 
 
@@ -94,7 +94,7 @@ async def get_auth_link(
 @router.put("/{company_slug}/timezone", response_model=GoogleCalendarSchema)
 async def update_google_calendar_timezone(
     company_slug: str,
-    request: TimezoneRequest,
+    request: UpdateTimezoneSchema,
     company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):

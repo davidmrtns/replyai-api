@@ -2,26 +2,29 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
-from app.db.models import Company, Media
-from app.routers.media.media_helpers import get_media_from_db
-from app.routers.routers_helpers import check_company_access
-from app.schemas.atualizacao_empresa_schema import (
-    InformacoesMidia,
-    parse_form_data_midia,
+from app.db.models import Media
+from app.routers.routers_helpers import (
+    get_company_id_from_logged_in_user,
+    get_company_id_from_user_or_request,
 )
-from app.schemas.empresa_schema import MidiaSchema as MidiaSchemaEmpresa
 from app.clients.microsoft.azure_blob_storage_client import AzureBlobStorageClient
+from app.schemas.media_schema import (
+    CreateMediaSchema,
+    MediaSchema,
+    UpdateMediaSchema,
+    parse_form_data_to_media,
+)
+from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
 router = APIRouter()
 
 
-@router.post("/{company_slug}")
+@router.post("/", response_model=MediaSchema)
 async def create_media(
-    company_slug: str,
     media_file: UploadFile = File(...),
-    request: InformacoesMidia = Depends(parse_form_data_midia),
-    company: Company = Depends(check_company_access),
+    request: CreateMediaSchema = Depends(parse_form_data_to_media),
+    company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(obter_sessao),
 ):
     filename = f"{media_file.filename}"
@@ -36,9 +39,9 @@ async def create_media(
             url=file_url,
             mediatype=mimetype,
             media_name=upload_filename,
-            shortcut=request.atalho,
-            order=request.ordem,
-            company_id=company.id,
+            shortcut=request.shortcut,
+            order=request.order,
+            company_id=company_id,
         )
 
         db.add(media)
@@ -48,35 +51,31 @@ async def create_media(
     return None
 
 
-@router.put("/{company_slug}/{media_id}", response_model=MidiaSchemaEmpresa)
-async def edit_media(
-    company_slug: str,
+@router.patch("/{media_id}", response_model=MediaSchema)
+async def update_media(
     media_id: int,
-    request: InformacoesMidia,
-    company: Company = Depends(check_company_access),
+    request: UpdateMediaSchema,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
-    media = get_media_from_db(company.id, media_id, db)
+    media = await get_resource_from_db(Media, media_id, db, company_id)
 
-    media.atalho = request.atalho
-    media.ordem = request.ordem
-
+    apply_model_update(media, request)
     db.commit()
     db.refresh(media)
     return media
 
 
-@router.delete("/{company_slug}/{media_id}")
+@router.delete("/{media_id}")
 async def delete_media(
-    company_slug: str,
     media_id: int,
-    company: Company = Depends(check_company_access),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(obter_sessao),
 ):
     azure_blob_storage_client = AzureBlobStorageClient()
-    media = get_media_from_db(company.id, media_id, db)
+    media = await get_resource_from_db(Media, media_id, db, company_id)
 
-    if media and azure_blob_storage_client.delete_file(media.nome):
+    if media and azure_blob_storage_client.delete_file(media.media_name):
         db.delete(media)
         db.commit()
         return True

@@ -13,13 +13,13 @@ from app.schemas.company_schema import (
     CreateCompanySchema,
     UpdateCompanySchema,
 )
-from app.utils.apply_model_update import apply_model_update
+from app.utils.model_utils import apply_model_update
 from app.utils.api_key_encryption import encrypt_api_key
 
-from ..routers_helpers import get_logged_in_user, check_company_access, require_auth
+from ..routers_helpers import get_logged_in_user, check_company_access
 
 
-router = APIRouter(dependencies=[Depends(require_auth)])
+router = APIRouter()
 
 
 @router.get("/", response_model=List[CompanyMinSchema])
