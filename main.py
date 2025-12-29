@@ -8,7 +8,6 @@ from app.exceptions.exception_handler import (
     generic_exception_handler,
 )
 from app.exceptions.exceptions import AppException
-from app.routers import trabalho
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
@@ -19,6 +18,7 @@ from app.routers.integrations.evolutionapi import evolutionapi
 from app.routers.integrations.google import google
 from app.routers.integrations.microsoft import microsoft
 from app.routers.integrations.rdstation import rdstation
+from app.routers.job import job
 from app.routers.reply import reply
 from app.routers.agenda import agenda
 from app.routers.assistant import assistant
@@ -77,5 +77,4 @@ app.include_router(evolutionapi.router, prefix="/evolutionapi", tags=["Evolution
 app.include_router(microsoft.router, prefix="/microsoft", tags=["Microsoft"])
 app.include_router(google.router, prefix="/google", tags=["Google"])
 app.include_router(rdstation.router, prefix="/rdstation", tags=["RDStation"])
-
-app.include_router(trabalho.router, prefix="/trabalho", tags=["Trabalhos"])
+app.include_router(job.router, prefix="/job", tags=["Jobs"])
