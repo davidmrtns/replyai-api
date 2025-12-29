@@ -2,39 +2,23 @@ import json
 from pathlib import Path
 import uuid
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import os
 
 from app.exceptions.exception_handler import (
     exception_handler,
     generic_exception_handler,
 )
 from app.exceptions.exceptions import AppException
-from fastapi.middleware.cors import CORSMiddleware
-import os
-
-from app.routers.company import company
-from app.routers.employee import employee
-from app.routers.integrations.asaas import asaas
-from app.routers.integrations.evolutionapi import evolutionapi
-from app.routers.integrations.google import google
-from app.routers.integrations.microsoft import microsoft
-from app.routers.integrations.rdstation import rdstation
-from app.routers.job import job
-from app.routers.reply import reply
-from app.routers.agenda import agenda
-from app.routers.assistant import assistant
-from app.routers.media import media
-from app.routers.integrations.digisac import digisac
-from app.routers.user import user
-from app.routers.voice import voice
+from app.routers import *
 
 
 app = FastAPI(title="ReplyAI API", version="1.0.0")
 
-origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
-
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,7 +27,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "The API is running"}
+    return {"status": "The API is running"}
 
 
 # Route to save incoming requests for debugging purposes
