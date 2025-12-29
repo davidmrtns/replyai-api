@@ -17,7 +17,7 @@ from .microsoft_helpers import (
     generate_microsoft_auth_credentials,
     get_outlook_client_from_db,
 )
-from app.schemas.empresa_schema import OutlookClientSchema as OutlookClientSchemaEmpresa
+from app.schemas.integrations.outlook_schema import OutlookClientSchema
 from app.utils.create_agenda_client import create_agenda_client
 
 
@@ -104,7 +104,7 @@ async def get_timezones(
     return None
 
 
-@router.put("/{company_slug}/timezone", response_model=OutlookClientSchemaEmpresa)
+@router.put("/{company_slug}/timezone", response_model=OutlookClientSchema)
 async def update_outlook_timezone(
     company_slug: str,
     request: UpdateTimezoneSchema,

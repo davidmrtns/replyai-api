@@ -19,6 +19,15 @@ async def get_digisac_client_from_db(
         return digisac_client_db
 
 
+def get_digisac_client(digisac_client_db: DigisacClientDB) -> DigisacClient:
+    return DigisacClient(
+        digisac_slug=digisac_client_db.digisac_slug,
+        service_id=digisac_client_db.service_id,
+        default_user_id=digisac_client_db.digisac_default_user,
+        digisac_token=digisac_client_db.digisac_token,
+    )
+
+
 def get_department_from_db(
     digisac_client: DigisacClientDB, department_id: int, db: Session
 ):
@@ -33,12 +42,3 @@ def get_department_from_db(
         )
 
     return department
-
-
-def get_digisac_client(digisac_client_db: DigisacClientDB) -> DigisacClient:
-    return DigisacClient(
-        digisac_slug=digisac_client_db.digisac_slug,
-        service_id=digisac_client_db.service_id,
-        default_user_id=digisac_client_db.digisac_default_user,
-        digisac_token=digisac_client_db.digisac_token,
-    )

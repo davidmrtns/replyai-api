@@ -12,17 +12,20 @@ from app.db.models import Assistant, Company
 from app.exceptions.exceptions import AssistantEditingException
 from app.routers.assistant.assistant_helpers import get_openai_client
 from app.routers.routers_helpers import check_company_access
-from app.schemas.integrations_schemas import AssistenteSchema
-from app.schemas.empresa_schema import AssistenteSchema as AssistenteSchemaEmpresa
+from app.schemas.assistant_schema import (
+    AssistantSchema,
+    CreateAssistantSchema,
+    UpdateAssistantSchema,
+)
 
 
 router = APIRouter()
 
 
-@router.post("/{company_slug}")
+@router.post("/{company_slug}", response_model=AssistantSchema)
 async def create_assistant(
     company_slug: str,
-    request: AssistenteSchema,
+    request: CreateAssistantSchema,
     company: Annotated[Company, Depends(check_company_access)],
     openai_client: Annotated[OpenAI, Depends(get_openai_client)],
     db: Session = Depends(obter_sessao),
@@ -78,11 +81,11 @@ async def get_instructions_from_assistant(
     return None
 
 
-@router.put("/{company_slug}/{assistant_id}", response_model=AssistenteSchemaEmpresa)
-async def edit_assistant(
+@router.patch("/{company_slug}/{assistant_id}", response_model=AssistantSchema)
+async def update_assistant(
     company_slug: str,
     assistant_id: int,
-    request: AssistenteSchema,
+    request: UpdateAssistantSchema,
     company: Annotated[Company, Depends(check_company_access)],
     openai_client: Annotated[OpenAI, Depends(get_openai_client)],
     db: Session = Depends(obter_sessao),

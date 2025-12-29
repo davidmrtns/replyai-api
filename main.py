@@ -14,9 +14,11 @@ import os
 
 from app.routers.company import company
 from app.routers.employee import employee
+from app.routers.integrations.asaas import asaas
 from app.routers.integrations.evolutionapi import evolutionapi
 from app.routers.integrations.google import google
 from app.routers.integrations.microsoft import microsoft
+from app.routers.integrations.rdstation import rdstation
 from app.routers.reply import reply
 from app.routers.agenda import agenda
 from app.routers.assistant import assistant
@@ -60,6 +62,7 @@ async def save_request_body(request: dict):
 app.add_exception_handler(AppException, exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
+# TODO: extract logics inside routers to specific services
 app.include_router(company.router, prefix="/company", tags=["Companies"])
 app.include_router(user.router, prefix="/user", tags=["Users"])
 app.include_router(employee.router, prefix="/employee", tags=["Employees"])
@@ -68,15 +71,11 @@ app.include_router(agenda.router, prefix="/agenda", tags=["Agendas"])
 app.include_router(assistant.router, prefix="/assistant", tags=["Assistants"])
 app.include_router(media.router, prefix="/media", tags=["Medias"])
 app.include_router(voice.router, prefix="/voice", tags=["Voices"])
-app.include_router(digisac.router, prefix="/digisac", tags=["Integrations", "Digisac"])
-app.include_router(
-    evolutionapi.router, prefix="/evolutionapi", tags=["Integrations", "EvolutionAPI"]
-)
-app.include_router(
-    microsoft.router, prefix="/microsoft", tags=["Integrations", "Microsoft"]
-)
-app.include_router(
-    google.router, prefix="/google", tags=["Integrations", "Google"]
-)  # TODO: maybe add 'integrations' prefix to routers
+app.include_router(asaas.router, prefix="/asaas", tags=["Asaas"])
+app.include_router(digisac.router, prefix="/digisac", tags=["Digisac"])
+app.include_router(evolutionapi.router, prefix="/evolutionapi", tags=["EvolutionAPI"])
+app.include_router(microsoft.router, prefix="/microsoft", tags=["Microsoft"])
+app.include_router(google.router, prefix="/google", tags=["Google"])
+app.include_router(rdstation.router, prefix="/rdstation", tags=["RDStation"])
 
 app.include_router(trabalho.router, prefix="/trabalho", tags=["Trabalhos"])

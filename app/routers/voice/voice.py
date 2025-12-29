@@ -8,19 +8,25 @@ from typing import Annotated
 
 from app.db.database import obter_sessao
 from app.db.models import Company, Voice
+from app.schemas.elevenlabs_client_schema import (
+    CreateVoiceSchema,
+    UpdateVoiceSchema,
+    VoiceMinSchema,
+    VoiceSchema,
+    parse_form_data_to_voice,
+)
 from ..routers_helpers import check_company_access
 from .voice_helpers import get_elevenlabs_client, get_voice_from_db
-from app.schemas.integrations_schemas import VozSchema, parse_form_data_voz
 
 
 router = APIRouter()
 
 
-@router.post("/{company_slug}")
+@router.post("/{company_slug}", response_model=VoiceSchema)
 async def create_voice(
     company_slug: str,
     company: Annotated[Company, Depends(check_company_access)],
-    request: VozSchema = Depends(parse_form_data_voz),
+    request: CreateVoiceSchema = Depends(parse_form_data_to_voice),
     files: List[UploadFile] = File(...),
     db: Session = Depends(obter_sessao),
 ):
@@ -61,7 +67,7 @@ async def create_voice(
             os.remove(temp_file)
 
 
-@router.get("/{company_slug}/{voice_id}")
+@router.get("/{company_slug}/{voice_id}", response_model=VoiceMinSchema)
 async def get_voice(
     slug: str,
     voice_id: int,
@@ -73,18 +79,18 @@ async def get_voice(
 
     voice = elevenlabs_client.get_voice(voice_db.elevenlabs_voice_id)
     if voice:
-        return {
-            "preview_url": voice.preview_url,
-            "description": voice.description,
-        }  # TODO: beautify response
+        return VoiceMinSchema(
+            voice.preview_url,
+            voice.description,
+        )
     return None
 
 
-@router.put("/{company_slug}/{voice_id}")
+@router.patch("/{company_slug}/{voice_id}", response_model=VoiceSchema)
 async def edit_voice(
     company_slug: str,
     voice_id: int,
-    request: VozSchema,
+    request: UpdateVoiceSchema,
     company: Annotated[Company, Depends(check_company_access)],
     db: Session = Depends(obter_sessao),
 ):

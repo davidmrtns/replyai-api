@@ -10,13 +10,13 @@ from app.routers.integrations.digisac.digisac_helpers import (
     get_digisac_client_from_db,
 )
 from app.routers.routers_helpers import check_company_access
-from app.schemas.integrations_schemas import (
+from app.schemas.digisac_client_schema import (
+    CreateDepartmentSchema,
+    CreateDigisacClientSchema,
+    DepartmentSchema,
     DigisacClientSchema,
-    DigisacDepartmentSchema,
-)
-from app.schemas.empresa_schema import (
-    DigisacClientSchema as DigisacClientSchemaEmpresa,
-    DepartamentoSchema as DigisacDepartmentSchemaEmpresa,
+    UpdateDepartmentSchema,
+    UpdateDigisacClientSchema,
 )
 from app.utils.api_key_encryption import encrypt_api_key
 
@@ -24,8 +24,54 @@ from app.utils.api_key_encryption import encrypt_api_key
 router = APIRouter()
 
 
+@router.post("/{company_slug}", response_model=DigisacClientSchema)
+async def create_digisac_client(
+    company_slug: str,
+    request: CreateDigisacClientSchema,
+    company: Company = Depends(check_company_access),
+    db: Session = Depends(obter_sessao),
+):
+    digisac_client_db = await get_digisac_client_from_db(company, db)
+    if digisac_client_db:
+        raise HTTPException(
+            status_code=404,
+            detail="This company already has a Digisac client registered",
+        )
+
+    digisac_client = DigisacClientDB(
+        digisac_slug=request.digisac_slug,
+        service_id=request.service_id,
+        digisac_token=encrypt_api_key(request.digisac_token),
+        digisac_default_user=request.digisac_default_user,
+        company_id=company.id,
+    )
+
+    db.add(digisac_client)
+    db.commit()
+    db.refresh(digisac_client)
+    return digisac_client
+
+
+@router.put("/{company_slug}", response_model=DigisacClientSchema)
+async def update_digisac_client(
+    company_slug: str,
+    request: UpdateDigisacClientSchema,
+    company: Company = Depends(check_company_access),
+    db: Session = Depends(obter_sessao),
+):
+    digisac_client_db = await get_digisac_client_from_db(company, db)
+
+    digisac_client_db.digisac_slug = request.digisac_slug
+    digisac_client_db.digisac_token = encrypt_api_key(request.digisac_token)
+    digisac_client_db.digisac_default_user = request.digisac_default_user
+    digisac_client_db.service_id = request.service_id
+
+    db.commit()
+    return digisac_client_db
+
+
 @router.get("/{company_slug}/services")
-async def list_services(
+async def list_digisac_services(
     company_slug: str,
     page: int = 1,
     service_name: str = None,
@@ -41,7 +87,7 @@ async def list_services(
 
 
 @router.get("/{company_slug}/users")
-async def list_users(
+async def list_digisac_users(
     company_slug: str,
     page: int = 1,
     user_name: str = None,
@@ -57,7 +103,7 @@ async def list_users(
 
 
 @router.get("/{company_slug}/departments")
-async def list_departments(
+async def list_digisac_departments(
     company_slug: str,
     page: int = 1,
     department_name: str = None,
@@ -72,21 +118,21 @@ async def list_departments(
     return response
 
 
-@router.post("/{company_slug}/departments")
+@router.post("/{company_slug}/departments", response_model=DepartmentSchema)
 async def create_department(
     company_slug: str,
-    request: DigisacDepartmentSchema,
+    request: CreateDepartmentSchema,
     company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):
-    digisac_client_db = get_digisac_client_from_db(company, db)
+    digisac_client_db = await get_digisac_client_from_db(company, db)
 
     department = Department(
-        shortcut=request.atalho,
-        contact_transfer_comment=request.comentario,
-        digisac_department_id=request.department_id,
-        digisac_user_id=request.user_id,
-        is_confirmation_department=request.departamento_confirmacao,
+        shortcut=request.shortcut,
+        contact_transfer_comment=request.contact_transfer_comment,
+        digisac_department_id=request.digisac_department_id,
+        digisac_user_id=request.digisac_user_id,
+        is_confirmation_department=request.is_confirmation_department,
         digisac_client_id=digisac_client_db.id,
     )
 
@@ -98,24 +144,23 @@ async def create_department(
 
 @router.put(
     "/{company_slug}/departments/{department_id}",
-    response_model=DigisacDepartmentSchemaEmpresa,
+    response_model=DepartmentSchema,
 )
 async def edit_department(
     company_slug: str,
     department_id: int,
-    request: DigisacDepartmentSchema,
+    request: UpdateDepartmentSchema,
     company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):
-    digisac_client_db = get_digisac_client_from_db(company, db)
-    department = get_department_from_db(digisac_client_db, db)
+    digisac_client_db = await get_digisac_client_from_db(company, db)
+    department = get_department_from_db(digisac_client_db, department_id, db)
 
-    department.atalho = request.atalho
-    department.comentario = request.comentario
-    department.departmentId = request.department_id
-    department.userId = request.user_id
-    department.departamento_confirmacao = request.departamento_confirmacao
-
+    department.shortcut = request.shortcut
+    department.contact_transfer_comment = request.contact_transfer_comment
+    department.digisac_department_id = request.digisac_department_id
+    department.digisac_user_id = request.digisac_user_id
+    department.is_confirmation_department = request.is_confirmation_department
     db.commit()
     return department
 
@@ -127,55 +172,9 @@ async def delete_department(
     company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):
-    digisac_client_db = get_digisac_client_from_db(company, db)
-    department = get_department_from_db(digisac_client_db, db)
+    digisac_client_db = await get_digisac_client_from_db(company, db)
+    department = get_department_from_db(digisac_client_db, department_id, db)
 
     db.delete(department)
     db.commit()
     return True
-
-
-@router.post("/{company_slug}")
-async def create_digisac_client(
-    company_slug: str,
-    request: DigisacClientSchema,
-    company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
-):
-    digisac_client_db = get_digisac_client_from_db(company, db)
-    if digisac_client_db:
-        raise HTTPException(
-            status_code=404,
-            detail="This company already has a Digisac client registered",
-        )
-
-    digisac_client = DigisacClientDB(
-        digisac_slug=request.slug,
-        service_id="",
-        digisac_token=encrypt_api_key(request.token),
-        digisac_default_user="",
-        company_id=company.id,
-    )
-
-    db.add(digisac_client)
-    db.commit()
-    db.refresh(digisac_client)
-    return digisac_client
-
-
-@router.put("/{company_slug}", response_model=DigisacClientSchemaEmpresa)
-async def edit_digisac_client(
-    company_slug: str,
-    request: DigisacClientSchema,
-    company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
-):
-    digisac_client_db = get_digisac_client_from_db(company, db)
-
-    digisac_client_db.digisacSlug = request.slug
-    digisac_client_db.digisacToken = encrypt_api_key(request.token)
-    digisac_client_db.digisacDefaultUser = request.user_id
-    digisac_client_db.service_id = request.service_id
-
-    db.commit()
-    return digisac_client_db

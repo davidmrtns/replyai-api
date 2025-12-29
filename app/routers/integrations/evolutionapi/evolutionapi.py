@@ -1,29 +1,28 @@
-import os
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import obter_sessao
 from app.db.models import Company
+from app.schemas.evolutionapi_client_schema import (
+    CreateEvolutionAPIInstanceSchema,
+    CreateEvolutionAPIWebhookSchema,
+    EvolutionAPIInstanceSchema,
+)
 from .evolutionapi_helpers import add_evolutionapi_client_to_db, get_evolutionapi_client
 from ...routers_helpers import check_company_access
-from app.schemas.integrations_schemas import (
-    EvolutionInstanceSchema,
-    EvolutionAPIWebhookSchema,
-)
 from app.clients.evolutionapi_client import EvolutionAPIClient
 
 
 router = APIRouter()
 
 
-@router.post("/{company_slug}")
+@router.post("/{company_slug}", response_model=EvolutionAPIInstanceSchema)
 async def create_instance(
-    request: EvolutionInstanceSchema,
+    request: CreateEvolutionAPIInstanceSchema,
     company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):
-    response = EvolutionAPIClient.create_instance(request.nome_instancia)
+    response = EvolutionAPIClient.create_instance(request.instance_name)
 
     if response.status_code == 201:
         db_register_response = await add_evolutionapi_client_to_db(
@@ -79,7 +78,7 @@ async def restart_instance(
 
 
 @router.delete("/{company_slug}/{api_key}/logout")
-async def desligar_instancia(
+async def shut_down_instance(
     company_slug: str,
     api_key: str,
     company: Company = Depends(check_company_access),
@@ -122,7 +121,7 @@ async def check_evolutionapi_connection():
 async def add_webhook(
     company_slug: str,
     api_key: str,
-    request: EvolutionAPIWebhookSchema,
+    request: CreateEvolutionAPIWebhookSchema,
     company: Company = Depends(check_company_access),
     db: Session = Depends(obter_sessao),
 ):

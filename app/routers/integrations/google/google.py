@@ -15,7 +15,7 @@ from .google_helpers import (
     generate_google_auth_credentials,
     get_google_calendar_client_from_db,
 )
-from app.schemas.empresa_schema import GoogleCalendarSchema
+from app.schemas.integrations.google_calendar_schema import GoogleCalendarSchema
 
 
 router = APIRouter()
