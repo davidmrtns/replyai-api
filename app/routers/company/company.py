@@ -5,8 +5,8 @@ from fastapi.params import Depends
 from requests import Session
 
 from app.db.database import get_db_session
-from app.db.models import Assistant, AssistantPurposeEnum, Company, User
-from app.exceptions.exceptions import ResourceNotFoundException
+from app.db.models import Assistant, AssistantPurposeEnum, Company
+from app.exceptions.exceptions import ResourceNotFoundException, UserAccessException
 from app.schemas.company_schema import (
     CompanyMinSchema,
     CompanySchema,
@@ -16,7 +16,10 @@ from app.schemas.company_schema import (
 from app.utils.model_utils import apply_model_update
 from app.utils.api_key_encryption import encrypt_api_key
 
-from ..routers_helpers import get_logged_in_user, check_company_access
+from ..routers_helpers import (
+    get_company_id_from_logged_in_user,
+    check_company_access,
+)
 
 
 router = APIRouter()
@@ -24,27 +27,23 @@ router = APIRouter()
 
 @router.get("/", response_model=List[CompanyMinSchema])
 async def get_all_companies(
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    if not logged_in_user.company_id:
+    if not company_id:
         companies = db.query(Company).all()
     else:
-        companies = (
-            db.query(Company)
-            .filter_by(id=logged_in_user.company_id, is_active=True)
-            .all()
-        )
+        companies = db.query(Company).filter_by(id=company_id, is_active=True).all()
     return companies
 
 
 @router.post("/", response_model=CompanySchema)
 async def create_company(
     request: CreateCompanySchema,
-    logged_in_user: User = Depends(get_logged_in_user),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    if not logged_in_user.company_id:
+    if not company_id:
         company = db.query(Company).filter_by(slug=request.slug).first()
         if not company:
             token = secrets.token_hex(32)
@@ -64,7 +63,11 @@ async def create_company(
             db.refresh(company)
 
             return company
-    return None
+    raise UserAccessException(
+        detail="The logged-in user doesn't have a company ID.",
+        user_friendly_detail="You don't have permission to create a company.",
+        http_status_code=400,
+    )
 
 
 @router.get("/{company_slug}", response_model=CompanySchema)
