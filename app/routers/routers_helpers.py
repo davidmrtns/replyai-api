@@ -81,7 +81,7 @@ async def check_company_access(
     return company
 
 
-def get_company_id_from_user_or_request(
+async def get_company_id_from_user_or_request(
     request: Request,
     logged_in_user: User = Depends(get_logged_in_user),
 ) -> int:
@@ -90,10 +90,19 @@ def get_company_id_from_user_or_request(
 
     Raises MalformedRequestException if neither is provided.
     """
+    body = await request.json()
+    body_company_id = body.get("company_id")
+
     if logged_in_user.company_id:
+        if body_company_id and body_company_id != logged_in_user.company_id:
+            raise MalformedRequestException(
+                detail="The logged-in is tied to a company, but a different company ID was provided in the request.",
+                user_friendly_detail="You cannot specify a different company for this action.",
+                http_status_code=400,
+            )
         return logged_in_user.company_id
-    elif request.company_id:
-        return request.company_id
+    elif body_company_id:
+        return body_company_id
     else:
         raise MalformedRequestException(
             detail="The logged-in user doesn't have a company ID and it was not provided in the request body.",
@@ -111,6 +120,22 @@ def get_company_id_from_logged_in_user(
     Returns None if the user is not tied to any company.
     """
     return logged_in_user.company_id
+
+
+def require_admin_user(
+    logged_in_user: User = Depends(get_logged_in_user),
+):
+    """
+    Ensures that the logged-in user is an admin.
+
+    Raises UserAccessException if the user is not an admin.
+    """
+    if not logged_in_user.is_admin:
+        raise UserAccessException(
+            detail="The logged-in user is not an admin.",
+            user_friendly_detail="You don't have permission to perform this action.",
+            http_status_code=403,
+        )
 
 
 secret_key_header = APIKeyHeader(name="Secret-Key", auto_error=False)

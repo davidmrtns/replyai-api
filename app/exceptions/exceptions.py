@@ -58,6 +58,7 @@ class AssistantEditingException(AppException):
         super().__init__(**kwargs)
 
 
+# TODO: rename to IntegrationException, and log exception correctly
 class IntegrationAuthException(AppException):
     def __init__(self, integration_name: str, company_slug: str, **kwargs):
         self.integration_name = integration_name or "Unknown integration"

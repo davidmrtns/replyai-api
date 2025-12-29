@@ -27,7 +27,7 @@ class CreateUserSchema(StrictBaseModel):
     password_confirmation: str
     is_active: bool
     is_admin: bool
-    company_id: int
+    company_id: Optional[int] = None
 
     @model_validator(mode="after")
     def check_passwords_match(self):

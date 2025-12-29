@@ -75,7 +75,7 @@ async def delete_media(
     azure_blob_storage_client = AzureBlobStorageClient()
     media = await get_resource_from_db(Media, media_id, db, company_id)
 
-    if media and azure_blob_storage_client.delete_file(media.media_name):
+    if azure_blob_storage_client.delete_file(media.media_name):
         db.delete(media)
         db.commit()
         return True

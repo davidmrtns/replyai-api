@@ -20,15 +20,16 @@ class VoiceMinSchema(OrmBaseModel):
 
 class CreateVoiceSchema(StrictBaseModel):
     voice_name: str
-    elevenlabs_voice_id: str
+    description: str
     stability: float
     similarity_boost: float
     style: float
+    company_id: Optional[int] = None
 
 
 class UpdateVoiceSchema(StrictBaseModel):
     voice_name: Optional[str] = None
-    elevenlabs_voice_id: Optional[str] = None
+    description: Optional[str] = None
     stability: Optional[float] = None
     similarity_boost: Optional[float] = None
     style: Optional[float] = None

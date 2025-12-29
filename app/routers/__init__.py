@@ -1,3 +1,4 @@
+from app.routers.auth import auth
 from app.routers.company import company
 from app.routers.employee import employee
 from app.routers.integrations.asaas import asaas

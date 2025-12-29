@@ -1,126 +1,126 @@
 import openai
 from fastapi import APIRouter
 from fastapi.params import Depends
-from openai import OpenAI
 from openai.types import ResponseFormatJSONObject
 from sqlalchemy.orm import Session
-from typing import Annotated
 
 from app.assistant_functions.assistant_function import get_function_documentations
 from app.db.database import get_db_session
-from app.db.models import Assistant, Company
-from app.exceptions.exceptions import AssistantEditingException
+from app.db.models import Assistant
+from app.exceptions.exceptions import (
+    AssistantEditingException,
+    IntegrationAuthException,
+)
 from app.routers.assistant.assistant_helpers import get_openai_client
-from app.routers.routers_helpers import check_company_access
+from app.routers.routers_helpers import (
+    get_company_id_from_logged_in_user,
+    get_company_id_from_user_or_request,
+)
 from app.schemas.assistant_schema import (
     AssistantSchema,
     CreateAssistantSchema,
     UpdateAssistantSchema,
 )
+from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
 router = APIRouter()
 
 
-@router.post("/{company_slug}", response_model=AssistantSchema)
+@router.post("/", response_model=AssistantSchema)
 async def create_assistant(
-    company_slug: str,
     request: CreateAssistantSchema,
-    company: Annotated[Company, Depends(check_company_access)],
-    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(get_db_session),
 ):
+    openai_client = get_openai_client(company_id, db)
     tools = get_function_documentations()
 
-    assistant = openai_client.beta.assistants.create(
+    openai_assistant = openai_client.beta.assistants.create(
         model="gpt-4o",
-        instructions=request.instrucoes,
-        name=f"{request.nome} - {request.proposito}",
+        instructions=request.instructions,
+        name=f"{request.assistant_name}",
         response_format=ResponseFormatJSONObject(type="json_object"),
         temperature=1.0,
         tools=tools,
         top_p=1.0,
     )
 
-    if assistant:
-        assistant_db = Assistant(
-            openai_assistant_id=assistant.id,
-            assistant_name=assistant.name,
-            purpose=request.proposito,
-            shortcut=request.atalho,
-            voice_id=request.voz,
-            company_id=company.id,
+    if openai_assistant:
+        assistant = Assistant(
+            openai_assistant_id=openai_assistant.id,
+            assistant_name=openai_assistant.name,
+            purpose=request.purpose,
+            shortcut=request.shortcut,
+            voice_id=request.voice_id,
+            company_id=company_id,
         )
 
-        db.add(assistant_db)
+        db.add(assistant)
         db.commit()
-        db.refresh(assistant_db)
-        return assistant_db
-    return None
+        db.refresh(assistant)
+        return assistant
+    raise IntegrationAuthException(
+        integration_name="OpenAI Assistant",
+        company_slug="",
+        detail="An error occurred while creating the assistant.",
+        user_friendly_detail="An error occurred while creating the assistant. Try again later.",
+        status_code=500,
+    )
 
 
-@router.get("/{company_slug}/{assistant_id}")
+@router.get("/{assistant_id}")
 async def get_instructions_from_assistant(
-    company_slug: str,
     assistant_id: int,
-    company: Annotated[Company, Depends(check_company_access)],
-    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    assistant_db = (
-        db.query(Assistant)
-        .filter_by(openai_assistant_id=assistant_id, company_id=company.id)
-        .first()
+    assistant = await get_resource_from_db(Assistant, assistant_id, db, company_id)
+    openai_client = get_openai_client(company_id or assistant.company_id, db)
+
+    openai_assistant = openai_client.beta.assistants.retrieve(
+        assistant_id=assistant.openai_assistant_id
     )
-    if assistant_db:
-        assistant = openai_client.beta.assistants.retrieve(
-            assistant_id=assistant_db.assistantId
-        )
-        if assistant:
-            return assistant.instructions
-    return None
+    if openai_assistant:
+        return openai_assistant.instructions
 
 
-@router.patch("/{company_slug}/{assistant_id}", response_model=AssistantSchema)
+@router.patch("/{assistant_id}", response_model=AssistantSchema)
 async def update_assistant(
-    company_slug: str,
     assistant_id: int,
     request: UpdateAssistantSchema,
-    company: Annotated[Company, Depends(check_company_access)],
-    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    company_id: int = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    assistant_db = (
-        db.query(Assistant)
-        .filter_by(openai_assistant_id=assistant_id, company_id=company.id)
-        .first()
+    assistant = await get_resource_from_db(Assistant, assistant_id, db, company_id)
+    openai_client = get_openai_client(company_id or assistant.company_id, db)
+
+    openai_update_data = {}
+    if request.assistant_name is not None:
+        openai_update_data["name"] = request.assistant_name
+    if request.instructions is not None:
+        openai_update_data["instructions"] = request.instructions
+
+    openai_assistant = openai_client.beta.assistants.update(
+        assistant_id=assistant.openai_assistant_id, **openai_update_data
     )
-    if assistant_db:
-        openai_client.beta.assistants.update(
-            assistant_id=assistant_db.openai_assistant_id,
-            name=f"{request.nome} - {request.proposito}",
-            instructions=request.instrucoes,
-        )
 
-        assistant_db.assistant_name = request.nome
-        assistant_db.purpose = request.proposito
-        assistant_db.shortcut = request.atalho
-        assistant_db.voice_id = request.voz
-
+    if openai_assistant:
+        apply_model_update(assistant, request)
         db.commit()
-        return assistant_db
-    return None
+    return assistant
 
 
-@router.delete("/{company_slug}/{assistant_id}")
+@router.delete("/{assistant_id}")
 async def delete_assistente(
-    company_slug: str,
     assistant_id: int,
-    company: Annotated[Company, Depends(check_company_access)],
-    openai_client: Annotated[OpenAI, Depends(get_openai_client)],
+    company_id: int = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    if company.default_assistant_id == assistant_id:
+    assistant = await get_resource_from_db(Assistant, assistant_id, db, company_id)
+    openai_client = get_openai_client(company_id or assistant.company_id, db)
+
+    if assistant.company.default_assistant_id == assistant_id:
         raise AssistantEditingException(
             assistant_id=assistant_id,
             detail="User tried to delete the default assistant of the company.",
@@ -128,28 +128,22 @@ async def delete_assistente(
             http_status_code=403,
         )
 
-    assistant_db = (
-        db.query(Assistant)
-        .filter_by(openai_assistant_id=assistant_id, company_id=company.id)
-        .first()
-    )
-    if assistant_db:
-        try:
-            assistant = openai_client.beta.assistants.delete(
-                assistant_id=assistant_db.assistantId
-            )
+    try:
+        openai_assistant = openai_client.beta.assistants.delete(
+            assistant_id=assistant.openai_assistant_id
+        )
 
-            if assistant.id:
-                db.delete(assistant_db)
-                db.commit()
-                return True
-        except openai.NotFoundError as e:
-            db.delete(assistant_db)
+        if openai_assistant.id:
+            db.delete(assistant)
             db.commit()
-            raise AssistantEditingException(
-                assistant_id=assistant_id,
-                detail="Assistant not found in OpenAI, but was removed from the database.",
-                user_friendly_detail="The assistant was not found in OpenAI, but it has been removed from the database.",
-                http_status_code=410,
-            )
+            return True
+    except openai.NotFoundError as e:
+        db.delete(assistant)
+        db.commit()
+        raise AssistantEditingException(
+            assistant_id=assistant_id,
+            detail="Assistant not found in OpenAI, but was removed from the database.",
+            user_friendly_detail="The assistant was not found in OpenAI, but it has been removed from the your company.",
+            http_status_code=410,
+        )
     return False

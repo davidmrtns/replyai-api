@@ -77,7 +77,6 @@ async def update_asaas_client(
 
     apply_model_update(asaas_client, update_data)
     db.commit()
-    # TODO: check if refresh is needed
     return asaas_client
 
 

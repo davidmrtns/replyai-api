@@ -27,9 +27,9 @@ async def create_agenda(
     db: Session = Depends(get_db_session),
 ):
     agenda = Agenda(
-        endereco=request.address,
-        atalho=request.shortcut,
-        id_empresa=company_id,
+        address=request.address,
+        shortcut=request.shortcut,
+        company_id=company_id,
     )
 
     db.add(agenda)
