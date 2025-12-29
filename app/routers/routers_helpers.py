@@ -1,4 +1,3 @@
-import os
 from fastapi.security import APIKeyHeader
 import jwt
 from fastapi import Depends, Request, Security
@@ -123,9 +122,7 @@ def validate_secret_key(token: str = Security(secret_key_header)):
 
     Raises MalformedRequestException if the secret key is missing or invalid.
     """
-    secret_key = os.getenv("SECRET_KEY")
-
-    if not token or secret_key != token:
+    if not token or SECRET_KEY != token:
         raise MalformedRequestException(
             detail="Invalid or missing secret key in request headers.",
             user_friendly_detail="You are not authorized to perform this action.",
