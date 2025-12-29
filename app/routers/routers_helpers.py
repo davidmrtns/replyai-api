@@ -5,7 +5,7 @@ from fastapi import Depends, Request, Security
 from fastapi.params import Depends, Cookie
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Company, User
 from app.exceptions.exceptions import (
     MalformedRequestException,
@@ -16,7 +16,8 @@ from app.utils.password_utils import SECRET_KEY, ALGORITHM
 
 
 async def get_logged_in_user(
-    token: str = Cookie(None, alias="access_token"), db: Session = Depends(obter_sessao)
+    token: str = Cookie(None, alias="access_token"),
+    db: Session = Depends(get_db_session),
 ) -> User:
     """
     Retrieves the logged-in user based on the provided JWT token.
@@ -50,7 +51,7 @@ async def get_logged_in_user(
 
 async def check_company_access(
     company_slug: str,
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
     logged_in_user: User = Depends(get_logged_in_user),
 ) -> Company:
     """

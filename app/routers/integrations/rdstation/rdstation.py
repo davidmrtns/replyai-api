@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from requests import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import RDStationCRMClient, RDStationCRMDealStage
 from app.exceptions.exceptions import ConflictingRequestException
 from app.utils.model_utils import apply_model_update, get_resource_from_db
@@ -32,7 +32,7 @@ router = APIRouter()
 async def create_rdstation_client(
     request: CreateRDStationClientSchema,
     company_id: int = Depends(get_company_id_from_user_or_request),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     rdstationcrm_client = (
         db.query(RDStationCRMClient).filter_by(company_id=company_id).first()
@@ -61,7 +61,7 @@ async def update_rdstation_client(
     rdstation_client_id: int,
     request: UpdateRDStationClientSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     update_data = request.model_dump(exclude_unset=True)
 
@@ -81,7 +81,7 @@ async def update_rdstation_client(
 async def delete_rdstation_client(
     rdstation_client_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     rdstation_client = await get_resource_from_db(
         RDStationCRMClient, rdstation_client_id, db, company_id
@@ -99,7 +99,7 @@ async def create_deal_stage(
     rdstation_client_id: int,
     request: CreateDealStageSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     rdstation_client = await get_resource_from_db(
         RDStationCRMClient, rdstation_client_id, db, company_id
@@ -128,7 +128,7 @@ async def update_deal_stage(
     deal_stage_id: int,
     request: UpdateDealStageSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     deal_stage = await get_deal_stage_from_db(
         rdstation_client_id, deal_stage_id, company_id, db
@@ -144,7 +144,7 @@ async def delete_deal_stage(
     rdstation_client_id: int,
     deal_stage_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     deal_stage = await get_deal_stage_from_db(
         rdstation_client_id, deal_stage_id, company_id, db

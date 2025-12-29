@@ -28,7 +28,7 @@ from app.routers.user import user
 from app.routers.voice import voice
 
 
-app = FastAPI()
+app = FastAPI(title="ReplyAI API", version="1.0.0")
 
 origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
 

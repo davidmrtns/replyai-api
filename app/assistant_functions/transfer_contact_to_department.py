@@ -2,7 +2,7 @@ from openai.types.beta import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.clients.digisac_client import DigisacClient
-from app.db.database import retornar_sessao
+from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Department, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.services.contact_service import change_awaiting_human_contact, transfer_contact
@@ -37,7 +37,7 @@ async def transfer_contact_to_department(
 ) -> bool:
     status = False
 
-    with retornar_sessao() as db:
+    with get_db_session_with_context() as db:
         assistant = (
             db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
         )

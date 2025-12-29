@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.jobs.jobs import (
     rodar_confirmar_agendamento,
     rodar_avisar_vencimento,
@@ -66,7 +66,7 @@ async def execute_thank_payment(
     slug: str,
     token: str,
     client_number: int,
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     company_data = await get_company_data(slug, token, db)
     if company_data is not None:
@@ -94,7 +94,7 @@ async def execute_send_invoice(
     slug: str,
     token: str,
     client_number: int,
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     company_data = await get_company_data(slug, token, db)
     if company_data is not None:

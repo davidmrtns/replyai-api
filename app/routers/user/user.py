@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Company, User
 from app.exceptions.exceptions import UserAccessException
 from app.schemas.user_schema import (
@@ -26,7 +26,7 @@ router = APIRouter()
 async def create_user(
     request: CreateUserSchema,
     logged_in_user: User = Depends(get_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     if logged_in_user.is_admin:
         hashed_password = hash_password(request.password)
@@ -62,7 +62,7 @@ async def update_user(
     user_id: int,
     request: UpdateUserSchema,
     logged_in_user: User = Depends(get_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     # If the logged-in user is an admin, they can edit any user
     if logged_in_user.is_admin:
@@ -105,7 +105,7 @@ async def update_user(
 async def delete_user(
     user_id: int,
     logged_in_user: User = Depends(get_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     # Only admins can delete users
     if logged_in_user.is_admin:
@@ -126,7 +126,7 @@ async def delete_user(
 @router.get("/all", response_model=UserListSchema)
 async def get_all_users(
     logged_in_user: User = Depends(get_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
     cursor: Optional[int] = Query(
         None, alias="cursor", description="Last user ID from the previous page"
     ),
@@ -164,7 +164,7 @@ async def get_all_users(
 async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     user = (
         db.query(User)

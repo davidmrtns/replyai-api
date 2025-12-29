@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 from app.assistant_functions.assistant_function import get_function_documentations
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Assistant, Company
 from app.exceptions.exceptions import AssistantEditingException
 from app.routers.assistant.assistant_helpers import get_openai_client
@@ -28,7 +28,7 @@ async def create_assistant(
     request: CreateAssistantSchema,
     company: Annotated[Company, Depends(check_company_access)],
     openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     tools = get_function_documentations()
 
@@ -65,7 +65,7 @@ async def get_instructions_from_assistant(
     assistant_id: int,
     company: Annotated[Company, Depends(check_company_access)],
     openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     assistant_db = (
         db.query(Assistant)
@@ -88,7 +88,7 @@ async def update_assistant(
     request: UpdateAssistantSchema,
     company: Annotated[Company, Depends(check_company_access)],
     openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     assistant_db = (
         db.query(Assistant)
@@ -118,7 +118,7 @@ async def delete_assistente(
     assistant_id: int,
     company: Annotated[Company, Depends(check_company_access)],
     openai_client: Annotated[OpenAI, Depends(get_openai_client)],
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     if company.default_assistant_id == assistant_id:
         raise AssistantEditingException(

@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.clients.microsoft.outlook_client import OutlookClient
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Company
 from app.db.models import OutlookClient as OutlookClientDB
 from app.schemas.agenda_schema import UpdateTimezoneSchema
@@ -25,7 +25,7 @@ router = APIRouter()
 
 
 @router.get("/callback")
-async def auth_callback(request: Request, db: Session = Depends(obter_sessao)):
+async def auth_callback(request: Request, db: Session = Depends(get_db_session)):
     code = request.query_params.get("code")
     company_slug = request.query_params.get("state")
 
@@ -94,7 +94,7 @@ async def get_auth_link(
 async def get_timezones(
     company_slug: str,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     outlook_client = create_agenda_client(company, db)
     if isinstance(outlook_client, OutlookClient):
@@ -109,7 +109,7 @@ async def update_outlook_timezone(
     company_slug: str,
     request: UpdateTimezoneSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     outlook_client_db = await get_outlook_client_from_db(company, db)
 

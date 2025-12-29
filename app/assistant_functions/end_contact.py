@@ -2,7 +2,7 @@ from openai.types.beta import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.clients.digisac_client import DigisacClient
-from app.db.database import retornar_sessao
+from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.services.contact_service import end_contact
@@ -30,7 +30,7 @@ def end_contact_doc():
 async def end_contact_doc(assistant_id: str, thread_id: str, **kwargs) -> bool:
     status = False
 
-    with retornar_sessao() as db:
+    with get_db_session_with_context() as db:
         assistant = (
             db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
         )

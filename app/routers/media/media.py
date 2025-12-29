@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Media
 from app.routers.routers_helpers import (
     get_company_id_from_logged_in_user,
@@ -25,7 +25,7 @@ async def create_media(
     media_file: UploadFile = File(...),
     request: CreateMediaSchema = Depends(parse_form_data_to_media),
     company_id: int = Depends(get_company_id_from_user_or_request),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     filename = f"{media_file.filename}"
     azure_blob_storage_client = AzureBlobStorageClient()
@@ -56,7 +56,7 @@ async def update_media(
     media_id: int,
     request: UpdateMediaSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     media = await get_resource_from_db(Media, media_id, db, company_id)
 
@@ -70,7 +70,7 @@ async def update_media(
 async def delete_media(
     media_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     azure_blob_storage_client = AzureBlobStorageClient()
     media = await get_resource_from_db(Media, media_id, db, company_id)

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Company
 from app.db.models import GoogleCalendarClient as GoogleCalendarClientDB
 from app.schemas.agenda_schema import UpdateTimezoneSchema
@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 @router.get("/callback")
-async def auth_callback(request: Request, db: Session = Depends(obter_sessao)):
+async def auth_callback(request: Request, db: Session = Depends(get_db_session)):
     code = request.query_params.get("code")
     company_slug = request.query_params.get("state")
 
@@ -96,7 +96,7 @@ async def update_google_calendar_timezone(
     company_slug: str,
     request: UpdateTimezoneSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     googlecalendar_client_db = await get_google_calendar_client_from_db(company, db)
 

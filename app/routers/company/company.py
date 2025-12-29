@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from requests import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Assistant, AssistantPurposeEnum, Company, User
 from app.exceptions.exceptions import ResourceNotFoundException
 from app.schemas.company_schema import (
@@ -25,7 +25,7 @@ router = APIRouter()
 @router.get("/", response_model=List[CompanyMinSchema])
 async def get_all_companies(
     logged_in_user: User = Depends(get_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     if not logged_in_user.company_id:
         companies = db.query(Company).all()
@@ -42,7 +42,7 @@ async def get_all_companies(
 async def create_company(
     request: CreateCompanySchema,
     logged_in_user: User = Depends(get_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     if not logged_in_user.company_id:
         company = db.query(Company).filter_by(slug=request.slug).first()
@@ -80,7 +80,7 @@ async def update_company(
     company_slug: str,
     request: UpdateCompanySchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     update_data = request.model_dump(exclude_unset=True)
 

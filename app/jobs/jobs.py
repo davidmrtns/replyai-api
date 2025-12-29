@@ -3,7 +3,7 @@ import asyncio
 import pytz
 from sqlalchemy import or_, and_
 
-from app.db.database import retornar_sessao
+from app.db.database import get_db_session_with_context
 from app.db.models import Company, Contact
 from app.jobs.sub_jobs import (
     enviar_retomada_conversa,
@@ -32,7 +32,7 @@ def rodar_cobrar_inadimplentes():
 async def retomar_conversa():
     agora = datetime.now()
 
-    with retornar_sessao() as db:
+    with get_db_session_with_context() as db:
         try:
             empresas = (
                 db.query(Company).filter_by(recall_is_active=True, is_active=True).all()
@@ -75,7 +75,7 @@ async def retomar_conversa():
 
 
 async def confirmar_agendamento():
-    with retornar_sessao() as db:
+    with get_db_session_with_context() as db:
         try:
             empresas = (
                 db.query(Company)
@@ -99,7 +99,7 @@ async def confirmar_agendamento():
 
 
 async def avisar_vencimento():
-    with retornar_sessao() as db:
+    with get_db_session_with_context() as db:
         try:
             empresas = (
                 db.query(Company)
@@ -127,7 +127,7 @@ async def avisar_vencimento():
 
 
 async def cobrar_inadimplentes():
-    with retornar_sessao() as db:
+    with get_db_session_with_context() as db:
         try:
             empresas = (
                 db.query(Company)

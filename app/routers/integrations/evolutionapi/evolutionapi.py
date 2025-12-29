@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Company
 from app.schemas.evolutionapi_client_schema import (
     CreateEvolutionAPIInstanceSchema,
@@ -20,7 +20,7 @@ router = APIRouter()
 async def create_instance(
     request: CreateEvolutionAPIInstanceSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     response = EvolutionAPIClient.create_instance(request.instance_name)
 
@@ -37,7 +37,7 @@ async def fetch_instance(
     company_slug: str,
     api_key: str,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
 
@@ -52,7 +52,7 @@ async def connect_instance(
     company_slug: str,
     api_key: str,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
 
@@ -67,7 +67,7 @@ async def restart_instance(
     company_slug: str,
     api_key: str,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
 
@@ -82,7 +82,7 @@ async def shut_down_instance(
     company_slug: str,
     api_key: str,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
 
@@ -97,7 +97,7 @@ async def check_instance_connection_state(
     company_slug: str,
     api_key: str,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
 
@@ -123,7 +123,7 @@ async def add_webhook(
     api_key: str,
     request: CreateEvolutionAPIWebhookSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
 
@@ -138,7 +138,7 @@ async def list_webhooks(
     company_slug: str,
     api_key: str,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from requests import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Employee
 from app.utils.model_utils import get_resource_from_db, apply_model_update
 from app.routers.routers_helpers import (
@@ -26,7 +26,7 @@ router = APIRouter()
 async def create_employee(
     request: CreateEmployeeSchema,
     company_id: int = Depends(get_company_id_from_user_or_request),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     employee = Employee(
         name=request.name,
@@ -47,7 +47,7 @@ async def update_employee(
     employee_id: int,
     request: UpdateEmployeeSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     employee = await get_resource_from_db(Employee, employee_id, db, company_id)
 
@@ -60,7 +60,7 @@ async def update_employee(
 async def delete_employee(
     employee_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     employee = await get_resource_from_db(Employee, employee_id, db, company_id)
 

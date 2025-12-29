@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.exceptions.exceptions import AIResponseException
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
@@ -26,7 +26,7 @@ async def reply(
     request: EvolutionAPIRequest,  # TODO: change to DigisacRequest | EvolutionAPIRequest
     slug: str,
     token: str,
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     reply_result = False
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Company, Department
 from app.db.models import DigisacClient as DigisacClientDB
 from app.routers.integrations.digisac.digisac_helpers import (
@@ -29,7 +29,7 @@ async def create_digisac_client(
     company_slug: str,
     request: CreateDigisacClientSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = await get_digisac_client_from_db(company, db)
     if digisac_client_db:
@@ -57,7 +57,7 @@ async def update_digisac_client(
     company_slug: str,
     request: UpdateDigisacClientSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = await get_digisac_client_from_db(company, db)
 
@@ -77,7 +77,7 @@ async def list_digisac_services(
     service_name: str = None,
     service_id: str = None,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = get_digisac_client_from_db(company, db)
     digisac_client = get_digisac_client(digisac_client_db)
@@ -93,7 +93,7 @@ async def list_digisac_users(
     user_name: str = None,
     user_id: str = None,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = get_digisac_client_from_db(company, db)
     digisac_client = get_digisac_client(digisac_client_db)
@@ -109,7 +109,7 @@ async def list_digisac_departments(
     department_name: str = None,
     department_id: str = None,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = get_digisac_client_from_db(company, db)
     digisac_client = get_digisac_client(digisac_client_db)
@@ -123,7 +123,7 @@ async def create_department(
     company_slug: str,
     request: CreateDepartmentSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = await get_digisac_client_from_db(company, db)
 
@@ -151,7 +151,7 @@ async def edit_department(
     department_id: int,
     request: UpdateDepartmentSchema,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = await get_digisac_client_from_db(company, db)
     department = get_department_from_db(digisac_client_db, department_id, db)
@@ -170,7 +170,7 @@ async def delete_department(
     company_slug: str,
     department_id: int,
     company: Company = Depends(check_company_access),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     digisac_client_db = await get_digisac_client_from_db(company, db)
     department = get_department_from_db(digisac_client_db, department_id, db)

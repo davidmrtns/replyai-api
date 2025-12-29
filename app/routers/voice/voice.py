@@ -6,7 +6,7 @@ from fastapi.params import Depends, File
 from sqlalchemy.orm import Session
 from typing import Annotated
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Company, Voice
 from app.schemas.elevenlabs_client_schema import (
     CreateVoiceSchema,
@@ -28,7 +28,7 @@ async def create_voice(
     company: Annotated[Company, Depends(check_company_access)],
     request: CreateVoiceSchema = Depends(parse_form_data_to_voice),
     files: List[UploadFile] = File(...),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     temp_files = []
 
@@ -72,7 +72,7 @@ async def get_voice(
     slug: str,
     voice_id: int,
     company: Annotated[Company, Depends(check_company_access)],
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     voice_db = get_voice_from_db(company.id, voice_id, db)
     elevenlabs_client = get_elevenlabs_client(company)
@@ -92,7 +92,7 @@ async def edit_voice(
     voice_id: int,
     request: UpdateVoiceSchema,
     company: Annotated[Company, Depends(check_company_access)],
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     voice_db = get_voice_from_db(company.id, voice_id, db)
     elevenlabs_client = get_elevenlabs_client(company)
@@ -117,7 +117,7 @@ async def delete_voice(
     company_slug: str,
     voice_id: int,
     company: Annotated[Company, Depends(check_company_access)],
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     voice_db = get_voice_from_db(company.id, voice_id, db)
     elevenlabs_client = get_elevenlabs_client(company)

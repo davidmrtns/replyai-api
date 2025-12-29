@@ -3,7 +3,7 @@ from fastapi.params import Depends
 import pytz
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import Agenda
 from ..routers_helpers import (
     get_company_id_from_logged_in_user,
@@ -24,7 +24,7 @@ router = APIRouter()
 async def create_agenda(
     request: CreateAgendaSchema,
     company_id: int = Depends(get_company_id_from_user_or_request),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     agenda = Agenda(
         endereco=request.address,
@@ -43,7 +43,7 @@ async def update_agenda(
     agenda_id: int,
     request: UpdateAgendaSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     agenda = await get_resource_from_db(Agenda, agenda_id, db, company_id)
 
@@ -57,7 +57,7 @@ async def update_agenda(
 async def delete_agenda(
     agenda_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     agenda = await get_resource_from_db(Agenda, agenda_id, db, company_id)
 

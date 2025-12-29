@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from requests import Session
 
-from app.db.database import obter_sessao
+from app.db.database import get_db_session
 from app.db.models import AsaasClient
 from app.exceptions.exceptions import ConflictingRequestException
 from app.utils.model_utils import apply_model_update, get_resource_from_db
@@ -28,7 +28,7 @@ router = APIRouter()
 async def create_asaas_client(
     request: CreateAsaasClientSchema,
     company_id: int = Depends(get_company_id_from_user_or_request),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     asaas_client = (
         db.query(AsaasClient)
@@ -64,7 +64,7 @@ async def update_asaas_client(
     asaas_client_id: int,
     request: UpdateAsaasClientSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     update_data = request.model_dump(exclude_unset=True)
 
@@ -85,7 +85,7 @@ async def update_asaas_client(
 async def delete_asaas_client(
     asaas_client_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
-    db: Session = Depends(obter_sessao),
+    db: Session = Depends(get_db_session),
 ):
     asaas_client = await get_resource_from_db(
         AsaasClient, asaas_client_id, db, company_id
