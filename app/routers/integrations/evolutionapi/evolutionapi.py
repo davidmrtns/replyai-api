@@ -2,44 +2,47 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
-from app.db.models import Company
 from app.schemas.evolutionapi_client_schema import (
     CreateEvolutionAPIInstanceSchema,
     CreateEvolutionAPIWebhookSchema,
     EvolutionAPIInstanceSchema,
 )
 from .evolutionapi_helpers import add_evolutionapi_client_to_db, get_evolutionapi_client
-from ...routers_helpers import check_company_access
+from ...routers_helpers import (
+    get_company_id_from_logged_in_user,
+    get_company_id_from_user_or_request,
+)
 from app.clients.evolutionapi_client import EvolutionAPIClient
 
 
 router = APIRouter()
 
 
-@router.post("/{company_slug}", response_model=EvolutionAPIInstanceSchema)
+@router.post("/", response_model=EvolutionAPIInstanceSchema)
 async def create_instance(
     request: CreateEvolutionAPIInstanceSchema,
-    company: Company = Depends(check_company_access),
+    company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(get_db_session),
 ):
     response = EvolutionAPIClient.create_instance(request.instance_name)
 
     if response.status_code == 201:
         db_register_response = await add_evolutionapi_client_to_db(
-            response, company.id, db
+            response, company_id, db
         )
         return db_register_response
     return None
 
 
-@router.get("/{company_slug}/{api_key}")
+@router.get("/{evolutionapi_client_id}")
 async def fetch_instance(
-    company_slug: str,
-    api_key: str,
-    company: Company = Depends(check_company_access),
+    evolutionapi_client_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
+    evolutionapi_client = await get_evolutionapi_client(
+        evolutionapi_client_id, company_id, db
+    )
 
     response = evolutionapi_client.fetch_instance()
     if response.status_code == 200:
@@ -47,14 +50,15 @@ async def fetch_instance(
     return None
 
 
-@router.get("/{company_slug}/{api_key}/connect")
+@router.get("/{evolutionapi_client_id}/connect")
 async def connect_instance(
-    company_slug: str,
-    api_key: str,
-    company: Company = Depends(check_company_access),
+    evolutionapi_client_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
+    evolutionapi_client = await get_evolutionapi_client(
+        evolutionapi_client_id, company_id, db
+    )
 
     response = evolutionapi_client.connect_instance()
     if response.status_code == 200:
@@ -62,14 +66,15 @@ async def connect_instance(
     return None
 
 
-@router.put("/{company_slug}/{api_key}/restart")
+@router.put("/{evolutionapi_client_id}/restart")
 async def restart_instance(
-    company_slug: str,
-    api_key: str,
-    company: Company = Depends(check_company_access),
+    evolutionapi_client_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
+    evolutionapi_client = await get_evolutionapi_client(
+        evolutionapi_client_id, company_id, db
+    )
 
     response = evolutionapi_client.restart_instance()
     if response.status_code == 200:
@@ -77,14 +82,15 @@ async def restart_instance(
     return None
 
 
-@router.delete("/{company_slug}/{api_key}/logout")
+@router.delete("/{evolutionapi_client_id}/logout")
 async def shut_down_instance(
-    company_slug: str,
-    api_key: str,
-    company: Company = Depends(check_company_access),
+    evolutionapi_client_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
+    evolutionapi_client = await get_evolutionapi_client(
+        evolutionapi_client_id, company_id, db
+    )
 
     response = evolutionapi_client.logout_instance()
     if response.status_code == 200:
@@ -92,14 +98,15 @@ async def shut_down_instance(
     return None
 
 
-@router.get("/{company_slug}/{api_key}/check-instance-connection")
+@router.get("/{evolutionapi_client_id}/check-instance-connection")
 async def check_instance_connection_state(
-    company_slug: str,
-    api_key: str,
-    company: Company = Depends(check_company_access),
+    evolutionapi_client_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
+    evolutionapi_client = await get_evolutionapi_client(
+        evolutionapi_client_id, company_id, db
+    )
 
     response = evolutionapi_client.check_instance_connection_state()
     if response.status_code == 200:
@@ -117,15 +124,16 @@ async def check_evolutionapi_connection():
         return False
 
 
-@router.post("/{company_slug}/{api_key}/webhook")
+@router.post("/{evolutionapi_client_id}/webhook")
 async def add_webhook(
-    company_slug: str,
-    api_key: str,
+    evolutionapi_client_id: int,
     request: CreateEvolutionAPIWebhookSchema,
-    company: Company = Depends(check_company_access),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
+    evolutionapi_client = await get_evolutionapi_client(
+        evolutionapi_client_id, company_id, db
+    )
 
     response = evolutionapi_client.add_webhook(request.webhook_url, request.is_enabled)
     if response.status_code == 201:
@@ -133,14 +141,15 @@ async def add_webhook(
     return None
 
 
-@router.get("/{company_slug}/{api_key}/webhook")
+@router.get("/{evolutionapi_client_id}/webhook")
 async def list_webhooks(
-    company_slug: str,
-    api_key: str,
-    company: Company = Depends(check_company_access),
+    evolutionapi_client_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    evolutionapi_client = await get_evolutionapi_client(company, api_key, db)
+    evolutionapi_client = await get_evolutionapi_client(
+        evolutionapi_client_id, company_id, db
+    )
 
     response = evolutionapi_client.list_webhooks()
     if response.status_code == 200:

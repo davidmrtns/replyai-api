@@ -1,33 +1,29 @@
 import os
 import urllib.parse
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.clients.microsoft.outlook_client import OutlookClient
 from app.db.database import get_db_session
 from app.db.models import Company
-from app.db.models import OutlookClient as OutlookClientDB
+from app.db.models import OutlookClient
 from app.schemas.agenda_schema import UpdateTimezoneSchema
 from app.utils.api_key_encryption import encrypt_api_key
-from ...routers_helpers import check_company_access
-from .microsoft_helpers import (
-    generate_microsoft_auth_credentials,
-    get_outlook_client_from_db,
-)
+from app.utils.create_agenda_client import build_outlook_client
+from app.utils.model_utils import apply_model_update, get_resource_from_db
+from ...routers_helpers import check_company_access, get_company_id_from_logged_in_user
+from .microsoft_helpers import generate_microsoft_auth_credentials
 from app.schemas.integrations.outlook_schema import OutlookClientSchema
-from app.utils.create_agenda_client import create_agenda_client
 
 
 router = APIRouter()
 
 
 @router.get("/callback")
-async def auth_callback(request: Request, db: Session = Depends(get_db_session)):
-    code = request.query_params.get("code")
-    company_slug = request.query_params.get("state")
+async def auth_callback(code: str, state: str, db: Session = Depends(get_db_session)):
+    company_slug = state
 
     if not code:
         raise HTTPException(
@@ -36,21 +32,24 @@ async def auth_callback(request: Request, db: Session = Depends(get_db_session))
 
     company = db.query(Company).filter_by(slug=company_slug).first()
     if company:
-        (access_token, refresh_token, expires_in, expires_at, user_email) = (
+        access_token, refresh_token, expires_in, expires_at, user_email = (
             generate_microsoft_auth_credentials(code, company_slug)
         )
 
-        outlook_client_db = await get_outlook_client_from_db(
-            company, db, raise_error_if_not_found=False
+        outlook_client_db = (
+            db.query(OutlookClient).filter_by(company_id=company.id).first()
         )
 
         if outlook_client_db:
-            outlook_client_db.access_token = encrypt_api_key(access_token)
-            outlook_client_db.refresh_token = encrypt_api_key(refresh_token)
-            outlook_client_db.expires_at = expires_at
-            outlook_client_db.default_user = user_email
+            update_data = {
+                "access_token": encrypt_api_key(access_token),
+                "refresh_token": encrypt_api_key(refresh_token),
+                "expires_at": expires_at,
+                "default_user": user_email,
+            }
+            apply_model_update(outlook_client_db, update_data)
         else:
-            outlook_client = OutlookClientDB(
+            outlook_client = OutlookClient(
                 access_token=encrypt_api_key(access_token),
                 refresh_token=encrypt_api_key(refresh_token),
                 expires_in=expires_in,
@@ -60,29 +59,26 @@ async def auth_callback(request: Request, db: Session = Depends(get_db_session))
                 company_id=company.id,
             )
             db.add(outlook_client)
-
         db.commit()
         return RedirectResponse(url=os.getenv("SUCCESS_AUTH_URL"))
     return RedirectResponse(url=os.getenv("FAILED_AUTH_URL"))
 
 
 @router.get("/{company_slug}/auth-link")
-async def get_auth_link(
-    company_slug: str, company: Company = Depends(check_company_access)
-):
-    client_id = os.getenv("MICROSOFT_CLIENT_ID")
-    redirect_uri = os.getenv("MICROSOFT_REDIRECT_URI")
+async def get_auth_link(company_slug: str, _: Company = Depends(check_company_access)):
+    CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
+    REDIRECT_URI = os.getenv("MICROSOFT_REDIRECT_URI")
 
     scopes = ["User.Read", "Calendars.ReadWrite", "offline_access"]
 
     query_parameters = urllib.parse.urlencode(
         {
-            "client_id": client_id,
+            "client_id": CLIENT_ID,
             "response_type": "code",
-            "redirect_uri": redirect_uri,
+            "redirect_uri": REDIRECT_URI,
             "response_mode": "query",
             "scope": " ".join(scopes),
-            "state": company.slug,
+            "state": company_slug,
             "prompt": "select_account",
         }
     )
@@ -90,30 +86,32 @@ async def get_auth_link(
     return f"https://login.microsoftonline.com/common/oauth2/v2.0/authorize?{query_parameters}"
 
 
-@router.get("/{company_slug}/timezones")
+@router.get("/{outlook_client_id}/timezones")
 async def get_timezones(
-    company_slug: str,
-    company: Company = Depends(check_company_access),
+    outlook_client_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    outlook_client = create_agenda_client(company, db)
-    if isinstance(outlook_client, OutlookClient):
-        timezones = await outlook_client.get_timezones()
-        return timezones
-    # TODO: raise exception if the client is not Outlook
-    return None
+    outlook_client_db = await get_resource_from_db(
+        OutlookClient, outlook_client_id, db, company_id
+    )
+    outlook_client = build_outlook_client(outlook_client_db, db)
+
+    timezones = await outlook_client.get_timezones()
+    return timezones
 
 
-@router.put("/{company_slug}/timezone", response_model=OutlookClientSchema)
+@router.put("/{outlook_client_id}/timezone", response_model=OutlookClientSchema)
 async def update_outlook_timezone(
-    company_slug: str,
+    outlook_client_id: int,
     request: UpdateTimezoneSchema,
-    company: Company = Depends(check_company_access),
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    outlook_client_db = await get_outlook_client_from_db(company, db)
+    outlook_client_db = await get_resource_from_db(
+        OutlookClient, outlook_client_id, db, company_id
+    )
 
-    outlook_client_db.timezone = request.timezone
+    apply_model_update(outlook_client_db, request)
     db.commit()
-
     return outlook_client_db

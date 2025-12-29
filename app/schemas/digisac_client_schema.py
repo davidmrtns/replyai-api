@@ -40,6 +40,7 @@ class CreateDigisacClientSchema(StrictBaseModel):
     digisac_token: str
     digisac_default_user: Optional[str] = None
     service_id: Optional[str] = None
+    company_id: Optional[int] = None
 
 
 class UpdateDigisacClientSchema(StrictBaseModel):

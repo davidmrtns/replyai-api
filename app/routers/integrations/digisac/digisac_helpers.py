@@ -2,24 +2,10 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.models import Company, Department, DigisacClient as DigisacClientDB
+from app.db.models import Department, DigisacClient as DigisacClientDB
 
 
-async def get_digisac_client_from_db(
-    company: Company, db: Session
-) -> DigisacClientDB | None:
-    digisac_client_db = (
-        db.query(DigisacClientDB).filter_by(company_id=company.id).first()
-    )
-    if not digisac_client_db:
-        raise HTTPException(
-            status_code=404, detail="No Digisac client found for this company"
-        )
-    else:
-        return digisac_client_db
-
-
-def get_digisac_client(digisac_client_db: DigisacClientDB) -> DigisacClient:
+def build_digisac_client(digisac_client_db: DigisacClientDB) -> DigisacClient:
     return DigisacClient(
         digisac_slug=digisac_client_db.digisac_slug,
         service_id=digisac_client_db.service_id,

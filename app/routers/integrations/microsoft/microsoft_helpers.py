@@ -1,10 +1,7 @@
 from datetime import datetime, timezone
 import os
-from fastapi import HTTPException
 import requests
-from sqlalchemy.orm import Session
 
-from app.db.models import Company, OutlookClient as OutlookClientDB
 from app.exceptions.exceptions import IntegrationAuthException
 
 
@@ -12,20 +9,6 @@ INTEGRATION_NAME = "Microsoft"
 USER_FRIENDLY_ERROR_DETAIL = (
     "Failed to authenticate with Microsoft. Please try again later."
 )
-
-
-async def get_outlook_client_from_db(
-    company: Company, db: Session, raise_error_if_not_found: bool = True
-) -> OutlookClientDB | None:
-    outlook_client_db = (
-        db.query(OutlookClientDB).filter_by(company_id=company.id).first()
-    )
-    if not outlook_client_db and raise_error_if_not_found:
-        raise HTTPException(
-            status_code=404, detail="No Outlook client found for this company"
-        )
-    else:
-        return outlook_client_db
 
 
 def generate_microsoft_auth_credentials(code: str, company_slug: str):

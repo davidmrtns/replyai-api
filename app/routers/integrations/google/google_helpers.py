@@ -1,9 +1,6 @@
 import os
-from fastapi import HTTPException
 import requests
-from sqlalchemy.orm import Session
 
-from app.db.models import Company, GoogleCalendarClient as GoogleCalendarClientDB
 from app.exceptions.exceptions import IntegrationAuthException
 
 
@@ -11,20 +8,6 @@ INTEGRATION_NAME = "Google"
 USER_FRIENDLY_ERROR_DETAIL = (
     "Failed to authenticate with Google. Please try again later."
 )
-
-
-async def get_google_calendar_client_from_db(
-    company: Company, db: Session, raise_error_if_not_found: bool = True
-) -> GoogleCalendarClientDB | None:
-    google_calendar_client_db = (
-        db.query(GoogleCalendarClientDB).filter_by(company_id=company.id).first()
-    )
-    if not google_calendar_client_db and raise_error_if_not_found:
-        raise HTTPException(
-            status_code=404, detail="No Google Calendar client found for this company"
-        )
-    else:
-        return google_calendar_client_db
 
 
 def generate_google_auth_credentials(code: str, company_slug: str):
