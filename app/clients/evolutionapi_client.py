@@ -132,7 +132,10 @@ class EvolutionAPIClient(MessageClient):
         endpoint = f"{BASE_URL}/instance/create"
         payload = {"instanceName": instance_name, "integration": "WHATSAPP-BAILEYS"}
 
-        custom_headers = {"apikey": GLOBAL_API_KEY, "Content-Type": "application/json"}
+        custom_headers = {
+            "apikey": GLOBAL_API_KEY,
+            "Content-Type": "application/json",
+        }
 
         response = requests.post(endpoint, headers=custom_headers, json=payload)
         return response
@@ -170,15 +173,17 @@ class EvolutionAPIClient(MessageClient):
         response = requests.get(endpoint)
         return response
 
-    def add_webhook(self, is_enabled: bool, webhook_url: str) -> Response:
+    def add_webhook(self, webhook_url: str, is_enabled: bool) -> Response:
         endpoint = f"{BASE_URL}/webhook/set/{self.instance_name}"
 
         payload = {
-            "enabled": is_enabled,
-            "url": webhook_url,
-            "webhookByEvents": False,
-            "webhookBase64": True,
-            "events": ["MESSAGES_UPSERT"],
+            "webhook": {
+                "enabled": is_enabled,
+                "url": webhook_url,
+                "byEvents": False,
+                "base64": True,
+                "events": ["MESSAGES_UPSERT"],
+            }
         }
 
         response = requests.post(endpoint, headers=self.headers, json=payload)

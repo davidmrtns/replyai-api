@@ -31,7 +31,7 @@ async def create_instance(
             response, company_id, db
         )
         return db_register_response
-    return None
+    # TODO: raise exception if status code is not 201
 
 
 @router.get("/{evolutionapi_client_id}")
@@ -66,6 +66,7 @@ async def connect_instance(
     return None
 
 
+# TODO: apparently this endpoint doesn't work anymore
 @router.put("/{evolutionapi_client_id}/restart")
 async def restart_instance(
     evolutionapi_client_id: int,
@@ -112,16 +113,6 @@ async def check_instance_connection_state(
     if response.status_code == 200:
         return response.json()
     return None
-
-
-@router.get("/check-evolutionapi-connection")
-async def check_evolutionapi_connection():
-    try:
-        response = EvolutionAPIClient.check_evolutionapi_connection()
-        return response.status_code == 200
-    except Exception:
-        # TODO: log the exception
-        return False
 
 
 @router.post("/{evolutionapi_client_id}/webhook")

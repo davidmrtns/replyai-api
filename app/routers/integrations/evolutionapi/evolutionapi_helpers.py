@@ -24,15 +24,15 @@ async def add_evolutionapi_client_to_db(
 ) -> EvolutionAPIClientDB | None:
     response_json: dict = response.json()
 
-    db_api_key = response_json.get("hash", {}).get("apikey")
-    db_instance_name = response_json.get("instance", {}).get("instanceName")
+    api_key = response_json.get("hash")
+    instance_name = response_json.get("instance", {}).get("instanceName")
 
-    if not db_api_key or not db_instance_name:
+    if not api_key or not instance_name:
         return None
 
     evolutionapi_client = EvolutionAPIClientDB(
-        api_key=encrypt_api_key(db_api_key),
-        instance_name=db_instance_name,
+        api_key=encrypt_api_key(api_key),
+        instance_name=instance_name,
         company_id=company_id,
     )
 
