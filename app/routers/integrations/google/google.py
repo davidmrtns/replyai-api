@@ -19,7 +19,7 @@ from app.schemas.integrations.google_calendar_schema import GoogleCalendarSchema
 router = APIRouter()
 
 
-@router.get("/callback")
+@router.get("/callback", include_in_schema=False)
 async def auth_callback(code: str, state: str, db: Session = Depends(get_db_session)):
     company_slug = state
 
@@ -61,7 +61,7 @@ async def auth_callback(code: str, state: str, db: Session = Depends(get_db_sess
     return RedirectResponse(url=os.getenv("FAILED_AUTH_URL"))
 
 
-@router.get("/{company_slug}/auth-link")
+@router.get("/{company_slug}/auth-link", include_in_schema=False)
 async def get_auth_link(company_slug: str, _: Company = Depends(check_company_access)):
     CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
@@ -88,7 +88,7 @@ async def get_auth_link(company_slug: str, _: Company = Depends(check_company_ac
     return f"https://accounts.google.com/o/oauth2/auth?{query_parameters}"
 
 
-@router.put(
+@router.patch(
     "/{google_calendar_client_id}/timezone", response_model=GoogleCalendarSchema
 )
 async def update_google_calendar_timezone(

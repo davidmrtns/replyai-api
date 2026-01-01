@@ -21,7 +21,7 @@ from app.schemas.integrations.outlook_schema import OutlookClientSchema
 router = APIRouter()
 
 
-@router.get("/callback")
+@router.get("/callback", include_in_schema=False)
 async def auth_callback(code: str, state: str, db: Session = Depends(get_db_session)):
     company_slug = state
 
@@ -64,7 +64,7 @@ async def auth_callback(code: str, state: str, db: Session = Depends(get_db_sess
     return RedirectResponse(url=os.getenv("FAILED_AUTH_URL"))
 
 
-@router.get("/{company_slug}/auth-link")
+@router.get("/{company_slug}/auth-link", include_in_schema=False)
 async def get_auth_link(company_slug: str, _: Company = Depends(check_company_access)):
     CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
     REDIRECT_URI = os.getenv("MICROSOFT_REDIRECT_URI")
@@ -101,7 +101,7 @@ async def get_timezones(
     return timezones
 
 
-@router.put("/{outlook_client_id}/timezone", response_model=OutlookClientSchema)
+@router.patch("/{outlook_client_id}/timezone", response_model=OutlookClientSchema)
 async def update_outlook_timezone(
     outlook_client_id: int,
     request: UpdateTimezoneSchema,
