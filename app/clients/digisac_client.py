@@ -14,6 +14,7 @@ from app.clients.message_client import (
 )
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.utils.api_key_encryption import decrypt_api_key
+from app.utils.decorators import ensure_success_status
 
 
 class DigisacClient(MessageClient):
@@ -256,6 +257,7 @@ class DigisacClient(MessageClient):
         response = requests.post(endpoint, headers=self.headers, json=request)
         return response
 
+    @ensure_success_status("Digisac")
     def list_users(
         self, page: int, user_name: str | None = None, user_id: str | None = None
     ) -> Response:
@@ -276,6 +278,7 @@ class DigisacClient(MessageClient):
         response = requests.get(endpoint, headers=self.headers, params=params)
         return response
 
+    @ensure_success_status("Digisac")
     def list_departments(
         self,
         page: int,
@@ -299,6 +302,7 @@ class DigisacClient(MessageClient):
         response = requests.get(endpoint, headers=self.headers, params=params)
         return response
 
+    @ensure_success_status("Digisac")
     def list_services(
         self, page: int, service_name: str | None = None, service_id: str | None = None
     ) -> Response:
