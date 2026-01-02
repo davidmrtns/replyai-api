@@ -7,7 +7,7 @@ from fastapi import UploadFile
 
 from app.clients.elevenlabs_client import ElevenLabsClient
 from app.db.models import Company, Voice
-from app.exceptions.exceptions import IntegrationAuthException
+from app.exceptions.exceptions import IntegrationException
 from app.schemas.elevenlabs_client_schema import (
     CreateVoiceSchema,
     UpdateVoiceSchema,
@@ -55,7 +55,7 @@ async def create_voice(
             db.refresh(voice)
             return voice
     except Exception as e:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name="ElevenLabs",
             company_slug="",
             detail="An error occurred while creating the voice.",

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import urllib.parse
 
 from app.db.models import Company, OutlookClient
-from app.exceptions.exceptions import IntegrationAuthException
+from app.exceptions.exceptions import IntegrationException
 from app.schemas.agenda_schema import UpdateTimezoneSchema
 from app.utils.api_key_encryption import encrypt_api_key
 from app.utils.create_agenda_client import build_outlook_client
@@ -42,7 +42,7 @@ def _generate_microsoft_auth_credentials(code: str, company_slug: str):
     )
 
     if tokens_response.status_code != 200:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail=f"An error occurred while fetching authorization tokens from {INTEGRATION_NAME}: {tokens_response.json()}",
@@ -62,7 +62,7 @@ def _generate_microsoft_auth_credentials(code: str, company_slug: str):
     )
 
     if user_info_response.status_code != 200:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail=f"An error occurred while fetching user info from {INTEGRATION_NAME}: {user_info_response.json()}",
@@ -74,7 +74,7 @@ def _generate_microsoft_auth_credentials(code: str, company_slug: str):
     user_email: str = user_data.get("mail") or user_data.get("userPrincipalName")
 
     if not user_email:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail="Email not available in user info.",
@@ -93,7 +93,7 @@ def _generate_microsoft_auth_credentials(code: str, company_slug: str):
 
 async def generate_auth_callback(company_slug: str, code: str, db: Session):
     if not code:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail="Code not available in the request.",

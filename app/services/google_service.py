@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 import urllib.parse
 
 from app.db.models import Company, GoogleCalendarClient
-from app.exceptions.exceptions import IntegrationAuthException
+from app.exceptions.exceptions import IntegrationException
 from app.schemas.agenda_schema import UpdateTimezoneSchema
 from app.utils.api_key_encryption import encrypt_api_key
 from app.utils.model_utils import apply_model_update, get_resource_from_db
@@ -38,7 +38,7 @@ def _generate_google_auth_credentials(code: str, company_slug: str):
     )
 
     if tokens_response.status_code != 200:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail=f"An error occurred while fetching authorization tokens from {INTEGRATION_NAME}: {tokens_response.json()}",
@@ -57,7 +57,7 @@ def _generate_google_auth_credentials(code: str, company_slug: str):
     )
 
     if user_info_response.status_code != 200:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail=f"An error occurred while fetching user info from {INTEGRATION_NAME}: {user_info_response.json()}",
@@ -69,7 +69,7 @@ def _generate_google_auth_credentials(code: str, company_slug: str):
     user_email: str = user_data.get("email")
 
     if not user_email:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail="Email not available in user info.",
@@ -82,7 +82,7 @@ def _generate_google_auth_credentials(code: str, company_slug: str):
 
 async def generate_auth_callback(company_slug: str, code: str, db: Session):
     if not code:
-        raise IntegrationAuthException(
+        raise IntegrationException(
             integration_name=INTEGRATION_NAME,
             company_slug=company_slug,
             detail="Code not available in the request.",

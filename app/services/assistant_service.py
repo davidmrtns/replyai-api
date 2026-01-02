@@ -8,7 +8,7 @@ from app.clients.assistants_client import CustomHTTPClient
 from app.db.models import Assistant, Company
 from app.exceptions.exceptions import (
     AssistantEditingException,
-    IntegrationAuthException,
+    IntegrationException,
 )
 from app.schemas.assistant_schema import CreateAssistantSchema, UpdateAssistantSchema
 from app.utils.api_key_encryption import decrypt_api_key
@@ -55,7 +55,7 @@ async def create_assistant(
         db.refresh(assistant)
         return assistant
     # TODO: should exceptions be handled here?
-    raise IntegrationAuthException(
+    raise IntegrationException(
         integration_name="OpenAI Assistant",
         company_slug="",
         detail="An error occurred while creating the assistant.",

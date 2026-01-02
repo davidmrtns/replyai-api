@@ -1,7 +1,7 @@
 from functools import wraps
 from requests import Response
 
-from app.exceptions.exceptions import AppException, IntegrationAuthException
+from app.exceptions.exceptions import AppException, IntegrationException
 
 
 def ensure_success_status(integration_name: str, valid_statuses=(200, 201)):
@@ -12,7 +12,7 @@ def ensure_success_status(integration_name: str, valid_statuses=(200, 201)):
                 response: Response = func(*args, **kwargs)
 
                 if response.status_code not in valid_statuses:
-                    raise IntegrationAuthException(
+                    raise IntegrationException(
                         integration_name=integration_name,
                         company_slug="",
                         detail=f"Unexpected status: {response.status_code}",
@@ -24,7 +24,7 @@ def ensure_success_status(integration_name: str, valid_statuses=(200, 201)):
             except AppException:
                 raise
             except Exception as e:
-                raise IntegrationAuthException(
+                raise IntegrationException(
                     integration_name=integration_name,
                     company_slug="",
                     detail="Unexpected integration error",
