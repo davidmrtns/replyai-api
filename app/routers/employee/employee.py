@@ -3,8 +3,6 @@ from fastapi.params import Depends
 from requests import Session
 
 from app.db.database import get_db_session
-from app.db.models import Employee
-from app.utils.model_utils import get_resource_from_db, apply_model_update
 from app.routers.routers_helpers import (
     get_company_id_from_logged_in_user,
     get_company_id_from_user_or_request,
@@ -14,12 +12,14 @@ from app.schemas.employee_schema import (
     EmployeeSchema,
     UpdateEmployeeSchema,
 )
+from app.services.employee_service import (
+    create_employee as create_employee_service,
+    update_employee as update_employee_service,
+    delete_employee as delete_employee_service,
+)
 
 
 router = APIRouter()
-
-
-# TODO: maybe add a GET endpoint to list employees, or get one by ID
 
 
 @router.post("/", response_model=EmployeeSchema)
@@ -28,18 +28,7 @@ async def create_employee(
     company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(get_db_session),
 ):
-    employee = Employee(
-        name=request.name,
-        nickname=request.nickname,
-        department_name=request.department_name,
-        company_id=company_id,
-    )
-
-    db.add(employee)
-    db.commit()
-    db.refresh(employee)
-
-    return employee
+    return await create_employee_service(request, company_id, db)
 
 
 @router.patch("/{employee_id}", response_model=EmployeeSchema)
@@ -49,11 +38,7 @@ async def update_employee(
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    employee = await get_resource_from_db(Employee, employee_id, db, company_id)
-
-    apply_model_update(employee, request)
-    db.commit()
-    return employee
+    return await update_employee_service(employee_id, request, company_id, db)
 
 
 @router.delete("/{employee_id}")
@@ -62,10 +47,4 @@ async def delete_employee(
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    employee = await get_resource_from_db(Employee, employee_id, db, company_id)
-
-    if employee:
-        db.delete(employee)
-        db.commit()
-        return True
-    return False
+    return await delete_employee_service(employee_id, company_id, db)

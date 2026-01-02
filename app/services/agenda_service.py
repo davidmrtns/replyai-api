@@ -1,9 +1,12 @@
 import json
+import pytz
 from sqlalchemy.orm import Session
 
-from app.db.models import Assistant, Company
+from app.db.models import Agenda, Assistant, Company
+from app.schemas.agenda_schema import CreateAgendaSchema, UpdateAgendaSchema
 from app.services import RespostaConfirmacao
 from app.clients.assistants_client import AssistantsClient
+from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
 # TODO: check if this function is still needed or if it can be replaced by an assistant action
@@ -42,3 +45,41 @@ async def extract_event_data(
     except Exception as e:
         print(e)
     return {}, None
+
+
+async def create_agenda(payload: CreateAgendaSchema, company_id: int, db: Session):
+    agenda = Agenda(
+        address=payload.address,
+        shortcut=payload.shortcut,
+        company_id=company_id,
+    )
+
+    db.add(agenda)
+    db.commit()
+    db.refresh(agenda)
+    return agenda
+
+
+async def update_agenda(
+    agenda_id: int, request: UpdateAgendaSchema, company_id: int | None, db: Session
+):
+    agenda = await get_resource_from_db(Agenda, agenda_id, db, company_id)
+
+    apply_model_update(agenda, request)
+    db.commit()
+    db.refresh(agenda)
+    return agenda
+
+
+async def delete_agenda(agenda_id: int, company_id: int | None, db: Session):
+    agenda = await get_resource_from_db(Agenda, agenda_id, db, company_id)
+
+    if agenda:
+        db.delete(agenda)
+        db.commit()
+        return True
+    return False
+
+
+async def list_timezones():
+    return {"timezones": pytz.all_timezones}
