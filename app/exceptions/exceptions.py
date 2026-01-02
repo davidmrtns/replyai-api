@@ -17,6 +17,11 @@ class AppException(Exception):
         return data
 
 
+class DatabaseConnectionException(AppException):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
 class AIResponseException(AppException):
     def __init__(self, thread_id: str, assistant_id: str, **kwargs):
         self.thread_id = thread_id or "Unknown thread"
