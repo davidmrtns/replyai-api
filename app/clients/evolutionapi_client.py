@@ -10,6 +10,7 @@ from requests import Response
 
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.utils.api_key_encryption import decrypt_api_key
+from app.utils.decorators import ensure_success_status
 from .message_client import ContactData, FileData, MediaMessageData, MessageClient
 
 
@@ -128,6 +129,7 @@ class EvolutionAPIClient(MessageClient):
         return filename, mimetype, file_stream
 
     @staticmethod
+    @ensure_success_status("EvolutionAPI")
     def create_instance(instance_name: str) -> Response:
         endpoint = f"{BASE_URL}/instance/create"
         payload = {"instanceName": instance_name, "integration": "WHATSAPP-BAILEYS"}
@@ -140,6 +142,7 @@ class EvolutionAPIClient(MessageClient):
         response = requests.post(endpoint, headers=custom_headers, json=payload)
         return response
 
+    @ensure_success_status("EvolutionAPI")
     def fetch_instance(self) -> Response:
         endpoint = f"{BASE_URL}/instance/fetchInstances"
         response = requests.get(
@@ -147,32 +150,38 @@ class EvolutionAPIClient(MessageClient):
         )
         return response
 
+    @ensure_success_status("EvolutionAPI")
     def connect_instance(self) -> Response:
         endpoint = f"{BASE_URL}/instance/connect/{self.instance_name}"
         response = requests.get(endpoint, headers=self.headers)
         return response
 
+    @ensure_success_status("EvolutionAPI")
     def check_instance_connection_state(self) -> Response:
         endpoint = f"{BASE_URL}/instance/connectionState/{self.instance_name}"
         response = requests.get(endpoint, headers=self.headers)
         return response
 
+    @ensure_success_status("EvolutionAPI")
     def restart_instance(self) -> Response:
         endpoint = f"{BASE_URL}/instance/restart/{self.instance_name}"
         response = requests.put(endpoint, headers=self.headers)
         return response
 
+    @ensure_success_status("EvolutionAPI")
     def logout_instance(self) -> Response:
         endpoint = f"{BASE_URL}/instance/logout/{self.instance_name}"
         response = requests.delete(endpoint, headers=self.headers)
         return response
 
     @staticmethod
+    @ensure_success_status("EvolutionAPI")
     def check_evolutionapi_connection() -> Response:
         endpoint = f"{BASE_URL}/"
         response = requests.get(endpoint)
         return response
 
+    @ensure_success_status("EvolutionAPI")
     def add_webhook(self, webhook_url: str, is_enabled: bool) -> Response:
         endpoint = f"{BASE_URL}/webhook/set/{self.instance_name}"
 
@@ -189,6 +198,7 @@ class EvolutionAPIClient(MessageClient):
         response = requests.post(endpoint, headers=self.headers, json=payload)
         return response
 
+    @ensure_success_status("EvolutionAPI")
     def list_webhooks(self) -> Response:
         endpoint = f"{BASE_URL}/webhook/find/{self.instance_name}"
         response = requests.get(endpoint, headers=self.headers)

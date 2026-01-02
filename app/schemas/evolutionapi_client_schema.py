@@ -9,7 +9,6 @@ class EvolutionAPIInstanceSchema(OrmBaseModel):
 
 class CreateEvolutionAPIInstanceSchema(StrictBaseModel):
     instance_name: str
-    api_key: str
     company_id: Optional[int] = None
 
 
