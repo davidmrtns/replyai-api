@@ -57,10 +57,10 @@ class CompanySchema(OrmBaseModel):
     agenda: Optional[List[AgendaSchema]] = None
     digisac_client: Optional[List[DigisacClientSchema]] = None
     evolutionapi_client: Optional[List[EvolutionAPIInstanceSchema]] = None
-    outlook_client: Optional[List[OutlookClientSchema]]
-    googlecalendar_client: Optional[List[GoogleCalendarClientSchema]]
-    rdstationcrm_client: Optional[List[RDStationClientSchema]]
-    asaas_client: Optional[List[AsaasClientSchema]]
+    outlook_client: Optional[List[OutlookClientSchema]] = None
+    googlecalendar_client: Optional[List[GoogleCalendarClientSchema]] = None
+    rdstationcrm_client: Optional[List[RDStationClientSchema]] = None
+    asaas_client: Optional[List[AsaasClientSchema]] = None
 
 
 class CompanyMinSchema(OrmBaseModel):

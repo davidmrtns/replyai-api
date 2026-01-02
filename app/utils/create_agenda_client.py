@@ -33,6 +33,27 @@ def build_outlook_client(
     )
 
 
+def build_google_calendar_client(
+    googlecalendar_client_db: GoogleCalendarClientDB, db: Session
+) -> GoogleCalendar:
+    return GoogleCalendar(
+        credential_data=(
+            googlecalendar_client_db.access_token,
+            googlecalendar_client_db.refresh_token,
+        ),
+        starting_time=googlecalendar_client_db.company.agenda_starting_time.strftime(
+            "%H:%M:%S"
+        ),
+        ending_time=googlecalendar_client_db.company.agenda_ending_time.strftime(
+            "%H:%M:%S"
+        ),
+        event_duration=googlecalendar_client_db.company.appointment_duration_in_minutes,
+        timezone=googlecalendar_client_db.timezone,
+        client_db=googlecalendar_client_db,
+        db=db,
+    )
+
+
 def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
     if company.agenda_client_type == "outlook":
         outlook_client_db: OutlookClientDB = (
@@ -41,20 +62,9 @@ def create_agenda_client(company: Company, db: Session) -> AgendaClient | None:
         if outlook_client_db:
             return build_outlook_client(outlook_client_db, db)
     elif company.agenda_client_type == "google_calendar":
-        googlecalendar_client: GoogleCalendarClientDB = (
+        googlecalendar_client_db: GoogleCalendarClientDB = (
             db.query(GoogleCalendarClientDB).filter_by(company_id=company.id).first()
         )
-        if googlecalendar_client:
-            return GoogleCalendar(
-                credential_data=(
-                    googlecalendar_client.access_token,
-                    googlecalendar_client.refresh_token,
-                ),
-                starting_time=company.agenda_starting_time.strftime("%H:%M:%S"),
-                ending_time=company.agenda_ending_time.strftime("%H:%M:%S"),
-                event_duration=company.appointment_duration_in_minutes,
-                timezone=googlecalendar_client.timezone,
-                client_db=googlecalendar_client,
-                db=db,
-            )
+        if googlecalendar_client_db:
+            return build_google_calendar_client(googlecalendar_client_db, db)
     return None

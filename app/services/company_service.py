@@ -94,7 +94,9 @@ async def get_all_companies(company_id: int | None, db: Session):
     return companies
 
 
-async def create_company(company_id: int, payload: CreateCompanySchema, db: Session):
+async def create_company(
+    company_id: int | None, payload: CreateCompanySchema, db: Session
+):
     if not company_id:
         company = db.query(Company).filter_by(slug=payload.slug).first()
         if not company:

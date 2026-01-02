@@ -308,4 +308,4 @@ class RDStationDealStage(Base):
         Integer, ForeignKey("rdstation_clients.id", ondelete="CASCADE"), nullable=False
     )
 
-    rdstationcrm_client = relationship("RDStationClient", back_populates="stages")
+    rdstationcrm_client = relationship("RDStationClient", backref="stages")
