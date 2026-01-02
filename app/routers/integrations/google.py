@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_session
 from app.db.models import Company
 from app.schemas.agenda_schema import UpdateTimezoneSchema
-from ...routers_helpers import check_company_access, get_company_id_from_logged_in_user
+from ..routers_helpers import check_company_access, get_company_id_from_logged_in_user
 from app.schemas.integrations.google_calendar_schema import GoogleCalendarSchema
 from app.services.google_service import (
     generate_auth_callback,

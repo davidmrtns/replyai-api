@@ -12,7 +12,7 @@ from app.jobs.jobs import (
     rodar_retomar_conversa,
 )
 from app.jobs.sub_jobs import processar_cobranca, processar_nf
-from app.routers.routers_helpers import validate_secret_key
+from .routers_helpers import validate_secret_key
 from app.schemas.integrations.asaas_schema import (
     AsaasPaymentRequest,
     AsaasInvoiceRequest,

@@ -11,7 +11,7 @@ from app.schemas.company_schema import (
     CreateCompanySchema,
     UpdateCompanySchema,
 )
-from ..routers_helpers import (
+from .routers_helpers import (
     get_company_id_from_logged_in_user,
     check_company_access,
 )

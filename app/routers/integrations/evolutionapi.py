@@ -7,7 +7,7 @@ from app.schemas.evolutionapi_client_schema import (
     CreateEvolutionAPIWebhookSchema,
     EvolutionAPIInstanceSchema,
 )
-from ...routers_helpers import (
+from ..routers_helpers import (
     get_company_id_from_logged_in_user,
     get_company_id_from_user_or_request,
 )

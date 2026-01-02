@@ -8,7 +8,7 @@ from app.schemas.asaas_client_schema import (
     CreateAsaasClientSchema,
     UpdateAsaasClientSchema,
 )
-from ...routers_helpers import (
+from ..routers_helpers import (
     get_company_id_from_logged_in_user,
     get_company_id_from_user_or_request,
 )

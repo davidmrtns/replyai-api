@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_session
 from app.db.models import Company
 from app.schemas.agenda_schema import UpdateTimezoneSchema
-from ...routers_helpers import check_company_access, get_company_id_from_logged_in_user
+from ..routers_helpers import check_company_access, get_company_id_from_logged_in_user
 from app.schemas.integrations.outlook_schema import OutlookClientSchema
 from app.services.microsoft_service import (
     generate_auth_callback,

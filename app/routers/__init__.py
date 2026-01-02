@@ -1,16 +1,20 @@
-from app.routers.auth import auth
-from app.routers.company import company
-from app.routers.employee import employee
-from app.routers.integrations.asaas import asaas
-from app.routers.integrations.evolutionapi import evolutionapi
-from app.routers.integrations.google import google
-from app.routers.integrations.microsoft import microsoft
-from app.routers.integrations.rdstation import rdstation
-from app.routers.job import job
+from app.routers import (
+    agenda,
+    assistant,
+    auth,
+    company,
+    employee,
+    job,
+    media,
+    user,
+    voice,
+)
+from app.routers.integrations import (
+    asaas,
+    digisac,
+    evolutionapi,
+    google,
+    microsoft,
+    rdstation,
+)
 from app.routers.reply import reply
-from app.routers.agenda import agenda
-from app.routers.assistant import assistant
-from app.routers.media import media
-from app.routers.integrations.digisac import digisac
-from app.routers.user import user
-from app.routers.voice import voice
