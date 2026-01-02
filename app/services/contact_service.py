@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Tuple
 
 import pytz
 from sqlalchemy.orm import Session
@@ -8,7 +9,6 @@ from app.db.models import Company, Contact, Department, Assistant
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client
-from app.types.types import CompanyData, ContactAndAssistant
 from app.clients.assistants_client import AssistantsClient
 from app.clients.message_client import MessageClient
 
@@ -16,9 +16,9 @@ from app.clients.message_client import MessageClient
 # TODO: refactor to improve redability and maintainability
 async def get_or_create_contact(
     request: DigisacRequest | EvolutionAPIRequest | None,
-    company_data: CompanyData,
+    company_data: Tuple[Company, MessageClient | None],
     db: Session,
-) -> ContactAndAssistant:
+):
     if isinstance(request, DigisacRequest):
         contact_id = request.data.contactId
     elif isinstance(request, EvolutionAPIRequest):
@@ -70,7 +70,7 @@ async def get_or_create_contact(
 async def create_contact(
     request: DigisacRequest | EvolutionAPIRequest,
     contact_id: str,
-    company_data: CompanyData,
+    company_data: Tuple[Company, MessageClient | None],
     timezone: pytz.timezone,
     db: Session,
 ) -> Contact:

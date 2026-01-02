@@ -13,7 +13,6 @@ from app.db.models import (
 )
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
-from app.types.types import MessageData
 from app.utils.download_file import download_file
 from app.clients.assistants_client import AssistantsClient
 from app.clients.elevenlabs_client import ElevenLabsClient
@@ -50,7 +49,7 @@ async def get_message(
     request: DigisacRequest | EvolutionAPIRequest,
     message_client: MessageClient,
     assistant: AssistantsClient,
-) -> MessageData:
+):
     message_in_text = None
     is_audio = False
     image = None
