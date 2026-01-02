@@ -8,7 +8,14 @@ from app.db.models import (
     FinancialClientTypeEnum,
     MessageClientTypeEnum,
 )
+from app.schemas.agenda_schema import AgendaSchema
+from app.schemas.asaas_client_schema import AsaasClientSchema
+from app.schemas.digisac_client_schema import DigisacClientSchema
 from app.schemas.employee_schema import EmployeeSchema
+from app.schemas.evolutionapi_client_schema import EvolutionAPIInstanceSchema
+from app.schemas.integrations.google_calendar_schema import GoogleCalendarClientSchema
+from app.schemas.integrations.outlook_schema import OutlookClientSchema
+from app.schemas.rdstation_client_schema import RDStationClientSchema
 from .base import OrmBaseModel, StrictBaseModel
 
 
@@ -47,7 +54,13 @@ class CompanySchema(OrmBaseModel):
     elevenlabs_api_key: Optional[str] = None
 
     employees: List[EmployeeSchema]
-    # TODO: add other related data, such as clients
+    agenda: Optional[List[AgendaSchema]] = None
+    digisac_client: Optional[List[DigisacClientSchema]] = None
+    evolutionapi_client: Optional[List[EvolutionAPIInstanceSchema]] = None
+    outlook_client: Optional[List[OutlookClientSchema]]
+    googlecalendar_client: Optional[List[GoogleCalendarClientSchema]]
+    rdstationcrm_client: Optional[List[RDStationClientSchema]]
+    asaas_client: Optional[List[AsaasClientSchema]]
 
 
 class CompanyMinSchema(OrmBaseModel):

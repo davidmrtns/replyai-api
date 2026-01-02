@@ -68,8 +68,6 @@ async def end_contact_doc(assistant_id: str, thread_id: str, **kwargs) -> bool:
                 function_name=end_contact_doc.__name__,
             )
 
-        await end_contact(
-            contact, message_client, db
-        )  # TODO: check if after ending the contact in Digisac clients the sent message will reopen the ticket
+        await end_contact(contact, message_client, db)
         status = True
     return status

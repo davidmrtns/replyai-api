@@ -54,7 +54,6 @@ async def create_assistant(
         db.commit()
         db.refresh(assistant)
         return assistant
-    # TODO: should exceptions be handled here?
     raise IntegrationException(
         integration_name="OpenAI Assistant",
         company_slug="",
@@ -123,7 +122,6 @@ async def delete_assistant(assistant_id: int, company_id: int | None, db: Sessio
     except openai.NotFoundError as e:
         db.delete(assistant)
         db.commit()
-        # TODO: should exceptions be handled here?
         raise AssistantEditingException(
             assistant_id=assistant_id,
             detail="Assistant not found in OpenAI, but was removed from the database.",

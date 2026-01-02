@@ -95,9 +95,7 @@ class Message(BaseModel):
     audioMessage: Optional[AudioMessage] = None
     documentMessage: Optional[DocumentMessage] = None
     reactionMessage: Optional[ReactionMessage] = None
-    base64: Optional[str] = (
-        None  # TODO: check if EvolutionAPI V.2 provides base64 directly
-    )
+    base64: Optional[str] = None
     senderKeyDistributionMessage: Optional[SenderKeyDistributionMessage] = None
     messageContextInfo: Optional[MessageContextInfo] = None
 

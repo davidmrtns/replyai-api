@@ -30,7 +30,7 @@ class DigisacClientSchema(OrmBaseModel):
     id: int
     digisac_slug: str
     digisac_token: str
-    digisac_default_user: Optional[str] = None
+    default_user_id: Optional[str] = None
     service_id: Optional[str] = None
     departments: List[DepartmentSchema]
 
@@ -38,7 +38,7 @@ class DigisacClientSchema(OrmBaseModel):
 class CreateDigisacClientSchema(StrictBaseModel):
     digisac_slug: str
     digisac_token: str
-    digisac_default_user: Optional[str] = None
+    default_user_id: Optional[str] = None
     service_id: Optional[str] = None
     company_id: Optional[int] = None
 
@@ -46,5 +46,5 @@ class CreateDigisacClientSchema(StrictBaseModel):
 class UpdateDigisacClientSchema(StrictBaseModel):
     digisac_slug: Optional[str] = None
     digisac_token: Optional[str] = None
-    digisac_default_user: Optional[str] = None
+    default_user_id: Optional[str] = None
     service_id: Optional[str] = None

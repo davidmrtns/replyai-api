@@ -61,11 +61,11 @@ class Schedule:
 
         availability_view = cls.gerar_availability_view(
             eventos=eventos,
-            intervalo=config.get("duracao_evento"),
-            hora_inicio=config.get("hora_inicio_agenda"),
-            hora_final=config.get("hora_final_agenda"),
+            intervalo=config.get("event_duration"),
+            hora_inicio=config.get("agenda_start_time"),
+            hora_final=config.get("agenda_end_time"),
             timezone=config.get("timezone"),
-            data=config.get("data_consulta"),
+            data=config.get("checked_date"),
         )
 
         return cls(

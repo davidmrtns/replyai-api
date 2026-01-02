@@ -5,9 +5,6 @@ from app.exceptions.exceptions import AppException
 from app.utils.logger import logger
 
 
-# TODO: improve error logging and centralize handling
-
-
 async def exception_handler(request: Request, exc: AppException):
     logger.error(exc, exc_info=True)
     logger.error(f"Detailed data: {exc.detailed()}")

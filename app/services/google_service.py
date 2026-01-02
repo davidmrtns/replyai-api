@@ -114,7 +114,6 @@ async def generate_auth_callback(company_slug: str, code: str, db: Session):
                 refresh_token=encrypt_api_key(refresh_token),
                 expires_in=expires_in,
                 client_email=user_email,
-                timezone="",  # TODO: make it optional or set a default value
                 company_id=company.id,
             )
             db.add(google_calendar_client)

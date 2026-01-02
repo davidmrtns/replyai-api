@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 
 from app.clients.rdstation_client import RDStationClient
 from app.db.models import (
-    RDStationCRMClient as RDStationCRMClientDB,
-    RDStationCRMDealStage,
+    RDStationClient as RDStationClientDB,
+    RDStationDealStage,
 )
 from app.exceptions.exceptions import (
     ConflictingRequestException,
@@ -23,14 +23,14 @@ async def _get_deal_stage_from_db(
     rdstation_client_id: int, deal_stage_id: int, company_id: int | None, db: Session
 ):
     rdstation_client = await get_resource_from_db(
-        RDStationCRMClientDB, rdstation_client_id, db, company_id
+        RDStationClientDB, rdstation_client_id, db, company_id
     )
 
-    query = db.query(RDStationCRMDealStage).filter_by(
+    query = db.query(RDStationDealStage).filter_by(
         id=deal_stage_id, id_rdstationcrm_client=rdstation_client.id
     )
     if company_id:
-        query = query.join(RDStationCRMClientDB).filter_by(company_id=company_id)
+        query = query.join(RDStationClientDB).filter_by(company_id=company_id)
 
     deal_stage = query.first()
 
@@ -49,7 +49,7 @@ async def create_rdstation_client(
     payload: CreateRDStationClientSchema, company_id: int, db: Session
 ):
     rdstationcrm_client = (
-        db.query(RDStationCRMClientDB).filter_by(company_id=company_id).first()
+        db.query(RDStationClientDB).filter_by(company_id=company_id).first()
     )
     if rdstationcrm_client:
         raise ConflictingRequestException(
@@ -82,7 +82,7 @@ async def update_rdstation_client(
         update_data["token"] = encrypt_api_key(update_data["token"])
 
     rdstation_client = await get_resource_from_db(
-        RDStationCRMClientDB, rdstation_client_id, db, company_id
+        RDStationClientDB, rdstation_client_id, db, company_id
     )
 
     apply_model_update(rdstation_client, update_data)
@@ -94,10 +94,9 @@ async def delete_rdstation_client(
     rdstation_client_id: int, company_id: int | None, db: Session
 ):
     rdstation_client = await get_resource_from_db(
-        RDStationCRMClientDB, rdstation_client_id, db, company_id
+        RDStationClientDB, rdstation_client_id, db, company_id
     )
     if rdstation_client:
-        # TODO: check if there are dependent deal stages before deleting
         db.delete(rdstation_client)
         db.commit()
         return True
@@ -111,10 +110,10 @@ async def create_deal_stage(
     db: Session,
 ):
     rdstation_client = await get_resource_from_db(
-        RDStationCRMClientDB, rdstation_client_id, db, company_id
+        RDStationClientDB, rdstation_client_id, db, company_id
     )
 
-    deal_stage = RDStationCRMDealStage(
+    deal_stage = RDStationDealStage(
         shortcut=payload.shortcut,
         deal_stage_id=payload.deal_stage_id,
         user_id=payload.user_id,

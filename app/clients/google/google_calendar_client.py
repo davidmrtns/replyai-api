@@ -76,13 +76,12 @@ class GoogleCalendar(AgendaClient):
             )
             responses.append(response)
 
-        # TODO: rename config keys
         config = {
-            "duracao_evento": self.event_duration,
-            "hora_inicio_agenda": self.starting_time,
-            "hora_final_agenda": self.ending_time,
+            "event_duration": self.event_duration,
+            "agenda_start_time": self.starting_time,
+            "agenda_end_time": self.ending_time,
             "timezone": self.timezone,
-            "data_consulta": date,
+            "checked_date": date,
         }
 
         return [Schedule.from_dict(data=item, config=config) for item in responses]

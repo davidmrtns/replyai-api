@@ -126,7 +126,6 @@ async def generate_auth_callback(company_slug: str, code: str, db: Session):
                 expires_in=expires_in,
                 expires_at=expires_at,
                 default_user=user_email,
-                timezone="",  # TODO: make it optional or set a default value
                 company_id=company.id,
             )
             db.add(outlook_client)

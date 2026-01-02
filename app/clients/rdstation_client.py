@@ -48,10 +48,8 @@ class RDStationClient(CRMClient):
         }
 
         response = requests.post(endpoint, headers=self.headers, json=request)
-        response_obj: dict = json.loads(
-            response.content
-        )  # TODO: rename to response_json
-        return response_obj.get("id", None)
+        response_json: dict = json.loads(response.content)
+        return response_json.get("id", None)
 
     def change_stage(
         self, deal_id: str, deal_stage_id: str, user_id: str | None

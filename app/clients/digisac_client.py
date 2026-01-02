@@ -80,10 +80,8 @@ class DigisacClient(MessageClient):
 
         if response.status_code == 200:
             json_response = json.loads(response.content)
-            contact_name = (
-                json_response.get("name", ""),
-            )  # TODO: maybe improve typing
-            phone_number = json_response.get("data", {}).get("number", "")
+            contact_name: str = json_response.get("name", "")
+            phone_number: str = json_response.get("data", {}).get("number", "")
 
         return ContactData(contact_name=contact_name, phone_number=phone_number)
 

@@ -22,7 +22,7 @@ async def _get_digisac_client(
     return DigisacClient(
         digisac_slug=digisac_client_db.digisac_slug,
         service_id=digisac_client_db.service_id,
-        default_user_id=digisac_client_db.digisac_default_user,
+        default_user_id=digisac_client_db.default_user_id,
         digisac_token=digisac_client_db.digisac_token,
     )
 
@@ -61,7 +61,7 @@ async def create_digisac_client(
         digisac_slug=payload.digisac_slug,
         service_id=payload.service_id,
         digisac_token=encrypt_api_key(payload.digisac_token),
-        digisac_default_user=payload.digisac_default_user,
+        default_user_id=payload.default_user_id,
         company_id=company_id,
     )
 

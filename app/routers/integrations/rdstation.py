@@ -28,9 +28,6 @@ from app.services.rdstation_service import (
 router = APIRouter()
 
 
-# TODO: maybe add a GET endpoint to get rdstation client
-
-
 @router.post("/", response_model=RDStationClientSchema)
 async def create_rdstation_client(
     request: CreateRDStationClientSchema,

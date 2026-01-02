@@ -53,7 +53,6 @@ async def connect_instance(
     return await connect_instance_service(evolutionapi_client_id, company_id, db)
 
 
-# TODO: apparently this endpoint doesn't work anymore
 @router.put("/{evolutionapi_client_id}/restart")
 async def restart_instance(
     evolutionapi_client_id: int,

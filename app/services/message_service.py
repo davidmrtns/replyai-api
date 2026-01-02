@@ -29,7 +29,7 @@ def create_message_client(company: Company, db: Session) -> MessageClient | None
             return DigisacClient(
                 digisac_slug=digisac_client.digisac_slug,
                 service_id=digisac_client.service_id,
-                default_user_id=digisac_client.digisac_default_user,
+                default_user_id=digisac_client.default_user_id,
                 digisac_token=digisac_client.digisac_token,
             )
     else:

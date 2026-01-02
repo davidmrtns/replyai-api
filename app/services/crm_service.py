@@ -2,18 +2,18 @@ from sqlalchemy.orm import Session
 
 from app.clients.crm_client import CRMClient
 from app.clients.rdstation_client import RDStationClient
-from app.db.models import RDStationCRMClient, RDStationCRMDealStage
+from app.db.models import RDStationClient as RDStationClientDB, RDStationDealStage
 from app.db.models import Company, Contact
 
 
 def create_crm_client(company: Company, db: Session) -> CRMClient | None:
     if company.crm_client_type == "rdstation":
         rdstationcrm_client = (
-            db.query(RDStationCRMClient).filter_by(company_id=company.id).first()
+            db.query(RDStationClientDB).filter_by(company_id=company.id).first()
         )
         if rdstationcrm_client:
             initial_deal_stage = (
-                db.query(RDStationCRMDealStage)
+                db.query(RDStationDealStage)
                 .filter_by(
                     is_initial_deal_stage=True,
                     rdstationcrm_client_id=rdstationcrm_client.id,
@@ -42,14 +42,14 @@ async def move_lead(
 
     if crm_client and contact.deal_id:
         deal_stage_db = (
-            db.query(RDStationCRMDealStage)
+            db.query(RDStationDealStage)
             .join(
-                RDStationCRMClient,
-                RDStationCRMDealStage.rdstationcrm_client_id == RDStationCRMClient.id,
+                RDStationClientDB,
+                RDStationDealStage.rdstationcrm_client_id == RDStationClientDB.id,
             )
             .filter(
-                RDStationCRMDealStage.shortcut == deal_stage_shortcut,
-                RDStationCRMClient.company_id == company.id,
+                RDStationDealStage.shortcut == deal_stage_shortcut,
+                RDStationClientDB.company_id == company.id,
             )
             .first()
         )

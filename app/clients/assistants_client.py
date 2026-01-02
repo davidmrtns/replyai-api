@@ -302,7 +302,7 @@ class AssistantsClient:
 
     def get_specific_message_from_thread(
         self, thread_id: str, index: int, order: str, limit: int
-    ):  # TODO: check if there's another more efficient way of getting the message
+    ):
         try:
             messages = self.list_thread_messages(thread_id, order, limit)
             if messages:

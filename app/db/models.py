@@ -150,9 +150,7 @@ class Assistant(Base):
     voice_id = Column(
         Integer, ForeignKey("voices.id", ondelete="SET NULL"), nullable=True
     )
-    company_id = Column(
-        Integer, ForeignKey("companies.id")
-    )  # TODO: check table order with company
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company", backref="assistants", foreign_keys=[company_id])
     voice = relationship("Voice", foreign_keys=[voice_id])
@@ -222,7 +220,6 @@ class Department(Base):
     digisac_client = relationship("DigisacClient", backref="departments")
 
 
-# TODO: change name to not conflict with the utility class
 class DigisacClient(Base):
     __tablename__ = "digisac_clients"
 
@@ -230,13 +227,12 @@ class DigisacClient(Base):
     digisac_slug = Column(String)
     service_id = Column(String)
     digisac_token = Column(String)
-    digisac_default_user = Column(String)  # TODO: rename to default_user_id
+    default_user_id = Column(String)
     company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company")
 
 
-# TODO: change name to not conflict with the utility class
 class EvolutionAPIClient(Base):
     __tablename__ = "evolutionapi_clients"
 
@@ -257,7 +253,7 @@ class OutlookClient(Base):
     expires_in = Column(Integer)
     expires_at = Column(Float)
     default_user = Column(String)
-    timezone = Column(String)
+    timezone = Column(String, nullable=True)
     company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company")
@@ -271,7 +267,7 @@ class GoogleCalendarClient(Base):
     refresh_token = Column(String)
     expires_in = Column(Integer)
     client_email = Column(String)
-    timezone = Column(String)
+    timezone = Column(String, nullable=True)
     company_id = Column(Integer, ForeignKey("companies.id"))
 
     company = relationship("Company")
@@ -289,8 +285,8 @@ class AsaasClient(Base):
     company = relationship("Company", backref="asaas_clients")
 
 
-class RDStationCRMClient(Base):  # TODO: remove CRM from the name
-    __tablename__ = "rdstationcrm_clients"
+class RDStationClient(Base):
+    __tablename__ = "rdstation_clients"
 
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String)
@@ -300,14 +296,16 @@ class RDStationCRMClient(Base):  # TODO: remove CRM from the name
     company = relationship("Company")
 
 
-class RDStationCRMDealStage(Base):  # TODO: remove CRM from the name
-    __tablename__ = "rdstationcrm_deal_stages"
+class RDStationDealStage(Base):
+    __tablename__ = "rdstation_deal_stages"
 
     id = Column(Integer, primary_key=True, index=True)
     shortcut = Column(String)
     deal_stage_id = Column(String)
     user_id = Column(String)
     is_initial_deal_stage = Column(Boolean)
-    rdstationcrm_client_id = Column(Integer, ForeignKey("rdstationcrm_clients.id"))
+    rdstationcrm_client_id = Column(
+        Integer, ForeignKey("rdstation_clients.id", ondelete="CASCADE"), nullable=False
+    )
 
-    rdstationcrm_client = relationship("RDStationCRMClient", backref="stages")
+    rdstationcrm_client = relationship("RDStationClient", back_populates="stages")
