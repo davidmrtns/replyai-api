@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 
-from app.clients.rdstation_client import RDStationClient
 from app.db.models import (
     RDStationClient as RDStationClientDB,
     RDStationDealStage,
@@ -58,7 +57,7 @@ async def create_rdstation_client(
             http_status_code=409,
         )
 
-    rdstationcrm_client = RDStationClient(
+    rdstationcrm_client = RDStationClientDB(
         token=encrypt_api_key(payload.token),
         default_source_id=payload.default_source_id,
         company_id=company_id,

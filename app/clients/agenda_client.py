@@ -149,12 +149,13 @@ class AgendaClient(ABC):
 
     @abstractmethod
     def confirm_event(
-        agenda_address: str, event_start_datetime: str, event_subject: str
+        self, agenda_address: str, event_start_datetime: str, event_subject: str
     ) -> bool:
         pass
 
     @abstractmethod
     def reschedule_event(
+        self,
         agenda_address: str,
         event_start_datetime: str,
         event_subject: str,
@@ -164,6 +165,7 @@ class AgendaClient(ABC):
 
     @abstractmethod
     def cancel_event(
+        self,
         agenda_address: str,
         event_start_datetime: str,
         event_subject: str,

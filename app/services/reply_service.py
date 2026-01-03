@@ -232,7 +232,7 @@ class MessageHandlerService:
         )
         text_message = replace_abbreviations(text_message)
         return await elevenlabs_client.generate_audio(
-            text=text_message,
+            text_message=text_message,
             voice_id=voice.elevenlabs_voice_id,
             stability=voice.stability,
             similarity_boost=voice.similarity_boost,

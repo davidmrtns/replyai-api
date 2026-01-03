@@ -42,7 +42,6 @@ class OutlookClient(AgendaClient):
         self.ending_time = ending_time
         self.event_duration = event_duration
         self.timezone = timezone
-        pass
 
     async def get_schedules(self, agendas: List[str], date: str) -> List[Schedule]:
         try:

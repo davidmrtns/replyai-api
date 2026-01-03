@@ -50,14 +50,16 @@ async def _get_department_from_db(
 async def create_digisac_client(
     company_id: int, payload: CreateDigisacClientSchema, db: Session
 ):
-    digisac_client_db = db.query(DigisacClient).filter_by(company_id=company_id).first()
+    digisac_client_db = (
+        db.query(DigisacClientDB).filter_by(company_id=company_id).first()
+    )
     if digisac_client_db:
         raise HTTPException(
             status_code=409,
             detail="This company already has a Digisac client registered",
         )
 
-    digisac_client = DigisacClient(
+    digisac_client = DigisacClientDB(
         digisac_slug=payload.digisac_slug,
         service_id=payload.service_id,
         digisac_token=encrypt_api_key(payload.digisac_token),

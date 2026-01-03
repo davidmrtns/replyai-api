@@ -5,7 +5,7 @@ import os
 from time import sleep
 from typing import List, Tuple
 import requests
-from requests import Response
+from requests import Response, RequestException
 from app.clients.message_client import (
     ContactData,
     FileData,
@@ -144,7 +144,7 @@ class DigisacClient(MessageClient):
                         url = response.json().get("file", {}).get("url", "")
                 else:
                     attempt += 1
-            except:
+            except RequestException:
                 sleep(10)
                 attempt += 1
 
