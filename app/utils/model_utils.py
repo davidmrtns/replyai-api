@@ -14,6 +14,21 @@ async def get_resource_from_db(
     db: Session,
     company_id: Optional[int] = None,
 ) -> T:
+    """
+    Retrieves a resource from the database by its ID and optional company ID.
+
+    Args:
+        model (Type[T]): The SQLAlchemy model class representing the resource.
+        resource_id (int): The ID of the resource to retrieve.
+        db (Session): The SQLAlchemy database session.
+        company_id (Optional[int]): The ID of the company to which the resource belongs. Defaults to None.
+
+    Returns:
+        T: The retrieved resource instance.
+
+    Raises:
+        ResourceNotFoundException: If the resource is not found in the database.
+    """
     query = db.query(model).filter_by(id=resource_id)
     if company_id:
         query = query.filter_by(company_id=company_id)
