@@ -46,7 +46,6 @@ async def save_request_body(request: dict):
 app.add_exception_handler(AppException, exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
-# TODO: extract logics inside routers to specific services
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(company.router, prefix="/company", tags=["Companies"])
 app.include_router(user.router, prefix="/user", tags=["Users"])

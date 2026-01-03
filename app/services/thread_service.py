@@ -1,11 +1,11 @@
-import json
-
 from sqlalchemy.orm import Session
 
 from app.db.models import Contact, Thread
 from app.clients.assistants_client import AssistantsClient, AssistantReply
+from app.utils.decorators import disabled_func
 
 
+@disabled_func
 async def execute_thread(
     message: str | None,
     image: str | None,
@@ -38,6 +38,7 @@ async def execute_thread(
     return response
 
 
+@disabled_func
 async def assign_new_thread_to_contact(
     contact: Contact, thread_id: str, db: Session
 ) -> None:

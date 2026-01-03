@@ -131,7 +131,10 @@ class AssistantsClient:
     async def transcribe_audio(self, audio_file: FileData) -> str:
         filename, mimetype, file_stream = audio_file
 
-        if mimetype in self.audio_extensions:
+        base_mimetype = mimetype.split(";")[0].strip()  # normalize mimetype
+
+        print(f"filename: {filename}, mimetype: {base_mimetype}")
+        if base_mimetype in self.audio_extensions:
             file_stream.seek(0)
             file_stream.name = filename
 

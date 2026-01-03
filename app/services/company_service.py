@@ -11,11 +11,13 @@ from app.db.models import (
 from app.clients.assistants_client import AssistantsClient
 from app.exceptions.exceptions import ResourceNotFoundException, UserAccessException
 from app.schemas.company_schema import CreateCompanySchema, UpdateCompanySchema
-from app.services.message_service import create_message_client
+from app.utils.create_message_client import create_message_client
 from app.utils.api_key_encryption import encrypt_api_key
+from app.utils.decorators import disabled_func
 from app.utils.model_utils import apply_model_update
 
 
+@disabled_func
 async def get_company_data(slug: str, token: str, db: Session):
     company = (
         db.query(Company).filter_by(slug=slug, token=token, is_active=True).first()
@@ -27,6 +29,7 @@ async def get_company_data(slug: str, token: str, db: Session):
     return None
 
 
+@disabled_func
 async def get_assistant_from_company(
     company: Company, purpose: str | None, shortcut: str | None, db: Session
 ):
@@ -53,6 +56,7 @@ async def get_assistant_from_company(
     return None, None
 
 
+@disabled_func
 async def get_department(
     company: Company,
     shortcut: str | None,

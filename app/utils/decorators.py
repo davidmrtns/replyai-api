@@ -35,3 +35,14 @@ def ensure_success_status(integration_name: str, valid_statuses=(200, 201)):
         return wrapper
 
     return decorator
+
+
+def disabled_func(reason: str = "Function temporarily disabled"):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            raise NotImplementedError(reason)
+
+        return wrapper
+
+    return decorator

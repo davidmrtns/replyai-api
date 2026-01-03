@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Tuple
 
 import pytz
@@ -11,9 +11,10 @@ from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client
 from app.clients.assistants_client import AssistantsClient
 from app.clients.message_client import MessageClient
+from app.utils.decorators import disabled_func
 
 
-# TODO: refactor to improve redability and maintainability
+@disabled_func
 async def get_or_create_contact(
     request: DigisacRequest | EvolutionAPIRequest | None,
     company_data: Tuple[Company, MessageClient | None],
@@ -41,10 +42,10 @@ async def get_or_create_contact(
         now = datetime.now(timezone)
         if not contact.receive_ai_replies:
             last_message_tz = contact.last_message_at.replace(tzinfo=now.tzinfo)
-            if contact.last_message_at and (now - last_message_tz >= timedelta(days=1)):
+            """if contact.last_message_at and (now - last_message_tz >= timedelta(days=1)):
                 await change_ai_reply_reception(contact=contact, value=True, db=db)
             else:
-                return contact, None
+                return contact, None"""
         contact.last_message_at = now
         contact.recall_count = 0
         db.commit()
@@ -67,6 +68,7 @@ async def get_or_create_contact(
     return contact, assistant
 
 
+@disabled_func
 async def create_contact(
     request: DigisacRequest | EvolutionAPIRequest,
     contact_id: str,
@@ -102,27 +104,6 @@ async def create_contact(
     return contact
 
 
-async def change_ai_reply_reception(
-    contact: Contact | None,
-    contact_id: str | None,
-    company: Company | None,
-    value: bool,
-    db: Session,
-) -> bool:
-    if contact_id:
-        contact = db.query(Contact).filter_by(contact_id=contact_id).first()
-        if not contact:
-            timezone = pytz.timezone(company.timezone)
-            await create_contact()  # TODO: check correct way of creating contact with reception set to false
-            return True
-
-    if contact.receive_ai_replies != value:
-        contact.receive_ai_replies = value
-        db.commit()
-        return True
-    return False
-
-
 async def change_awaiting_human_contact(
     contact: Contact, value: bool, db: Session
 ) -> None:
@@ -142,6 +123,7 @@ async def transfer_contact(
     )
 
 
+@disabled_func
 async def update_current_assistant(
     contact: Contact, assistant_id: int, db: Session
 ) -> None:
@@ -149,6 +131,7 @@ async def update_current_assistant(
     db.commit()
 
 
+@disabled_func
 async def reset_contact(contact: Contact, db: Session) -> None:
     contact.current_thread_id = None
     contact.current_assistant = None

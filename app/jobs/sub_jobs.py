@@ -17,8 +17,8 @@ from app.services.contact_service import (
     update_current_assistant,
 )
 
-# from app.services.direcionamento_service import direcionar # pyright: ignore[reportMissingImports] #TODO: update to use the new pipelines
-from app.services.message_service import create_message_client
+# from app.services.direcionamento_service import direcionar
+from app.utils.create_message_client import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
 from app.utils.create_agenda_client import create_agenda_client
 

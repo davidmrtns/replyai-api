@@ -1,9 +1,15 @@
 from abc import abstractmethod
 from io import BytesIO
-from typing import Tuple
+from typing import NamedTuple, Tuple
 
 
 FileData = Tuple[str, str, BytesIO]
+
+
+class MessageContent(NamedTuple):
+    text_message: str | None
+    is_audio: bool
+    image: str | None
 
 
 class ContactData:
@@ -50,4 +56,8 @@ class MessageClient:
 
     @abstractmethod
     def get_file_data(self, **kwargs) -> FileData | None:
+        pass
+
+    @abstractmethod
+    def get_message_content(self, **kwargs) -> MessageContent:
         pass

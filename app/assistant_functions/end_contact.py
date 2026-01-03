@@ -6,7 +6,7 @@ from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.services.contact_service import end_contact
-from app.services.message_service import create_message_client
+from app.utils.create_message_client import create_message_client
 
 
 def end_contact_doc():

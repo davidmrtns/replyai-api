@@ -6,6 +6,7 @@ from app.routers import (
     employee,
     job,
     media,
+    reply,
     user,
     voice,
 )
@@ -17,4 +18,3 @@ from app.routers.integrations import (
     microsoft,
     rdstation,
 )
-from app.routers.reply import reply

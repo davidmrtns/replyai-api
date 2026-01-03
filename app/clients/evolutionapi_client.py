@@ -11,7 +11,13 @@ from requests import Response
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.utils.api_key_encryption import decrypt_api_key
 from app.utils.decorators import ensure_success_status
-from .message_client import ContactData, FileData, MediaMessageData, MessageClient
+from .message_client import (
+    ContactData,
+    FileData,
+    MediaMessageData,
+    MessageClient,
+    MessageContent,
+)
 
 
 BASE_URL = os.getenv("EVOLUTIONAPI_SERVER_URL")
@@ -128,11 +134,31 @@ class EvolutionAPIClient(MessageClient):
 
         return filename, mimetype, file_stream
 
+    def get_message_content(self, request: EvolutionAPIRequest) -> MessageContent:
+        text_message, is_audio, image = None, False, None
+
+        match request.data.messageType:
+            case "conversation":
+                text_message = request.data.message.conversation
+            case "extendedTextMessage":
+                text_message = request.data.message.extendedTextMessage.text
+            case "imageMessage":
+                text_message = request.data.message.imageMessage.caption or ""
+                image = request.data.message.base64
+            case "audioMessage":
+                is_audio = True
+
+        return MessageContent(text_message=text_message, is_audio=is_audio, image=image)
+
     @staticmethod
     @ensure_success_status("EvolutionAPI")
     def create_instance(instance_name: str) -> Response:
         endpoint = f"{BASE_URL}/instance/create"
-        payload = {"instanceName": instance_name, "integration": "WHATSAPP-BAILEYS"}
+        payload = {
+            "instanceName": instance_name,
+            "integration": "WHATSAPP-BAILEYS",
+            "groupsIgnore": True,
+        }
 
         custom_headers = {
             "apikey": GLOBAL_API_KEY,

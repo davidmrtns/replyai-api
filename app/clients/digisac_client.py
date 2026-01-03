@@ -11,6 +11,7 @@ from app.clients.message_client import (
     FileData,
     MediaMessageData,
     MessageClient,
+    MessageContent,
 )
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.utils.api_key_encryption import decrypt_api_key
@@ -178,6 +179,19 @@ class DigisacClient(MessageClient):
                 return filename, mimetype, file_stream
 
         return None
+
+    def get_message_content(self, request: DigisacRequest) -> MessageContent:
+        text_message, is_audio, image = None, False, None
+
+        match request.data.message.type:
+            case "text":
+                text_message = request.data.message.text
+            case "audio" | "ptt":
+                is_audio = True
+            case "image":
+                image = self.get_file_url(request.data.message.id)
+
+        return MessageContent(text_message=text_message, is_audio=is_audio, image=image)
 
     def get_ticket_and_last_message_ids(
         self, contact_id: str
