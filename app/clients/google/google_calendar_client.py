@@ -15,7 +15,7 @@ from .google_calendar_client_helpers import CredentialData
 from app.db.models import GoogleCalendarClient as GoogleCalendarClientDB
 
 
-class GoogleCalendar(AgendaClient):
+class GoogleCalendarClient(AgendaClient):
     def __init__(
         self,
         credential_data: CredentialData,

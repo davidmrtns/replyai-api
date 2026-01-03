@@ -6,7 +6,7 @@ from app.db.models import (
     OutlookClient as OutlookClientDB,
 )
 from app.clients.agenda_client import AgendaClient
-from app.clients.google.google_calendar_client import GoogleCalendar
+from app.clients.google.google_calendar_client import GoogleCalendarClient
 from app.clients.microsoft.outlook_client import OutlookClient
 from app.utils.api_key_encryption import decrypt_api_key
 
@@ -35,8 +35,8 @@ def build_outlook_client(
 
 def build_google_calendar_client(
     googlecalendar_client_db: GoogleCalendarClientDB, db: Session
-) -> GoogleCalendar:
-    return GoogleCalendar(
+) -> GoogleCalendarClient:
+    return GoogleCalendarClient(
         credential_data=(
             googlecalendar_client_db.access_token,
             googlecalendar_client_db.refresh_token,
