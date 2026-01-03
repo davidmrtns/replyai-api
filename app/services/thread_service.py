@@ -1,36 +1,50 @@
-import json
-
 from sqlalchemy.orm import Session
 
-from app.db.models import Contato
-from app.utils.assistant import Assistant, Resposta
-from app.utils.message_client import DadosContato
+from app.db.models import Contact, Thread
+from app.clients.assistants_client import AssistantsClient, AssistantReply
+from app.utils.decorators import disabled_func
 
 
-async def executar_thread(
-        mensagem: str | None,
-        imagem: str | None,
-        contato: Contato,
-        dados_contato: DadosContato | None,
-        assistente: Assistant,
-        db: Session
-):
-    if mensagem:
-        assistente.adicionar_mensagens([mensagem], [], contato.threadId or None)
+@disabled_func
+async def execute_thread(
+    message: str | None,
+    image: str | None,
+    contact: Contact,
+    assistant: AssistantsClient,
+    db: Session,
+) -> AssistantReply:
+    current_thread_id = (
+        contact.current_thread.thread_id if contact.current_thread else None
+    )
 
-    if dados_contato:
-        assistente.adicionar_mensagens([dados_contato.__str__()], [], contato.threadId or None)
+    if message:
+        assistant.add_message(message=message, thread_id=current_thread_id)
 
-    if imagem:
-        id_imagens = assistente.subir_imagens([imagem])
-        assistente.adicionar_imagens(id_imagens, contato.threadId or None)
+    """if contact_data:
+        assistente.adicionar_mensagens([contact_data.__str__()], [], contato.threadId or None)"""  # TODO: check how to pass the contact data in a better way
 
-    resposta, thread_id = assistente.criar_rodar_thread(thread_id=contato.threadId)
+    if image:
+        image_id = assistant.upload_image(image)
+        assistant.add_message(
+            is_image=True, image_id=image_id, thread_id=current_thread_id
+        )
 
-    if not contato.threadId:
-        contato.threadId = thread_id
-        db.commit()
+    result = assistant.create_or_run_thread(thread_id=current_thread_id)
 
-    resposta = json.loads(resposta)
-    resposta_obj = Resposta.from_dict(resposta)
-    return resposta_obj
+    if not contact.current_thread:
+        await assign_new_thread_to_contact(contact, result.thread_id, db)
+
+    response = AssistantReply.from_run_result(result)
+    return response
+
+
+@disabled_func
+async def assign_new_thread_to_contact(
+    contact: Contact, thread_id: str, db: Session
+) -> None:
+    thread = Thread(
+        thread_id=thread_id, last_message_from="assistant", contact_id=contact.id
+    )
+    db.add(thread)
+    contact.current_thread = thread
+    db.commit()

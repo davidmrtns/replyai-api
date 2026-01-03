@@ -1,176 +1,247 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Float
+import enum
+
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    Boolean,
+    Enum,
+    Time,
+    Float,
+)
 from sqlalchemy.orm import relationship
+
 from app.db.database import Base
 
 
-class Usuario(Base):
-    __tablename__ = "usuarios"
+class MessageClientTypeEnum(str, enum.Enum):
+    digisac = "digisac"
+    evolution = "evolution"
+
+
+class AgendaClientTypeEnum(str, enum.Enum):
+    outlook = "outlook"
+    google_calendar = "google_calendar"
+
+
+class CRMClientTypeEnum(str, enum.Enum):
+    rdstation = "rdstation"
+
+
+class FinancialClientTypeEnum(str, enum.Enum):
+    asaas = "asaas"
+
+
+class EventCancellationTypeEnum(str, enum.Enum):
+    keep = "keep"
+    delete = "delete"
+
+
+class AssistantPurposeEnum(str, enum.Enum):
+    reply = "reply"
+    recall = "recall"
+    rewrite = "rewrite"
+    schedule = "schedule"
+    charge = "charge"
+
+
+class LastMessageFromEnum(str, enum.Enum):
+    assistant = "assistant"
+    customer = "customer"
+
+
+class Company(Base):
+    __tablename__ = "companies"
 
     id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String, index=True)
-    email = Column(String, unique=True, index=True)
-    senha = Column(String)
-    ativo = Column(Boolean, default=True)
-    admin = Column(Boolean, default=False)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
-
-    empresa = relationship("Empresa", backref="usuarios")
-
-
-class Contato(Base):
-    __tablename__ = "contatos"
-
-    id = Column(Integer, primary_key=True, index=True)
-    contactId = Column(String, index=True)
-    threadId = Column(String)
-    assistenteAtual = Column(Integer, ForeignKey("assistentes.id"))
-    lastMessage = Column(DateTime)
-    recallCount = Column(Integer)
-    appointmentConfirmation = Column(Boolean)
-    deal_id = Column(String, default=None)
-    receber_respostas_ia = Column(Boolean, default=True)
-    aguardando_humano = Column(Boolean, default=False)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
-
-    empresa = relationship("Empresa", backref="contatos")
-
-
-class Assistente(Base):
-    __tablename__ = "assistentes"
-
-    id = Column(Integer, primary_key=True, index=True)
-    assistantId = Column(String)
-    nome = Column(String)
-    proposito = Column(String)
-    atalho = Column(String)
-    id_voz = Column(Integer, ForeignKey("vozes.id", ondelete="SET NULL"), nullable=True)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
-
-    empresa = relationship("Empresa", backref="assistentes", foreign_keys=[id_empresa])
-
-
-class Voz(Base):
-    __tablename__ = "vozes"
-
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String)
-    voiceId = Column(String)
-    stability = Column(Float)
-    similarity_boost = Column(Float)
-    style = Column(Float)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
-
-    assistente = relationship("Assistente", backref="voz")
-    empresa = relationship("Empresa", backref="vozes")
-
-
-class Empresa(Base):
-    __tablename__ = "empresas"
-
-    id = Column(Integer, primary_key=True, index=True)
-    slug = Column(String, index=True)
-    nome = Column(String)
+    slug = Column(String, index=True, nullable=False)
+    company_name = Column(String, nullable=False)
     token = Column(String, unique=True, nullable=False)
-    fuso_horario = Column(String)
-    empresa_ativa = Column(Boolean)
-    message_client_type = Column(String)
-    agenda_client_type = Column(String)
-    crm_client_type = Column(String)
-    financial_client_type = Column(String)
+    is_active = Column(Boolean, default=True, nullable=False)
+    ai_reply_error_message = Column(String)
+    message_client_type = Column(Enum(MessageClientTypeEnum))
+    agenda_client_type = Column(Enum(AgendaClientTypeEnum))
+    crm_client_type = Column(Enum(CRMClientTypeEnum))
+    financial_client_type = Column(Enum(FinancialClientTypeEnum))
     recall_timeout_minutes = Column(Integer)
     final_recall_timeout_minutes = Column(Integer)
-    recall_quant = Column(Integer)
-    recall_ativo = Column(Boolean)
-    recall_confirmacao_ativo = Column(Boolean)
-    confirmar_agendamentos_ativo = Column(Boolean)
-    lembrar_vencimentos_ativo = Column(Boolean)
-    enviar_boleto_lembrar_vencimento = Column(Boolean)
-    cobrar_inadimplentes_ativo = Column(Boolean)
-    tipo_cancelamento_evento = Column(String)
-    mensagem_erro_ia = Column(String)
-    duracao_evento = Column(Integer)
-    hora_inicio_agenda = Column(String)
-    hora_final_agenda = Column(String)
+    recall_quantity = Column(Integer, default=0)
+    recall_is_active = Column(Boolean, default=False, nullable=False)
+    confirmation_recall_is_active = Column(Boolean, default=False, nullable=False)
+    agenda_starting_time = Column(Time)
+    agenda_ending_time = Column(Time)
+    timezone = Column(String)
+    event_cancellation_type = Column(Enum(EventCancellationTypeEnum))
+    appointment_duration_in_minutes = Column(Integer)
+    appointment_confirmation_is_active = Column(Boolean, default=False, nullable=False)
+    charge_due_payments = Column(Boolean, default=False, nullable=False)
+    send_due_payments_on_charge = Column(Boolean, default=False, nullable=False)
+    charge_due_payments_is_active = Column(Boolean, default=False, nullable=False)
     openai_api_key = Column(String)
     elevenlabs_api_key = Column(String)
-    assistentePadrao = Column(Integer, ForeignKey("assistentes.id"))
+    default_assistant_id = Column(Integer, ForeignKey("assistants.id"))
 
-    assistente = relationship("Assistente", backref="assistente_padrao", foreign_keys=[assistentePadrao])
+    default_assistant = relationship("Assistant", foreign_keys=[default_assistant_id])
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="users")
+
+
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    nickname = Column(String)
+    department_name = Column(
+        String
+    )  # TODO: change to department_id and add direct relationship to department (so companies without Digisac will have a similar department transfer feature)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="employees")
 
 
 class Agenda(Base):
     __tablename__ = "agendas"
 
     id = Column(Integer, primary_key=True, index=True)
-    endereco = Column(String)
-    atalho = Column(String)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
+    address = Column(String)
+    shortcut = Column(String)
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
-    empresa = relationship("Empresa", backref="agenda")
+    company = relationship("Company", backref="agendas")
 
 
-class Midia(Base):
+class Voice(Base):
+    __tablename__ = "voices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    voice_name = Column(String)
+    elevenlabs_voice_id = Column(String, nullable=False)
+    stability = Column(Float)
+    similarity_boost = Column(Float)
+    style = Column(Float)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="voices")
+
+
+class Assistant(Base):
+    __tablename__ = "assistants"
+
+    id = Column(Integer, primary_key=True, index=True)
+    openai_assistant_id = Column(String, nullable=False)
+    assistant_name = Column(String, nullable=False)
+    purpose = Column(Enum(AssistantPurposeEnum), nullable=False)
+    shortcut = Column(String)
+    voice_id = Column(
+        Integer, ForeignKey("voices.id", ondelete="SET NULL"), nullable=True
+    )
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="assistants", foreign_keys=[company_id])
+    voice = relationship("Voice", foreign_keys=[voice_id])
+
+
+class Thread(Base):
+    __tablename__ = "threads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(String, index=True)
+    last_message_from = Column(Enum(LastMessageFromEnum), nullable=False)
+    contact_id = Column(Integer, ForeignKey("contacts.id"))
+
+    contact = relationship("Contact", backref="threads", foreign_keys=[contact_id])
+
+
+class Contact(Base):
+    __tablename__ = "contacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    contact_id = Column(String, index=True)
+    phone_number = Column(String)
+    contact_name = Column(String)
+    current_thread_id = Column(
+        Integer, ForeignKey("threads.id"), nullable=True, default=None
+    )
+    current_assistant = Column(
+        Integer, ForeignKey("assistants.id"), nullable=True, default=None
+    )  # TODO: change to current_assistant_id and add direct reference to assistant
+    last_message_at = Column(DateTime)
+    recall_count = Column(Integer, default=0)
+    under_appointment_confirmation = Column(Boolean, default=False)
+    receive_ai_replies = Column(Boolean, default=True)
+    awaiting_human_contact = Column(Boolean, default=False)
+    deal_id = Column(String, default=None)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company", backref="contacts")
+    current_thread = relationship("Thread", foreign_keys=[current_thread_id])
+
+
+class Media(Base):
     __tablename__ = "midias"
 
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String)
-    mediatype = Column(String)
-    nome = Column(String)
-    atalho = Column(String)
-    ordem = Column(Integer)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
+    mediatype = Column(String)  # TODO: maybe change to mimetype
+    media_name = Column(String)
+    shortcut = Column(String)
+    order = Column(Integer)
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
-    empresa = relationship("Empresa", backref="midias")
-
-
-class Colaborador(Base):
-    __tablename__ = "colaboradores"
-
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String)
-    apelido = Column(String)
-    departamento = Column(String)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
-
-    empresa = relationship("Empresa", backref="colaboradores")
+    company = relationship("Company", backref="medias")
 
 
-class EvolutionAPIClient(Base):
-    __tablename__ = "evolutionapi_clients"
+class Department(Base):
+    __tablename__ = "departamentos"
 
-    id = Column(Integer, primary_key=True, index=True)
-    apiKey = Column(String)
-    instanceName = Column(String)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    shortcut = Column(String)
+    contact_transfer_comment = Column(String)
+    digisac_department_id = Column(String)
+    digisac_user_id = Column(String)
+    is_confirmation_department = Column(Boolean)
+    digisac_client_id = Column(Integer, ForeignKey("digisac_clients.id"))
 
-    empresa = relationship("Empresa", backref="evolutionapi_client")
+    digisac_client = relationship("DigisacClient", backref="departments")
 
 
 class DigisacClient(Base):
     __tablename__ = "digisac_clients"
 
     id = Column(Integer, primary_key=True, index=True)
-    digisacSlug = Column(String)
+    digisac_slug = Column(String)
     service_id = Column(String)
-    digisacToken = Column(String)
-    digisacDefaultUser = Column(String)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
+    digisac_token = Column(String)
+    default_user_id = Column(String)
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
-    empresa = relationship("Empresa", backref="digisac_client")
+    company = relationship("Company")
 
 
-class Departamento(Base):
-    __tablename__ = "departamentos"
+class EvolutionAPIClient(Base):
+    __tablename__ = "evolutionapi_clients"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    atalho = Column(String)
-    comentario = Column(String)
-    departmentId = Column(String)
-    userId = Column(String)
-    departamento_confirmacao = Column(Boolean)
-    id_digisac_client = Column(Integer, ForeignKey("digisac_clients.id"))
+    id = Column(Integer, primary_key=True, index=True)
+    api_key = Column(String)
+    instance_name = Column(String)
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
-    digisac_client = relationship("DigisacClient", backref="departamentos")
+    company = relationship("Company")
 
 
 class OutlookClient(Base):
@@ -181,11 +252,11 @@ class OutlookClient(Base):
     refresh_token = Column(String)
     expires_in = Column(Integer)
     expires_at = Column(Float)
-    usuarioPadrao = Column(String)
-    timeZone = Column(String)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
+    default_user = Column(String)
+    timezone = Column(String, nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
-    empresa = relationship("Empresa", backref="outlook_client")
+    company = relationship("Company")
 
 
 class GoogleCalendarClient(Base):
@@ -196,34 +267,10 @@ class GoogleCalendarClient(Base):
     refresh_token = Column(String)
     expires_in = Column(Integer)
     client_email = Column(String)
-    timezone = Column(String)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
+    timezone = Column(String, nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
-    empresa = relationship("Empresa", backref="googlecalendar_client")
-
-
-class RDStationCRMClient(Base):
-    __tablename__ = "rdstationcrm_clients"
-
-    id = Column(Integer, primary_key=True, index=True)
-    token = Column(String)
-    id_fonte_padrao = Column(String)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
-
-    empresa = relationship("Empresa", backref="rdstationcrm_client")
-
-
-class RDStationCRMDealStage(Base):
-    __tablename__ = "rdstationcrm_deal_stages"
-
-    id = Column(Integer, primary_key=True, index=True)
-    atalho = Column(String)
-    deal_stage_id = Column(String)
-    user_id = Column(String)
-    deal_stage_inicial = Column(Boolean)
-    id_rdstationcrm_client = Column(Integer, ForeignKey("rdstationcrm_clients.id"))
-
-    rdstationcrm_client = relationship("RDStationCRMClient", backref="estagios")
+    company = relationship("Company")
 
 
 class AsaasClient(Base):
@@ -231,16 +278,34 @@ class AsaasClient(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String)
-    rotulo = Column(String)
+    label = Column(String)
     client_number = Column(Integer)
-    id_empresa = Column(Integer, ForeignKey("empresas.id"))
+    company_id = Column(Integer, ForeignKey("companies.id"))
 
-    empresa = relationship("Empresa", backref="asaas_client")
+    company = relationship("Company", backref="asaas_clients")
 
 
-class ExemploPrompt(Base):
-    __tablename__ = "exemplos_prompt"
+class RDStationClient(Base):
+    __tablename__ = "rdstation_clients"
 
     id = Column(Integer, primary_key=True, index=True)
-    tipo_assistente = Column(String)
-    prompt = Column(String)
+    token = Column(String)
+    default_source_id = Column(String)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+
+    company = relationship("Company")
+
+
+class RDStationDealStage(Base):
+    __tablename__ = "rdstation_deal_stages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    shortcut = Column(String)
+    deal_stage_id = Column(String)
+    user_id = Column(String)
+    is_initial_deal_stage = Column(Boolean)
+    rdstationcrm_client_id = Column(
+        Integer, ForeignKey("rdstation_clients.id", ondelete="CASCADE"), nullable=False
+    )
+
+    rdstationcrm_client = relationship("RDStationClient", backref="stages")

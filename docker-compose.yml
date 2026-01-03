@@ -1,0 +1,47 @@
+version: '3'
+services:
+  redis:
+    image: redis:latest
+    networks:
+      - evolution-net
+    container_name: redis
+    command: >
+      redis-server --port 6379 --appendonly yes
+    volumes:
+      - evolution_redis:/data
+    ports:
+      - "6379:6379"
+  
+  evolution-api:
+    container_name: evolution_api
+    image: atendai/evolution-api
+    networks:
+      - evolution-net
+    depends_on:
+      - redis
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - evolutionapi.env
+    volumes:
+      - evolution_store:/evolution/store
+      - evolution_instances:/evolution/instances
+
+  replyai-api:
+    container_name: replyai_api
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+
+volumes:
+  evolution_store:
+  evolution_instances:
+  evolution_redis:
+
+networks:
+  evolution-net:
+    name: evolution-net
+    driver: bridge

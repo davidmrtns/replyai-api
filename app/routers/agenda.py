@@ -1,65 +1,56 @@
-import pytz
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
+from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
-from app.db.database import obter_sessao
-from app.db.models import Empresa, Agenda
-from app.routers.empresa import verificar_permissao_empresa
-from app.schemas.atualizacao_empresa_schema import InformacoesAgendaUnica
-from app.schemas.empresa_schema import AgendaSchema as AgendaSchemaEmpresa
+from app.db.database import get_db_session
+from .routers_helpers import (
+    get_company_id_from_logged_in_user,
+    get_company_id_from_user_or_request,
+)
+from app.schemas.agenda_schema import (
+    AgendaSchema,
+    CreateAgendaSchema,
+    UpdateAgendaSchema,
+)
+from app.services.agenda_service import (
+    create_agenda as create_agenda_service,
+    update_agenda as update_agenda_service,
+    delete_agenda as delete_agenda_service,
+    list_timezones as list_timezones_service,
+)
 
 
 router = APIRouter()
 
-@router.post("/{slug}")
-async def criar_agenda(
-        slug: str,
-        request: InformacoesAgendaUnica,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
-        db: Session = Depends(obter_sessao)
+
+@router.post("/", response_model=AgendaSchema)
+async def create_agenda(
+    request: CreateAgendaSchema,
+    company_id: int = Depends(get_company_id_from_user_or_request),
+    db: Session = Depends(get_db_session),
 ):
-    agenda = Agenda(
-        endereco=request.endereco,
-        atalho=request.atalho,
-        id_empresa=empresa.id
-    )
-    db.add(agenda)
-    db.commit()
-    db.refresh(agenda)
-    return agenda
+    return await create_agenda_service(request, company_id, db)
 
-@router.put("/{slug}/{id}", response_model=AgendaSchemaEmpresa)
-async def editar_agenda(
-        slug: str,
-        id: int,
-        request: InformacoesAgendaUnica,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
-        db: Session = Depends(obter_sessao)
+
+@router.patch("/{agenda_id}", response_model=AgendaSchema)
+async def update_agenda(
+    agenda_id: int,
+    request: UpdateAgendaSchema,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
+    db: Session = Depends(get_db_session),
 ):
-    agenda = db.query(Agenda).filter_by(id=id, id_empresa=empresa.id).first()
-    if agenda:
-        agenda.endereco = request.endereco
-        agenda.atalho = request.atalho
+    return await update_agenda_service(agenda_id, request, company_id, db)
 
-        db.commit()
-        db.refresh(agenda)
-        return agenda
-    return None
 
-@router.delete("/{slug}/{id}")
-async def excluir_agenda(
-        slug: str,
-        id: int,
-        empresa: Empresa = Depends(verificar_permissao_empresa),
-        db: Session = Depends(obter_sessao)
+@router.delete("/{agenda_id}")
+async def delete_agenda(
+    agenda_id: int,
+    company_id: int | None = Depends(get_company_id_from_logged_in_user),
+    db: Session = Depends(get_db_session),
 ):
-    agenda = db.query(Agenda).filter_by(id=id, id_empresa=empresa.id).first()
-    if agenda:
-        db.delete(agenda)
-        db.commit()
-        return True
-    return False
+    return await delete_agenda_service(agenda_id, company_id, db)
 
-@router.get("/fusos")
-async def listar_fusos_horarios():
-    return {"timezones": pytz.all_timezones}
+
+@router.get("/timezones")
+async def list_timezones():
+    return await list_timezones_service()
