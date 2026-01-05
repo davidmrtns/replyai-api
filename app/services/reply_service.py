@@ -7,7 +7,7 @@ from app.clients.assistants_client import AssistantsClient
 from app.clients.digisac_client import DigisacClient
 from app.clients.elevenlabs_client import ElevenLabsClient
 from app.clients.evolutionapi_client import EvolutionAPIClient
-from app.clients.message_client import MessageClient
+from app.clients.message_client import MediaMessageData, MessageClient
 from app.db.models import Assistant, Company, Contact, Department, Thread, Voice
 from app.exceptions.exceptions import AIResponseException
 from app.schemas.integrations.digisac_schema import DigisacRequest
@@ -281,11 +281,12 @@ class MessageHandlerService:
             style=voice.style,
         )
 
-    def _send_message(
+    def send_message(
         self,
-        message_type: Literal["text", "audio"],
+        message_type: Literal["text", "audio", "media"],
         text_message: str | None,
         audio_message_base64: str | None,
+        media_message: MediaMessageData | None,
         contact: Contact,
     ):
         """Sends a message to the contact based on the client type."""
@@ -295,7 +296,7 @@ class MessageHandlerService:
                 message_type=message_type,
                 text_message=text_message,
                 audio_message_base64=audio_message_base64,
-                media_message=None,
+                media_message=media_message,
                 assistant_name=self.assistant.assistant_name,
             )
         elif isinstance(self.message_client, DigisacClient):
@@ -304,7 +305,7 @@ class MessageHandlerService:
                 user_id=None,
                 text_message=text_message,
                 audio_message_base64=audio_message_base64,
-                media_message=None,
+                media_message=media_message,
                 assistant_name=self.assistant.assistant_name,
             )
         else:
@@ -312,6 +313,7 @@ class MessageHandlerService:
                 "Unsupported message client type"
             )  # TODO: raise AppException
 
+    # TODO: maybe unify with send_message method
     async def handle_message_response(
         self,
         is_audio: bool,
@@ -322,7 +324,6 @@ class MessageHandlerService:
             text_message=text_message,
             is_audio=is_audio,
         )
-        print(f"Generated base64 audio message: {base64_audio_message}")
 
         # Determine the message type and send the message
         if is_audio and base64_audio_message:
@@ -331,10 +332,11 @@ class MessageHandlerService:
         else:
             message_type = "text"
 
-        self._send_message(
+        self.send_message(
             message_type=message_type,
             text_message=text_message,
             audio_message_base64=base64_audio_message,
+            media_message=None,
             contact=contact,
         )
 
@@ -401,13 +403,16 @@ class ReplyService:
                 is_audio, response, contact
             )
             return True
-        except AIResponseException as e:
-            message_handler_service._send_message(
-                "text",
-                company.ai_reply_error_message
-                or "Sorry, an error occurred. Could you repeat your last message?",
-                None,
-                contact,
+        except AIResponseException:
+            message_handler_service.send_message(
+                message_type="text",
+                text_message=(
+                    company.ai_reply_error_message
+                    or "Sorry, an error occurred. Could you repeat your last message?"
+                ),
+                audio_message_base64=None,
+                media_message=None,
+                contact=contact,
             )
             return False
 

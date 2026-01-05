@@ -19,33 +19,6 @@ from app.utils.create_message_client import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact
 
 
-async def enviar_aviso_vencimento(
-    data_cobranca: str, data_atual: str, empresa: Company, db: Session
-):
-    message_client = create_message_client(empresa, db)
-    financial_clients = create_financial_clients(empresa, db)
-
-    for financial_client in financial_clients:
-        resposta = financial_client.listar_cobrancas(
-            due_date_le=data_cobranca,
-            due_date_ge=data_cobranca,
-            status="PENDING",
-            limit="100",
-        )
-        if resposta.get("totalCount", 0) > 0:
-            for cobranca in resposta.get("data", []):
-                await processar_cobranca(
-                    "extrair_dados_aviso_vencimento",
-                    cobranca,
-                    data_atual,
-                    empresa.enviar_boleto_lembrar_vencimento,
-                    empresa,
-                    message_client,
-                    financial_client,
-                    db,
-                )
-
-
 async def enviar_cobranca_inadimplente(data: str, empresa: Company, db: Session):
     message_client = create_message_client(empresa, db)
     financial_clients = create_financial_clients(empresa, db)

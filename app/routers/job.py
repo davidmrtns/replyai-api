@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
 from app.jobs.jobs import (
-    rodar_avisar_vencimento,
     rodar_cobrar_inadimplentes,
 )
 from app.jobs.registry import JOBS
@@ -34,14 +33,6 @@ def execute_job(job_name: str):
     runner.run(job)
 
     return create_job_executed_response(job_name=job_name)
-
-
-@router.post("/notify_due_dates", response_model=JobExecutedResponse)
-async def execute_notify_due_date():
-    process = multiprocessing.Process(target=rodar_avisar_vencimento)
-    process.start()
-
-    return create_job_executed_response(job_name="notify_due_dates")
 
 
 @router.post("/charge_defaulters", response_model=JobExecutedResponse)

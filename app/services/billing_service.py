@@ -9,6 +9,7 @@ from app.clients.assistants_client import AssistantsClient
 from app.utils.logger import logger
 
 
+# TODO: move to utils file
 def create_financial_clients(
     company: Company, db: Session, client_number: int | None = None
 ) -> list[AsaasClient] | AsaasClient:
