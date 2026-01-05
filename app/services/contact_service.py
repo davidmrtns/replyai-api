@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Tuple
 
 import pytz
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.models import Company, Contact, Department, Assistant
+from app.db.models import Company, Contact, Assistant
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client
@@ -42,10 +42,8 @@ async def get_or_create_contact(
         now = datetime.now(timezone)
         if not contact.receive_ai_replies:
             last_message_tz = contact.last_message_at.replace(tzinfo=now.tzinfo)
-            """if contact.last_message_at and (now - last_message_tz >= timedelta(days=1)):
-                await change_ai_reply_reception(contact=contact, value=True, db=db)
-            else:
-                return contact, None"""
+            if contact.last_message_at and (now - last_message_tz >= timedelta(days=1)):
+                contact.receive_ai_replies = True
         contact.last_message_at = now
         contact.recall_count = 0
         db.commit()
@@ -109,18 +107,6 @@ async def change_awaiting_human_contact(
 ) -> None:
     contact.awaiting_human_contact = value
     db.commit()
-
-
-async def transfer_contact(
-    message_client: DigisacClient, contact: Contact, department: Department
-) -> None:
-    message_client.transfer_contact(
-        contact.contact_id,
-        department.digisac_department_id,
-        department.digisac_user_id,
-        by_user_id=None,
-        comments=department.comentario,
-    )
 
 
 @disabled_func

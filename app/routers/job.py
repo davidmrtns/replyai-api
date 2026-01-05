@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
 from app.jobs.jobs import (
-    rodar_confirmar_agendamento,
     rodar_avisar_vencimento,
     rodar_cobrar_inadimplentes,
     rodar_retomar_conversa,
 )
+from app.jobs.registry import JOBS
+from app.jobs.runners.process_runner import ProcessJobRunner
 from app.jobs.sub_jobs import processar_cobranca, processar_nf
 from .routers_helpers import validate_secret_key
 from app.schemas.integrations.asaas_schema import (
@@ -25,20 +26,23 @@ from app.services.company_service import get_company_data
 router = APIRouter(dependencies=[Depends(validate_secret_key)])
 
 
+@router.post("/{job_name}")
+def execute_job(job_name: str):
+    job_class = JOBS[job_name]
+    job = job_class()
+
+    runner = ProcessJobRunner()
+    runner.run(job)
+
+    return create_job_executed_response(job_name=job_name)
+
+
 @router.post("/recall_conversations", response_model=JobExecutedResponse)
 async def execute_conversation_recall():
     process = multiprocessing.Process(target=rodar_retomar_conversa)
     process.start()
 
     return create_job_executed_response(job_name="recall_conversations")
-
-
-@router.post("/confirm_appointments", response_model=JobExecutedResponse)
-async def execute_confirm_appointment():
-    process = multiprocessing.Process(target=rodar_confirmar_agendamento)
-    process.start()
-
-    return create_job_executed_response(job_name="confirm_appointments")
 
 
 @router.post("/notify_due_dates", response_model=JobExecutedResponse)

@@ -3,24 +3,21 @@ from sqlalchemy.orm import Session
 from app.clients.digisac_client import DigisacClient
 from app.clients.financial_client import FinancialClient
 from app.clients.message_client import MessageClient
-from app.db.models import Contact, Company, Agenda
-from app.services.agenda_service import extract_event_data
+from app.db.models import Contact, Company
 from app.services.billing_service import (
     generate_billing_response,
     create_financial_clients,
 )
-from app.services.company_service import get_assistant_from_company, get_department
+from app.services.company_service import get_assistant_from_company
 from app.services.contact_service import (
     get_or_create_contact,
     reset_contact,
-    transfer_contact,
     update_current_assistant,
 )
 
 # from app.services.direcionamento_service import direcionar
 from app.utils.create_message_client import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact, execute_thread
-from app.utils.create_agenda_client import create_agenda_client
 
 
 async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Session):
@@ -62,80 +59,6 @@ async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Sessi
         print(
             f"Erro ao enviar retomada de conversa para o contato de ID {contato.id}: {e}"
         )
-
-
-async def enviar_confirmacao_consulta(
-    data: str, data_atual: str, empresa: Company, db: Session
-):
-    agenda_client = create_agenda_client(empresa, db)
-    agendas = db.query(Agenda).filter_by(id_empresa=empresa.id).all()
-
-    message_client = create_message_client(empresa, db)
-    respostas = await agenda_client.obter_horarios(
-        agendas=[agenda.endereco for agenda in agendas], data=data
-    )
-
-    for resposta in respostas:
-        for evento in resposta.schedule_items:
-            try:
-                resposta_extracao, thread_id = await extract_event_data(
-                    resposta.schedule_id, evento, data_atual, empresa, db
-                )
-                if resposta_extracao:
-                    if resposta_extracao.telefone:
-                        try:
-                            id_contato = await message_client.obter_id_contato(
-                                resposta_extracao.telefone, resposta_extracao.cliente
-                            )
-                            if id_contato:
-                                contato = (
-                                    await get_or_create_contact(
-                                        None,
-                                        id_contato,
-                                        empresa,
-                                        message_client,
-                                        None,
-                                        db,
-                                    )
-                                )[0]
-                                assistente, assistente_db_id = (
-                                    await get_assistant_from_company(
-                                        empresa, "confirmar", None, db
-                                    )
-                                )
-                                if assistente:
-                                    if not contato.appointmentConfirmation:
-                                        contato.appointmentConfirmation = True
-                                        db.commit()
-                                        await update_current_assistant(
-                                            contato, assistente_db_id, db
-                                        )
-                                    if isinstance(message_client, DigisacClient):
-                                        message_client.encerrar_chamado(
-                                            contactId=contato.contactId,
-                                            ticketTopicIds=[],
-                                            comments="Chamado encerrado para confirmação de consulta",
-                                            byUserId=None,
-                                        )
-                                        departamento = await get_department(
-                                            empresa, None, True, db
-                                        )
-                                        if departamento:
-                                            await transfer_contact(
-                                                message_client, contato, departamento
-                                            )
-                                    # await direcionar(resposta_extracao.resposta_confirmacao, False, message_client, None, None, empresa, contato, assistente, db)
-                                    await assign_new_thread_to_contact(
-                                        contato, thread_id, db
-                                    )
-                        except Exception as e:
-                            db.rollback()
-                            print(
-                                f"Erro ao processar contato {resposta_extracao.cliente} - {resposta_extracao.telefone}: {e}"
-                            )
-            except Exception as e:
-                db.rollback()
-                print(f"Erro ao processar evento {evento}: {e}")
 
 
 async def enviar_aviso_vencimento(

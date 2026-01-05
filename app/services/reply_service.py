@@ -8,7 +8,7 @@ from app.clients.digisac_client import DigisacClient
 from app.clients.elevenlabs_client import ElevenLabsClient
 from app.clients.evolutionapi_client import EvolutionAPIClient
 from app.clients.message_client import MessageClient
-from app.db.models import Assistant, Company, Contact, Thread, Voice
+from app.db.models import Assistant, Company, Contact, Department, Thread, Voice
 from app.exceptions.exceptions import AIResponseException
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
@@ -43,6 +43,48 @@ class ContactService:
         else:
             self._update_contact(contact)
         return contact
+
+    def get_contact_by_phone_number(
+        self,
+        phone_number: str,
+        message_client: MessageClient,
+    ) -> Contact:
+        """Retrieve a contact by phone number."""
+        contact = (
+            self.db.query(Contact)
+            .filter_by(phone_number=phone_number, company_id=self.company.id)
+            .first()
+        )
+        if not contact:
+            contact_name = "Unknown"  # TODO: find a way to get contact name
+            contact_id = message_client.get_contact_id(
+                phone_number=phone_number,
+            )
+
+            contact = Contact(
+                contact_id=contact_id,
+                phone_number=phone_number,
+                contact_name=contact_name,
+                last_message_at=datetime.now(self.timezone),
+                deal_id=None,
+                company_id=self.company.id,
+            )
+        return contact
+
+    def transfer_contact_to_department(
+        self,
+        contact: Contact,
+        digisac_client: DigisacClient,
+        department: Department,
+    ) -> None:
+        """Transfers a contact to a specified department."""
+        digisac_client.transfer_contact(
+            contact_id=contact.contact_id,
+            department_id=department.digisac_department_id,
+            user_id=department.digisac_user_id,
+            by_user_id=None,
+            comments=department.contact_transfer_comment,
+        )
 
     def _create_contact(
         self,
@@ -133,7 +175,7 @@ class AssistantService:
             openai_api_key=self.company.openai_api_key,
         )
 
-    def execute_thread(self, message: str, image: str) -> str:
+    def execute_thread(self, message: str, image: str | None) -> str:
         """Runs or creates a thread for the assistant."""
         current_thread_id = (
             self.contact.current_thread.thread_id

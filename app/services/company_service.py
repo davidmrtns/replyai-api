@@ -5,8 +5,6 @@ from app.db.models import (
     Assistant,
     AssistantPurposeEnum,
     Company,
-    DigisacClient,
-    Department,
 )
 from app.clients.assistants_client import AssistantsClient
 from app.exceptions.exceptions import ResourceNotFoundException, UserAccessException
@@ -54,39 +52,6 @@ async def get_assistant_from_company(
             )
             return assistant, assistant_db.id
     return None, None
-
-
-@disabled_func
-async def get_department(
-    company: Company,
-    shortcut: str | None,
-    is_confirmation_department: bool,
-    db: Session,
-) -> Department | None:
-    if company:
-        digisac_client = (
-            db.query(DigisacClient).filter_by(company_id=company.id).first()
-        )
-
-        if digisac_client:
-            if is_confirmation_department:
-                department = (
-                    db.query(Department)
-                    .filter_by(
-                        departamento_confirmacao=True,
-                        id_digisac_client=digisac_client.id,
-                    )
-                    .first()
-                )
-            else:
-                department = (
-                    db.query(Department)
-                    .filter_by(shortcut=shortcut, digisac_client_id=digisac_client.id)
-                    .first()
-                )
-            if department:
-                return department
-    return None
 
 
 # Services for company management

@@ -7,7 +7,6 @@ from app.db.database import get_db_session_with_context
 from app.db.models import Company, Contact
 from app.jobs.sub_jobs import (
     enviar_retomada_conversa,
-    enviar_confirmacao_consulta,
     enviar_aviso_vencimento,
     enviar_cobranca_inadimplente,
 )
@@ -15,10 +14,6 @@ from app.jobs.sub_jobs import (
 
 def rodar_retomar_conversa():
     asyncio.run(retomar_conversa())
-
-
-def rodar_confirmar_agendamento():
-    asyncio.run(confirmar_agendamento())
 
 
 def rodar_avisar_vencimento():
@@ -70,30 +65,6 @@ async def retomar_conversa():
 
                 for contato in interacoes_inativas:
                     await enviar_retomada_conversa(contato, empresa, db)
-        except Exception as e:
-            print(f"Erro ao processar: {e}")
-
-
-async def confirmar_agendamento():
-    with get_db_session_with_context() as db:
-        try:
-            empresas = (
-                db.query(Company)
-                .filter_by(appointment_confirmation_is_active=True, is_active=True)
-                .all()
-            )
-
-            for empresa in empresas:
-                timezone = empresa.timezone if empresa.timezone else "UTC"
-                tz = pytz.timezone(timezone)
-
-                data_atual = datetime.now(tz)
-                data_atual_formatada = data_atual.strftime("%Y-%m-%dT%H:%M:%S")
-                dia_seguinte = (data_atual + timedelta(days=1)).strftime("%Y-%m-%d")
-
-                await enviar_confirmacao_consulta(
-                    dia_seguinte, data_atual_formatada, empresa, db
-                )
         except Exception as e:
             print(f"Erro ao processar: {e}")
 

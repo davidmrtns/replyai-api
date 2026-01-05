@@ -2,13 +2,41 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import List, Literal
 from msgraph.generated.models.schedule_information import ScheduleInformation
-import pytz
 
 from app.db.models import Company
 
 
+class DateTimeInfo:
+    def __init__(self, date_time: str, time_zone: str):
+        self.date_time = date_time
+        self.time_zone = time_zone
+
+
+class ScheduleItem:
+    def __init__(
+        self,
+        start: DateTimeInfo,
+        end: DateTimeInfo,
+        location: str,
+        is_private: bool,
+        status: str,
+        subject: str,
+    ):
+        self.start = start
+        self.end = end
+        self.location = location
+        self.is_private = is_private
+        self.status = status
+        self.subject = subject
+
+
 class Schedule:
-    def __init__(self, availability_view: str, schedule_id: str, schedule_items: list):
+    def __init__(
+        self,
+        availability_view: str,
+        schedule_id: str,
+        schedule_items: List[ScheduleItem],
+    ):
         self.availability_view = availability_view
         self.schedule_id = schedule_id
         self.schedule_items = schedule_items
@@ -16,20 +44,20 @@ class Schedule:
     @classmethod
     def from_object(cls, data: ScheduleInformation):
         schedule_items = [
-            {
-                "start": {
-                    "date_time": item.start.date_time,
-                    "time_zone": item.start.time_zone,
-                },
-                "end": {
-                    "date_time": item.end.date_time,
-                    "time_zone": item.end.time_zone,
-                },
-                "location": item.location,
-                "is_private": item.is_private,
-                "status": item.status,
-                "subject": item.subject,
-            }
+            ScheduleItem(
+                start=DateTimeInfo(
+                    date_time=item.start.date_time,
+                    time_zone=item.start.time_zone,
+                ),
+                end=DateTimeInfo(
+                    date_time=item.end.date_time,
+                    time_zone=item.end.time_zone,
+                ),
+                location=item.location,
+                is_private=item.is_private,
+                status=item.status,
+                subject=item.subject,
+            )
             for item in data.schedule_items
         ]
 
@@ -41,37 +69,37 @@ class Schedule:
 
     @classmethod
     def from_dict(cls, data: dict, config: dict):
-        eventos = [
-            {
-                "start": {
-                    "date_time": item.get("start", {}).get("dateTime", ""),
-                    "time_zone": item.get("start", {}).get("timeZone", ""),
-                },
-                "end": {
-                    "date_time": item.get("end", {}).get("dateTime", ""),
-                    "time_zone": item.get("end", {}).get("timeZone", ""),
-                },
-                "location": item.get("location", ""),
-                "is_private": False,
-                "status": item.get("status", ""),
-                "subject": item.get("summary", ""),
-            }
+        events = [
+            ScheduleItem(
+                start=DateTimeInfo(
+                    date_time=item.get("start", {}).get("dateTime", ""),
+                    time_zone=item.get("start", {}).get("timeZone", ""),
+                ),
+                end=DateTimeInfo(
+                    date_time=item.get("end", {}).get("dateTime", ""),
+                    time_zone=item.get("end", {}).get("timeZone", ""),
+                ),
+                location=item.get("location", ""),
+                is_private=False,
+                status=item.get("status", ""),
+                subject=item.get("summary", ""),
+            )
             for item in data.get("items", [])
         ]
 
-        availability_view = cls.gerar_availability_view(
-            eventos=eventos,
-            intervalo=config.get("event_duration"),
-            hora_inicio=config.get("agenda_start_time"),
-            hora_final=config.get("agenda_end_time"),
+        availability_view = cls.generate_availability_view(
+            events=events,
+            interval=config.get("event_duration"),
+            start_time=config.get("agenda_start_time"),
+            end_time=config.get("agenda_end_time"),
+            date=config.get("checked_date"),
             timezone=config.get("timezone"),
-            data=config.get("checked_date"),
         )
 
         return cls(
             availability_view=availability_view,
             schedule_id=data.get("summary", ""),
-            schedule_items=eventos,
+            schedule_items=events,
         )
 
     def to_string_list(self, company: Company) -> list[str]:
@@ -93,39 +121,41 @@ class Schedule:
         return slots
 
     @staticmethod
-    def gerar_availability_view(
-        eventos: List[dict],
-        intervalo: int,
-        hora_inicio: str,
-        hora_final: str,
-        data: str,
-        timezone: pytz.timezone,
+    def generate_availability_view(
+        events: List[ScheduleItem],
+        interval: int,
+        start_time: str,
+        end_time: str,
+        date: str,
+        timezone,
     ):
-        hora_inicio_dt = timezone.localize(
-            datetime.strptime(f"{data} {hora_inicio}", "%Y-%m-%d %H:%M:%S")
+        start_time_dt = timezone.localize(
+            datetime.strptime(f"{date} {start_time}", "%Y-%m-%d %H:%M:%S")
         )
-        hora_final_dt = timezone.localize(
-            datetime.strptime(f"{data} {hora_final}", "%Y-%m-%d %H:%M:%S")
+        end_time_dt = timezone.localize(
+            datetime.strptime(f"{date} {end_time}", "%Y-%m-%d %H:%M:%S")
         )
 
-        total_minutos = int((hora_final_dt - hora_inicio_dt).total_seconds() // 60)
-        total_blocos = total_minutos // intervalo
-        blocks = ["0"] * total_blocos
+        total_minutes = int((end_time_dt - start_time_dt).total_seconds() // 60)
+        total_blocks = total_minutes // interval
+        blocks = ["0"] * total_blocks
 
-        for evento in eventos:
-            inicio_evento = datetime.fromisoformat(evento["start"]["date_time"])
-            fim_evento = datetime.fromisoformat(evento["end"]["date_time"])
+        for event in events:
+            event_start_time = datetime.fromisoformat(event.start.date_time)
+            event_end_time = datetime.fromisoformat(event.end.date_time)
 
-            offset = int((inicio_evento - hora_inicio_dt).total_seconds() // 60)
-            index_inicial_bloco = offset // intervalo
+            offset = int((event_start_time - start_time_dt).total_seconds() // 60)
+            initial_block_index = offset // interval
 
-            duracao_evento = int((fim_evento - inicio_evento).total_seconds() // 60)
+            event_duration = int(
+                (event_end_time - event_start_time).total_seconds() // 60
+            )
 
             for i in range(
-                index_inicial_bloco,
-                index_inicial_bloco + (duracao_evento // intervalo) + 1,
+                initial_block_index,
+                initial_block_index + (event_duration // interval) + 1,
             ):
-                if i < total_blocos:
+                if i < total_blocks:
                     blocks[i] = "2"
 
         return "".join(blocks)
@@ -133,11 +163,11 @@ class Schedule:
 
 class AgendaClient(ABC):
     @abstractmethod
-    def get_schedules(self, agendas: List[str], date: str) -> List[Schedule]:
+    async def get_schedules(self, agendas: List[str], date: str) -> List[Schedule]:
         pass
 
     @abstractmethod
-    def add_event(
+    async def add_event(
         self,
         agenda_address: str,
         date: str,
@@ -148,13 +178,13 @@ class AgendaClient(ABC):
         pass
 
     @abstractmethod
-    def confirm_event(
+    async def confirm_event(
         self, agenda_address: str, event_start_datetime: str, event_subject: str
     ) -> bool:
         pass
 
     @abstractmethod
-    def reschedule_event(
+    async def reschedule_event(
         self,
         agenda_address: str,
         event_start_datetime: str,
@@ -164,7 +194,7 @@ class AgendaClient(ABC):
         pass
 
     @abstractmethod
-    def cancel_event(
+    async def cancel_event(
         self,
         agenda_address: str,
         event_start_datetime: str,
