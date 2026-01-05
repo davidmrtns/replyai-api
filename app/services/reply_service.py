@@ -21,7 +21,7 @@ from app.utils.string_replacements import replace_abbreviations
 class ContactService:
     """Encapsulates contact-related operations."""
 
-    def __init__(self, company: Company, db: Session, timezone: str):
+    def __init__(self, company: Company, db: Session, timezone: str = "UTC"):
         self.company = company
         self.db = db
         self.timezone = pytz.timezone(timezone)

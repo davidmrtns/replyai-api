@@ -1,19 +1,13 @@
 from datetime import datetime, timedelta
 import asyncio
 import pytz
-from sqlalchemy import or_, and_
 
 from app.db.database import get_db_session_with_context
-from app.db.models import Company, Contact
+from app.db.models import Company
 from app.jobs.sub_jobs import (
-    enviar_retomada_conversa,
     enviar_aviso_vencimento,
     enviar_cobranca_inadimplente,
 )
-
-
-def rodar_retomar_conversa():
-    asyncio.run(retomar_conversa())
 
 
 def rodar_avisar_vencimento():
@@ -22,51 +16,6 @@ def rodar_avisar_vencimento():
 
 def rodar_cobrar_inadimplentes():
     asyncio.run(cobrar_inadimplentes())
-
-
-async def retomar_conversa():
-    agora = datetime.now()
-
-    with get_db_session_with_context() as db:
-        try:
-            empresas = (
-                db.query(Company).filter_by(recall_is_active=True, is_active=True).all()
-            )
-
-            for empresa in empresas:
-                timeout_padrao = empresa.recall_timeout_minutes or 60
-                timeout_padrao_time = agora - timedelta(minutes=timeout_padrao)
-
-                timeout_final = empresa.final_recall_timeout_minutes or 1440
-                timeout_final_time = agora - timedelta(minutes=timeout_final)
-
-                query = db.query(Contact).filter(
-                    Contact.company_id == empresa.id,
-                    or_(
-                        and_(
-                            Contact.last_message_at <= timeout_padrao_time,
-                            Contact.recall_count < empresa.recall_quant - 1,
-                            Contact.receive_ai_replies == True,
-                            Contact.awaiting_human_contact == False,
-                        ),
-                        and_(
-                            Contact.last_message_at <= timeout_final_time,
-                            Contact.recall_count == empresa.recall_quant - 1,
-                            Contact.receive_ai_replies == True,
-                            Contact.awaiting_human_contact == False,
-                        ),
-                    ),
-                )
-
-                if not empresa.recall_confirmacao_ativo:
-                    query = query.filter_by(appointment_confirmation_is_active=False)
-
-                interacoes_inativas = query.all()
-
-                for contato in interacoes_inativas:
-                    await enviar_retomada_conversa(contato, empresa, db)
-        except Exception as e:
-            print(f"Erro ao processar: {e}")
 
 
 async def avisar_vencimento():

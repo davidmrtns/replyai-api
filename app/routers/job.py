@@ -8,7 +8,6 @@ from app.db.database import get_db_session
 from app.jobs.jobs import (
     rodar_avisar_vencimento,
     rodar_cobrar_inadimplentes,
-    rodar_retomar_conversa,
 )
 from app.jobs.registry import JOBS
 from app.jobs.runners.process_runner import ProcessJobRunner
@@ -35,14 +34,6 @@ def execute_job(job_name: str):
     runner.run(job)
 
     return create_job_executed_response(job_name=job_name)
-
-
-@router.post("/recall_conversations", response_model=JobExecutedResponse)
-async def execute_conversation_recall():
-    process = multiprocessing.Process(target=rodar_retomar_conversa)
-    process.start()
-
-    return create_job_executed_response(job_name="recall_conversations")
 
 
 @router.post("/notify_due_dates", response_model=JobExecutedResponse)

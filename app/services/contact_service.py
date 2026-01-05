@@ -117,17 +117,6 @@ async def update_current_assistant(
     db.commit()
 
 
-@disabled_func
-async def reset_contact(contact: Contact, db: Session) -> None:
-    contact.current_thread_id = None
-    contact.current_assistant = None
-    contact.last_message_at = None
-    contact.recall_count = 0
-    contact.under_appointment_confirmation = False
-    contact.awaiting_human_contact = False
-    db.commit()
-
-
 async def end_contact(
     contact: Contact, message_client: MessageClient, db: Session
 ) -> None:
@@ -135,4 +124,4 @@ async def end_contact(
         message_client.close_contact_ticket(
             contact.contact_id, ticket_topic_ids=[], comments="", by_user_id=None
         )
-    await reset_contact(contact, db)
+    # await reset_contact(contact, db)

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.clients.digisac_client import DigisacClient
 from app.clients.financial_client import FinancialClient
 from app.clients.message_client import MessageClient
-from app.db.models import Contact, Company
+from app.db.models import Company
 from app.services.billing_service import (
     generate_billing_response,
     create_financial_clients,
@@ -11,54 +11,12 @@ from app.services.billing_service import (
 from app.services.company_service import get_assistant_from_company
 from app.services.contact_service import (
     get_or_create_contact,
-    reset_contact,
     update_current_assistant,
 )
 
 # from app.services.direcionamento_service import direcionar
 from app.utils.create_message_client import create_message_client
-from app.services.thread_service import assign_new_thread_to_contact, execute_thread
-
-
-async def enviar_retomada_conversa(contato: Contact, empresa: Company, db: Session):
-    try:
-        assistente, _ = await get_assistant_from_company(empresa, "retomar", None, db)
-
-        if not assistente:
-            return
-
-        if contato.recallCount < empresa.recall_quant - 1:
-            acao = "retomar_atendimento"
-        else:
-            acao = "encerrar_conversa"
-
-        message_client = create_message_client(empresa, db)
-        if isinstance(message_client, DigisacClient):
-            ticket_id, last_message_id = message_client.obter_ticket_ultima_mensagem(
-                contato.contactId
-            )
-            if ticket_id is None:
-                await reset_contact(contato, db)
-                return
-            else:
-                if last_message_id is None:
-                    return
-                origem_mensagem = message_client.obter_origem_mensagem(last_message_id)
-                if origem_mensagem is None or origem_mensagem == "user":
-                    await reset_contact(contato, db)
-                    return
-        resposta = await execute_thread(acao, None, contato, assistente, db)
-        # await direcionar(resposta, False, message_client, None, None, empresa, contato, assistente, db)
-
-        if resposta.activity != "E":
-            contato.recallCount += 1
-        db.commit()
-        return
-    except Exception as e:
-        db.rollback()
-        print(
-            f"Erro ao enviar retomada de conversa para o contato de ID {contato.id}: {e}"
-        )
+from app.services.thread_service import assign_new_thread_to_contact
 
 
 async def enviar_aviso_vencimento(

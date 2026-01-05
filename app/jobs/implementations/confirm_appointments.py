@@ -39,7 +39,7 @@ class ConfirmAppointmentsJob(Job):
                     log_job_error(self.name, company.slug, e)
 
     async def _process_company(self, company: Company, db: Session):
-        contact_service = ContactService(company, db, company.timezone or "UTC")
+        contact_service = ContactService(company, db, company.timezone)
 
         timezone = company.timezone or "UTC"
         tz = pytz.timezone(timezone)
