@@ -1,14 +1,11 @@
-from datetime import datetime, timedelta
-import pytz
 from sqlalchemy.orm import Session
 
 from app.clients.asaas_client import AsaasClient
-from app.clients.digisac_client import DigisacClient
-from app.clients.message_client import MediaMessageData, MessageClient
+from app.clients.message_client import MessageClient
 from app.db.database import get_db_session_with_context
-from app.db.models import Company, Contact
+from app.db.models import Company
 from app.jobs.base import Job
-from app.prompts.load_prompt import load_prompt
+from app.prompts import load_prompt
 from app.services.billing_service import create_financial_clients
 from app.services.reply_service import (
     AssistantService,
@@ -16,12 +13,11 @@ from app.services.reply_service import (
     MessageHandlerService,
 )
 from app.utils.create_message_client import create_message_client
-from app.utils.download_file import download_file
 from app.utils.logger import log_job_error
 
 
-class NotifyDueDatesJob(Job):
-    name = "notify_due_dates"
+class ChargeDefaultersJob(Job):
+    name = "charge_defaulters"
 
     async def run(self) -> None:
         async with get_db_session_with_context() as db:
@@ -39,37 +35,23 @@ class NotifyDueDatesJob(Job):
                     log_job_error(self.name, company.slug, e)
 
     async def _process_company(self, company: Company, db: Session):
-        timezone = company.timezone or "UTC"
-        tz = pytz.timezone(timezone)
-
-        today = datetime.now(tz)
-        today_formatted = today.strftime("%Y-%m-%d")
-        next_day = (today + timedelta(days=1)).strftime("%Y-%m-%d")
-        three_days_ahead = (today + timedelta(days=3)).strftime("%Y-%m-%d")
-
         message_client = create_message_client(company, db)
         financial_clients = create_financial_clients(company, db)
 
         for financial_client in financial_clients:
             await self._send_notifications(
-                company, financial_client, message_client, next_day, db
-            )
-            await self._send_notifications(
-                company, financial_client, message_client, three_days_ahead, db
+                company, financial_client, message_client, db
             )
 
     async def _send_notifications(
         self,
         company: Company,
         financial_client: AsaasClient,
-        message_client: MessageClient,
-        due_date: str,
+        message_client,
         db: Session,
     ):
         response = financial_client.list_payments(
-            due_date_le=due_date,
-            due_date_ge=due_date,
-            status="PENDING",
+            status="OVERDUE",
             limit="100",
         )
 
@@ -80,6 +62,7 @@ class NotifyDueDatesJob(Job):
                     company, financial_client, message_client, payment, db
                 )
 
+    # TODO: unify with function from notify_due_dates.py
     async def _process_payment(
         self,
         company: Company,
@@ -101,7 +84,7 @@ class NotifyDueDatesJob(Job):
             )
 
             prompt = load_prompt(
-                "notify_due_dates",
+                "charge_defaulters",
                 {
                     "name": name,
                     "due_date": due_date,
@@ -119,41 +102,3 @@ class NotifyDueDatesJob(Job):
             await message_handler_service.handle_message_response(
                 False, response, contact
             )
-
-            if company.send_due_payments_on_charge:
-                await self._send_bank_slip(
-                    message_handler_service, payment, message_client, contact
-                )
-
-    async def _send_bank_slip(
-        self,
-        message_service: MessageHandlerService,
-        payment: dict,
-        message_client: MessageClient,
-        contact: Contact,
-    ):
-        bank_slip_url = payment.get("bankSlipUrl", "")
-        if bank_slip_url:
-            bank_slip = download_file(bank_slip_url)
-            if bank_slip:
-                mediatype = (
-                    "application/pdf"
-                    if isinstance(message_client, DigisacClient)
-                    else "document"
-                )
-
-                media_message_data = MediaMessageData(
-                    mediatype=mediatype,
-                    mimetype=mediatype,
-                    caption="",
-                    media=bank_slip,
-                    filename="file.pdf",
-                )
-
-                message_service.send_message(
-                    message_type="media",
-                    text_message=None,
-                    audio_message_base64=None,
-                    media_message=media_message_data,
-                    contact=contact,
-                )

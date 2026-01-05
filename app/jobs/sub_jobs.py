@@ -6,7 +6,6 @@ from app.clients.message_client import MessageClient
 from app.db.models import Company
 from app.services.billing_service import (
     generate_billing_response,
-    create_financial_clients,
 )
 from app.services.company_service import get_assistant_from_company
 from app.services.contact_service import (
@@ -15,28 +14,7 @@ from app.services.contact_service import (
 )
 
 # from app.services.direcionamento_service import direcionar
-from app.utils.create_message_client import create_message_client
 from app.services.thread_service import assign_new_thread_to_contact
-
-
-async def enviar_cobranca_inadimplente(data: str, empresa: Company, db: Session):
-    message_client = create_message_client(empresa, db)
-    financial_clients = create_financial_clients(empresa, db)
-
-    for financial_client in financial_clients:
-        resposta = financial_client.listar_cobrancas(status="OVERDUE", limit="100")
-        if resposta.get("totalCount", 0) > 0:
-            for cobranca in resposta.get("data", []):
-                await processar_cobranca(
-                    "extrair_dados_inadimplencia",
-                    cobranca,
-                    data,
-                    False,
-                    empresa,
-                    message_client,
-                    financial_client,
-                    db,
-                )
 
 
 async def processar_cobranca(

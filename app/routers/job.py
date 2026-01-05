@@ -1,13 +1,8 @@
-import multiprocessing
-
 from fastapi import APIRouter
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
-from app.jobs.jobs import (
-    rodar_cobrar_inadimplentes,
-)
 from app.jobs.registry import JOBS
 from app.jobs.runners.process_runner import ProcessJobRunner
 from app.jobs.sub_jobs import processar_cobranca, processar_nf
@@ -33,14 +28,6 @@ def execute_job(job_name: str):
     runner.run(job)
 
     return create_job_executed_response(job_name=job_name)
-
-
-@router.post("/charge_defaulters", response_model=JobExecutedResponse)
-async def execute_charge_defaulters():
-    process = multiprocessing.Process(target=rodar_cobrar_inadimplentes)
-    process.start()
-
-    return create_job_executed_response(job_name="charge_defaulters")
 
 
 @router.post(
