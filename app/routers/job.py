@@ -1,25 +1,17 @@
 from fastapi import APIRouter
 from fastapi.params import Depends
-from sqlalchemy.orm import Session
 
-from app.db.database import get_db_session
 from app.jobs.registry import JOBS
 from app.jobs.runners.process_runner import ProcessJobRunner
-from app.jobs.sub_jobs import processar_cobranca, processar_nf
 from .routers_helpers import validate_secret_key
-from app.schemas.integrations.asaas_schema import (
-    AsaasPaymentRequest,
-    AsaasInvoiceRequest,
-)
+
 from app.schemas.job_schema import JobExecutedResponse, create_job_executed_response
-from app.services.billing_service import create_financial_clients
-from app.services.company_service import get_company_data
 
 
 router = APIRouter(dependencies=[Depends(validate_secret_key)])
 
 
-@router.post("/{job_name}")
+@router.post("/{job_name}", response_model=JobExecutedResponse)
 def execute_job(job_name: str):
     job_class = JOBS[job_name]
     job = job_class()
@@ -28,58 +20,3 @@ def execute_job(job_name: str):
     runner.run(job)
 
     return create_job_executed_response(job_name=job_name)
-
-
-@router.post(
-    "/thank_payment/asaas/{slug}/{token}/{client_number}",
-    response_model=JobExecutedResponse,
-)
-async def execute_thank_payment(
-    request: AsaasPaymentRequest,
-    slug: str,
-    token: str,
-    client_number: int,
-    db: Session = Depends(get_db_session),
-):
-    company_data = await get_company_data(slug, token, db)
-    if company_data is not None:
-        company, message_client = company_data
-        financial_client = create_financial_clients(company, db, client_number)
-        await processar_cobranca(
-            "extract_payment_data",
-            request.payment.model_dump(),
-            "",
-            False,
-            company,
-            message_client,
-            financial_client,
-            db,
-        )
-        return create_job_executed_response(job_name="thank_payment")
-
-
-@router.post(
-    "/send_invoice/asaas/{slug}/{token}/{client_number}",
-    response_model=JobExecutedResponse,
-)
-async def execute_send_invoice(
-    request: AsaasInvoiceRequest,
-    slug: str,
-    token: str,
-    client_number: int,
-    db: Session = Depends(get_db_session),
-):
-    company_data = await get_company_data(slug, token, db)
-    if company_data is not None:
-        company, message_client = company_data
-        financial_client = create_financial_clients(company, db, client_number)
-        await processar_nf(
-            "extract_invoice_data",
-            request.invoice.model_dump(),
-            "",
-            company,
-            message_client,
-            financial_client,
-            db,
-        )
-        return create_job_executed_response(job_name="send_invoice")

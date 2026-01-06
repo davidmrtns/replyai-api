@@ -6,6 +6,7 @@ from app.db.models import RDStationClient as RDStationClientDB, RDStationDealSta
 from app.db.models import Company, Contact
 
 
+# TODO: move to utility file
 def create_crm_client(company: Company, db: Session) -> CRMClient | None:
     if company.crm_client_type == "rdstation":
         rdstationcrm_client = (

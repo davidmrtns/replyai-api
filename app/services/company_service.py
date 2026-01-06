@@ -6,55 +6,12 @@ from app.db.models import (
     AssistantPurposeEnum,
     Company,
 )
-from app.clients.assistants_client import AssistantsClient
 from app.exceptions.exceptions import ResourceNotFoundException, UserAccessException
 from app.schemas.company_schema import CreateCompanySchema, UpdateCompanySchema
-from app.utils.create_message_client import create_message_client
 from app.utils.api_key_encryption import encrypt_api_key
-from app.utils.decorators import disabled_func
 from app.utils.model_utils import apply_model_update
 
 
-@disabled_func
-async def get_company_data(slug: str, token: str, db: Session):
-    company = (
-        db.query(Company).filter_by(slug=slug, token=token, is_active=True).first()
-    )
-
-    if company is not None:
-        message_client = create_message_client(company, db)
-        return company, message_client
-    return None
-
-
-@disabled_func
-async def get_assistant_from_company(
-    company: Company, purpose: str | None, shortcut: str | None, db: Session
-):
-    if company:
-        if purpose:
-            assistant_db = (
-                db.query(Assistant)
-                .filter_by(company_id=company.id, purpose=purpose)
-                .first()
-            )
-        else:
-            assistant_db = (
-                db.query(Assistant)
-                .filter_by(company_id=company.id, shortcut=shortcut)
-                .first()
-            )
-        if assistant_db:
-            assistant = AssistantsClient(
-                assistant_name=assistant_db.assistant_name,
-                openai_assistant_id=assistant_db.openai_assistant_id,
-                openai_api_key=company.openai_api_key,
-            )
-            return assistant, assistant_db.id
-    return None, None
-
-
-# Services for company management
 async def get_all_companies(company_id: int | None, db: Session):
     if not company_id:
         companies = db.query(Company).all()
