@@ -8,11 +8,9 @@ from app.db.database import get_db_session_with_context
 from app.db.models import Company, Contact
 from app.jobs.base import Job
 from app.prompts.load_prompt import load_prompt
-from app.services.reply_service import (
-    AssistantService,
-    ContactService,
-    MessageHandlerService,
-)
+from app.services.message_handler_service import MessageHandlerService
+from app.services.thread_service import ThreadService
+from app.services.contact_service import ContactService
 from app.utils.create_message_client import create_message_client
 from app.utils.logger import log_job_error
 from app.utils.model_utils import apply_model_update
@@ -94,12 +92,12 @@ class RecallConversationsJob(Job):
             if should_break:
                 return
 
-        assistant_service = AssistantService(contact, company, db)
-        response = assistant_service.execute_thread(prompt, None)
-        assistant = assistant_service.get_assistant()
+        thread_service = ThreadService(contact, company, db)
+        response = thread_service.execute_thread(prompt, None)
+        assistants_client = thread_service.get_assistants_client()
 
         message_handler_service = MessageHandlerService(
-            assistant, message_client, company, db
+            assistants_client, message_client, company, db
         )
         await message_handler_service.handle_message_response(False, response, contact)
 

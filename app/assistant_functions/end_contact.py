@@ -5,7 +5,7 @@ from app.clients.digisac_client import DigisacClient
 from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
-from app.services.contact_service import end_contact
+from app.services.contact_service import ContactService
 from app.utils.create_message_client import create_message_client
 
 
@@ -68,6 +68,8 @@ async def end_contact_doc(assistant_id: str, thread_id: str, **kwargs) -> bool:
                 function_name=end_contact_doc.__name__,
             )
 
-        await end_contact(contact, message_client, db)
+        contact_service = ContactService(company, db, company.timezone)
+        contact_service.end_contact(contact, message_client)
+
         status = True
     return status

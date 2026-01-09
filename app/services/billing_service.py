@@ -7,11 +7,9 @@ from app.clients.digisac_client import DigisacClient
 from app.clients.message_client import MediaMessageData, MessageClient
 from app.db.models import Company, Contact
 from app.prompts.load_prompt import load_prompt
-from app.services.reply_service import (
-    AssistantService,
-    ContactService,
-    MessageHandlerService,
-)
+from app.services.contact_service import ContactService
+from app.services.message_handler_service import MessageHandlerService
+from app.services.thread_service import ThreadService
 from app.utils import download_file
 
 
@@ -72,12 +70,12 @@ async def process_payment(
             },
         )
 
-        assistant_service = AssistantService(contact, company, db)
-        response = assistant_service.execute_thread(prompt, None)
-        assistant = assistant_service.get_assistant()
+        thread_service = ThreadService(contact, company, db)
+        response = thread_service.execute_thread(prompt, None)
+        assistants_client = thread_service.get_assistants_client()
 
         message_handler_service = MessageHandlerService(
-            assistant, message_client, company, db
+            assistants_client, message_client, company, db
         )
         await message_handler_service.handle_message_response(False, response, contact)
 

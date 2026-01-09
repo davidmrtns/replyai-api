@@ -10,7 +10,7 @@ from app.schemas.integrations.asaas_schema import (
 )
 from app.services.billing_service import process_payment
 from app.services.company_service import get_company_by_slug_and_token
-from app.services.reply_service import ContactService
+from app.services.contact_service import ContactService
 from app.utils.create_financial_clients import create_financial_clients
 from app.utils.create_message_client import create_message_client
 

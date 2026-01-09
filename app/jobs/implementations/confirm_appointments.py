@@ -8,11 +8,9 @@ from app.clients.message_client import MessageClient
 from app.db.database import get_db_session_with_context
 from app.db.models import Agenda, Company, Department
 from app.jobs.base import Job
-from app.services.reply_service import (
-    AssistantService,
-    ContactService,
-    MessageHandlerService,
-)
+from app.services.contact_service import ContactService
+from app.services.message_handler_service import MessageHandlerService
+from app.services.thread_service import ThreadService
 from app.utils.create_message_client import create_message_client
 from app.utils.create_agenda_client import create_agenda_client
 from app.utils.extract_phone_number import extract_phone_number
@@ -90,12 +88,12 @@ class ConfirmAppointmentsJob(Job):
                 },
             )
 
-            assistant_service = AssistantService(contact, company, db)
-            response = assistant_service.execute_thread(prompt, None)
-            assistant = assistant_service.get_assistant()
+            thread_service = ThreadService(contact, company, db)
+            response = thread_service.execute_thread(prompt, None)
+            assistants_client = thread_service.get_assistants_client()
 
             message_handler_service = MessageHandlerService(
-                assistant, message_client, company, db
+                assistants_client, message_client, company, db
             )
             await message_handler_service.handle_message_response(
                 False, response, contact

@@ -5,8 +5,7 @@ from app.clients.digisac_client import DigisacClient
 from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Department, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
-from app.services.contact_service import change_awaiting_human_contact
-from app.services.reply_service import ContactService
+from app.services.contact_service import ContactService
 from app.utils.create_message_client import create_message_client
 
 
@@ -87,9 +86,9 @@ async def transfer_contact_to_department(
                 function_name=transfer_contact_to_department.__name__,
             )
 
-        await change_awaiting_human_contact(contact, True, db)
-
         contact_service = ContactService(company, db, company.timezone)
+
+        contact_service.change_awaiting_human_contact(contact, True)
         contact_service.transfer_contact_to_department(
             contact, message_client, department
         )
