@@ -76,7 +76,7 @@ class ReplyService:
             )
             return True
         except AIResponseException:
-            message_handler_service.send_message(
+            await message_handler_service.send_message(
                 text_message=(
                     company.ai_reply_error_message
                     or "Sorry, an error occurred. Could you repeat your last message?"

@@ -20,7 +20,7 @@ class RecallConversationsJob(Job):
     name = "recall_conversations"
 
     async def run(self) -> None:
-        async with get_db_session_with_context() as db:
+        with get_db_session_with_context() as db:
             companies = (
                 db.query(Company).filter_by(recall_is_active=True, is_active=True).all()
             )
@@ -87,7 +87,7 @@ class RecallConversationsJob(Job):
 
         if isinstance(message_client, DigisacClient):
             should_break = await self._process_digisac_contact(
-                contact, company, message_client, contact_service, db
+                contact, message_client, contact_service, db
             )
             if should_break:
                 return

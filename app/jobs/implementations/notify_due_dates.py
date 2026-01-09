@@ -16,7 +16,7 @@ class NotifyDueDatesJob(Job):
     name = "notify_due_dates"
 
     async def run(self) -> None:
-        async with get_db_session_with_context() as db:
+        with get_db_session_with_context() as db:
             companies = (
                 db.query(Company)
                 .filter_by(charge_due_payments_is_active=True, is_active=True)
@@ -26,7 +26,6 @@ class NotifyDueDatesJob(Job):
             for company in companies:
                 try:
                     await self._process_company(company, db)
-                    pass
                 except Exception as e:
                     log_job_error(self.name, company.slug, e)
 

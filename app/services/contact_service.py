@@ -67,17 +67,18 @@ class ContactService:
     def transfer_contact_to_department(
         self,
         contact: Contact,
-        digisac_client: DigisacClient,
+        message_client: MessageClient,
         department: Department,
     ) -> None:
         """Transfers a contact to a specified department."""
-        digisac_client.transfer_contact(
-            contact_id=contact.contact_id,
-            department_id=department.digisac_department_id,
-            user_id=department.digisac_user_id,
-            by_user_id=None,
-            comments=department.contact_transfer_comment,
-        )
+        if isinstance(message_client, DigisacClient):
+            message_client.transfer_contact(
+                contact_id=contact.contact_id,
+                department_id=department.digisac_department_id,
+                user_id=department.digisac_user_id,
+                by_user_id=None,
+                comments=department.contact_transfer_comment,
+            )
 
     def _create_contact(
         self,

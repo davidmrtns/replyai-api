@@ -87,7 +87,15 @@ class MessageHandlerService:
         message_type: Literal["text", "audio", "media"] = "text",
         media_message: MediaMessageData | None = None,
     ):
-        """Sends a message to the contact based on the client type."""
+        """
+        Sends a message to the contact based on the client type.
+
+        Args:
+            text_message (str | None): The text content of the message. Should be None if sending audio or media.
+            contact (Contact): The contact to whom the message will be sent.
+            message_type (Literal["text", "audio", "media"]): The type of message to be sent.
+            media_message (MediaMessageData | None): The media content, if sending a media message.
+        """
         is_audio = message_type == "audio"
 
         audio_message_base64 = await self._generate_audio_message(

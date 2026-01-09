@@ -71,6 +71,9 @@ class ConfirmAppointmentsJob(Job):
         subject = event.subject
 
         phone_number = extract_phone_number(subject)
+        if not phone_number:
+            return
+
         contact = contact_service.get_contact_by_phone_number(
             phone_number, message_client
         )

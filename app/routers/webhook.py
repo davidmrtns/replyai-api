@@ -28,7 +28,7 @@ async def execute_thank_payment(
 ):
     company = get_company_by_slug_and_token(company_slug, token, db)
     message_client = create_message_client(company, db)
-    financial_client = create_financial_clients(company, db, client_number)
+    financial_client = create_financial_clients(company, db, client_number)[0]
     contact_service = ContactService(company, db, company.timezone)
 
     await process_payment(
@@ -53,7 +53,7 @@ async def execute_send_invoice(
 ):
     company = get_company_by_slug_and_token(company_slug, token, db)
     message_client = create_message_client(company, db)
-    financial_client = create_financial_clients(company, db, client_number)
+    financial_client = create_financial_clients(company, db, client_number)[0]
     contact_service = ContactService(company, db, company.timezone)
 
     await process_payment(
