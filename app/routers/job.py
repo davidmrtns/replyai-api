@@ -4,7 +4,6 @@ from fastapi.params import Depends
 from app.jobs.registry import JOBS
 from app.jobs.runners.process_runner import ProcessJobRunner
 from .routers_helpers import validate_secret_key
-
 from app.schemas.job_schema import JobExecutedResponse, create_job_executed_response
 
 

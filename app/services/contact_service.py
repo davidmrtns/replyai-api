@@ -1,119 +1,14 @@
-from datetime import datetime, timedelta
-from typing import Tuple
-
-import pytz
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.models import Company, Contact, Assistant
-from app.schemas.integrations.digisac_schema import DigisacRequest
-from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
-from app.services.crm_service import create_crm_client
-from app.clients.assistants_client import AssistantsClient
+from app.db.models import Contact
 from app.clients.message_client import MessageClient
-from app.utils.decorators import disabled_func
-
-
-@disabled_func
-async def get_or_create_contact(
-    request: DigisacRequest | EvolutionAPIRequest | None,
-    company_data: Tuple[Company, MessageClient | None],
-    db: Session,
-):
-    if isinstance(request, DigisacRequest):
-        contact_id = request.data.contactId
-    elif isinstance(request, EvolutionAPIRequest):
-        contact_id = request.data.key.remoteJid
-    else:
-        raise ValueError("The request body is invalid")
-
-    company = company_data[0]
-
-    contact = (
-        db.query(Contact)
-        .filter_by(contact_id=contact_id, company_id=company.id)
-        .first()
-    )
-    timezone = pytz.timezone(company.timezone)
-
-    if contact is None:
-        contact = await create_contact(request, contact_id, company_data, timezone, db)
-    else:
-        now = datetime.now(timezone)
-        if not contact.receive_ai_replies:
-            last_message_tz = contact.last_message_at.replace(tzinfo=now.tzinfo)
-            if contact.last_message_at and (now - last_message_tz >= timedelta(days=1)):
-                contact.receive_ai_replies = True
-        contact.last_message_at = now
-        contact.recall_count = 0
-        db.commit()
-
-    if contact.current_assistant:
-        assistant_db = (
-            db.query(Assistant)
-            .filter_by(id=contact.current_assistant, company_id=company.id)
-            .first()
-        )
-    else:
-        assistant_db = company.default_assistant
-        await update_current_assistant(contact, assistant_db.id, db)
-    assistant = AssistantsClient(
-        assistant_name=assistant_db.assistant_name,
-        openai_assistant_id=assistant_db.openai_assistant_id,
-        openai_api_key=company.openai_api_key,
-    )
-
-    return contact, assistant
-
-
-@disabled_func
-async def create_contact(
-    request: DigisacRequest | EvolutionAPIRequest,
-    contact_id: str,
-    company_data: Tuple[Company, MessageClient | None],
-    timezone: pytz.timezone,
-    db: Session,
-) -> Contact:
-    company, message_client = company_data
-
-    contact_data = message_client.get_contact_data(request=request)
-
-    deal_id = None
-    crm_client = create_crm_client(company, db)
-    if crm_client and contact_data:
-        deal_id = crm_client.create_lead(
-            contact_data.contact_name,
-            contact_data.contact_name,
-            contact_data.phone_number,
-        )
-
-    contact = Contact(
-        contact_id=contact_id,
-        phone_number=contact_data.phone_number,
-        contact_name=contact_data.contact_name,
-        last_message_at=datetime.now(timezone),
-        deal_id=deal_id,
-        company_id=company.id,
-    )
-    db.add(contact)
-    db.commit()
-    db.refresh(contact)
-
-    return contact
 
 
 async def change_awaiting_human_contact(
     contact: Contact, value: bool, db: Session
 ) -> None:
     contact.awaiting_human_contact = value
-    db.commit()
-
-
-@disabled_func
-async def update_current_assistant(
-    contact: Contact, assistant_id: int, db: Session
-) -> None:
-    contact.current_assistant = assistant_id
     db.commit()
 
 

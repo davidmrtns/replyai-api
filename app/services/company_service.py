@@ -12,6 +12,13 @@ from app.utils.api_key_encryption import encrypt_api_key
 from app.utils.model_utils import apply_model_update
 
 
+def get_company_by_slug_and_token(
+    company_slug: str, token: str, db: Session
+) -> Company | None:
+    company = db.query(Company).filter_by(slug=company_slug, token=token).first()
+    return company
+
+
 async def get_all_companies(company_id: int | None, db: Session):
     if not company_id:
         companies = db.query(Company).all()

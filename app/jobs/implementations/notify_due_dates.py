@@ -5,11 +5,9 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_session_with_context
 from app.db.models import Company
 from app.jobs.base import Job
-from app.services.billing_service import (
-    create_financial_clients,
-    process_multiple_payments,
-)
+from app.services.billing_service import process_multiple_payments
 from app.services.reply_service import ContactService
+from app.utils.create_financial_clients import create_financial_clients
 from app.utils.create_message_client import create_message_client
 from app.utils.logger import log_job_error
 
