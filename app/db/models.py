@@ -39,6 +39,7 @@ class EventCancellationTypeEnum(str, enum.Enum):
     delete = "delete"
 
 
+# TODO: this is not needed anymore, remove it
 class AssistantPurposeEnum(str, enum.Enum):
     reply = "reply"
     recall = "recall"

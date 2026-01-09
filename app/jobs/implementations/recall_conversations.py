@@ -99,7 +99,9 @@ class RecallConversationsJob(Job):
         message_handler_service = MessageHandlerService(
             assistants_client, message_client, company, db
         )
-        await message_handler_service.handle_message_response(False, response, contact)
+        await message_handler_service.send_message(
+            text_message=response, contact=contact
+        )
 
         apply_model_update(contact, {"recall_count": contact.recall_count + 1})
         db.commit()

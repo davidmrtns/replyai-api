@@ -69,19 +69,18 @@ class ReplyService:
         # Handle assistant replies
         try:
             response = thread_service.execute_thread(message, image)
-            await message_handler_service.handle_message_response(
-                is_audio, response, contact
+            await message_handler_service.send_message(
+                text_message=response,
+                contact=contact,
+                message_type="audio" if is_audio else "text",
             )
             return True
         except AIResponseException:
             message_handler_service.send_message(
-                message_type="text",
                 text_message=(
                     company.ai_reply_error_message
                     or "Sorry, an error occurred. Could you repeat your last message?"
                 ),
-                audio_message_base64=None,
-                media_message=None,
                 contact=contact,
             )
             return False

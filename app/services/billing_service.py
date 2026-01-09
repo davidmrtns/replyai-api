@@ -78,7 +78,9 @@ async def process_payment(
         message_handler_service = MessageHandlerService(
             assistants_client, message_client, company, db
         )
-        await message_handler_service.handle_message_response(False, response, contact)
+        await message_handler_service.send_message(
+            text_message=response, contact=contact
+        )
 
         if send_file:
             if send_file == "bank_slip":
@@ -114,9 +116,8 @@ async def send_financial_document_to_contact(
         )
 
         message_handler_service.send_message(
-            message_type="media",
             text_message=None,
-            audio_message_base64=None,
-            media_message=media_message_data,
             contact=contact,
+            message_type="media",
+            media_message=media_message_data,
         )

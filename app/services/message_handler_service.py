@@ -80,15 +80,25 @@ class MessageHandlerService:
             style=voice.style,
         )
 
-    def send_message(
+    async def send_message(
         self,
-        message_type: Literal["text", "audio", "media"],
         text_message: str | None,
-        audio_message_base64: str | None,
-        media_message: MediaMessageData | None,
         contact: Contact,
+        message_type: Literal["text", "audio", "media"] = "text",
+        media_message: MediaMessageData | None = None,
     ):
         """Sends a message to the contact based on the client type."""
+        is_audio = message_type == "audio"
+
+        audio_message_base64 = await self._generate_audio_message(
+            text_message=text_message,
+            is_audio=is_audio,
+        )
+
+        # Clears text message if audio or media
+        if (is_audio and audio_message_base64) or message_type == "media":
+            text_message = None
+
         if isinstance(self.message_client, EvolutionAPIClient):
             self.message_client.send_message(
                 phone_number=contact.phone_number,
@@ -111,30 +121,3 @@ class MessageHandlerService:
             raise ValueError(
                 "Unsupported message client type"
             )  # TODO: raise AppException
-
-    # TODO: maybe unify with send_message method
-    async def handle_message_response(
-        self,
-        is_audio: bool,
-        text_message: str,
-        contact: Contact,
-    ):
-        base64_audio_message = await self._generate_audio_message(
-            text_message=text_message,
-            is_audio=is_audio,
-        )
-
-        # Determine the message type and send the message
-        if is_audio and base64_audio_message:
-            message_type = "audio"
-            text_message = None
-        else:
-            message_type = "text"
-
-        self.send_message(
-            message_type=message_type,
-            text_message=text_message,
-            audio_message_base64=base64_audio_message,
-            media_message=None,
-            contact=contact,
-        )
