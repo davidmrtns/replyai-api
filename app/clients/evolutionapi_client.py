@@ -25,7 +25,15 @@ GLOBAL_API_KEY = os.getenv("EVOLUTIONAPI_GLOBAL_KEY")
 
 
 class EvolutionAPIClient(MessageClient):
-    def __init__(self, api_key: str, instance_name: str, delay_amount: int):
+    def __init__(
+        self,
+        message_client_id: int,
+        api_key: str,
+        instance_name: str,
+        delay_amount: int,
+    ):
+        super().__init__(message_client_id)
+
         decrypted_api_key = decrypt_api_key(api_key)
 
         self.headers = {"apikey": decrypted_api_key, "Content-Type": "application/json"}

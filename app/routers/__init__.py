@@ -9,6 +9,7 @@ from app.routers import (
     reply,
     user,
     voice,
+    webhook,
 )
 from app.routers.integrations import (
     asaas,

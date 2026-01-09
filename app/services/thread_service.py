@@ -1,50 +1,70 @@
 from sqlalchemy.orm import Session
 
-from app.db.models import Contact, Thread
-from app.clients.assistants_client import AssistantsClient, AssistantReply
-from app.utils.decorators import disabled_func
+from app.clients.assistants_client import AssistantsClient
+from app.db.models import Assistant, Company, Contact, Thread
 
 
-@disabled_func
-async def execute_thread(
-    message: str | None,
-    image: str | None,
-    contact: Contact,
-    assistant: AssistantsClient,
-    db: Session,
-) -> AssistantReply:
-    current_thread_id = (
-        contact.current_thread.thread_id if contact.current_thread else None
-    )
+class ThreadService:
+    """Encapsulates thread and assistant related operations."""
 
-    if message:
-        assistant.add_message(message=message, thread_id=current_thread_id)
+    def __init__(self, contact: Contact, company: Company, db: Session):
+        self.contact = contact
+        self.company = company
+        self.db = db
 
-    """if contact_data:
-        assistente.adicionar_mensagens([contact_data.__str__()], [], contato.threadId or None)"""  # TODO: check how to pass the contact data in a better way
+    def get_assistants_client(self) -> AssistantsClient:
+        """Retrieve the assistant for the contact."""
+        assistant = (
+            self.db.query(Assistant)
+            .filter_by(id=self.contact.current_assistant, company_id=self.company.id)
+            .first()
+            if self.contact.current_assistant
+            else self.company.default_assistant
+        )
+        if not self.contact.current_assistant:
+            self.contact.current_assistant = assistant.id
+            self.db.commit()
 
-    if image:
-        image_id = assistant.upload_image(image)
-        assistant.add_message(
-            is_image=True, image_id=image_id, thread_id=current_thread_id
+        return AssistantsClient(
+            assistant_name=assistant.assistant_name,
+            openai_assistant_id=assistant.openai_assistant_id,
+            openai_api_key=self.company.openai_api_key,
         )
 
-    result = assistant.create_or_run_thread(thread_id=current_thread_id)
+    def execute_thread(self, message: str, image: str | None) -> str:
+        """Runs or creates a thread for the assistant."""
+        current_thread_id = (
+            self.contact.current_thread.thread_id
+            if self.contact.current_thread
+            else None
+        )
 
-    if not contact.current_thread:
-        await assign_new_thread_to_contact(contact, result.thread_id, db)
+        assistant = self.get_assistants_client()
+        if message:
+            assistant.add_message(message=message, thread_id=current_thread_id)
+        if image:
+            image_id = assistant.upload_image(image)
+            assistant.add_message(
+                message=None,
+                is_image=True,
+                image_id=image_id,
+                thread_id=current_thread_id,
+            )
 
-    response = AssistantReply.from_run_result(result)
-    return response
+        result = assistant.create_or_run_thread(thread_id=current_thread_id)
 
+        if not self.contact.current_thread:
+            self._assign_thread_to_contact(result.thread_id)
 
-@disabled_func
-async def assign_new_thread_to_contact(
-    contact: Contact, thread_id: str, db: Session
-) -> None:
-    thread = Thread(
-        thread_id=thread_id, last_message_from="assistant", contact_id=contact.id
-    )
-    db.add(thread)
-    contact.current_thread = thread
-    db.commit()
+        return result.text_response
+
+    def _assign_thread_to_contact(self, thread_id: str):
+        """Assign a new thread to the contact."""
+        thread = Thread(
+            thread_id=thread_id,
+            last_message_from="assistant",
+            contact_id=self.contact.id,
+        )
+        self.db.add(thread)
+        self.contact.current_thread = thread
+        self.db.commit()

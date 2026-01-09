@@ -1,152 +1,156 @@
-from datetime import datetime
-from typing import Tuple
-
+from datetime import datetime, timedelta
+from typing import Union
 import pytz
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
-from app.db.models import Company, Contact, Department, Assistant
+from app.db.models import Company, Contact, Department
+from app.clients.message_client import MessageClient
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.services.crm_service import create_crm_client
-from app.clients.assistants_client import AssistantsClient
-from app.clients.message_client import MessageClient
-from app.utils.decorators import disabled_func
 
 
-@disabled_func
-async def get_or_create_contact(
-    request: DigisacRequest | EvolutionAPIRequest | None,
-    company_data: Tuple[Company, MessageClient | None],
-    db: Session,
-):
-    if isinstance(request, DigisacRequest):
-        contact_id = request.data.contactId
-    elif isinstance(request, EvolutionAPIRequest):
-        contact_id = request.data.key.remoteJid
-    else:
-        raise ValueError("The request body is invalid")
+class ContactService:
+    """Encapsulates contact-related operations."""
 
-    company = company_data[0]
+    def __init__(self, company: Company, db: Session, timezone: str = "UTC"):
+        self.company = company
+        self.db = db
+        self.timezone = pytz.timezone(timezone)
 
-    contact = (
-        db.query(Contact)
-        .filter_by(contact_id=contact_id, company_id=company.id)
-        .first()
-    )
-    timezone = pytz.timezone(company.timezone)
-
-    if contact is None:
-        contact = await create_contact(request, contact_id, company_data, timezone, db)
-    else:
-        now = datetime.now(timezone)
-        if not contact.receive_ai_replies:
-            last_message_tz = contact.last_message_at.replace(tzinfo=now.tzinfo)
-            """if contact.last_message_at and (now - last_message_tz >= timedelta(days=1)):
-                await change_ai_reply_reception(contact=contact, value=True, db=db)
-            else:
-                return contact, None"""
-        contact.last_message_at = now
-        contact.recall_count = 0
-        db.commit()
-
-    if contact.current_assistant:
-        assistant_db = (
-            db.query(Assistant)
-            .filter_by(id=contact.current_assistant, company_id=company.id)
+    def get_or_create_contact(
+        self,
+        contact_id: str,
+        message_client: MessageClient,
+        payload: Union[DigisacRequest, EvolutionAPIRequest],
+    ) -> Contact:
+        """Retrieve an existing contact or create one if it doesn't exist."""
+        contact = (
+            self.db.query(Contact)
+            .filter_by(contact_id=contact_id, company_id=self.company.id)
             .first()
         )
-    else:
-        assistant_db = company.default_assistant
-        await update_current_assistant(contact, assistant_db.id, db)
-    assistant = AssistantsClient(
-        assistant_name=assistant_db.assistant_name,
-        openai_assistant_id=assistant_db.openai_assistant_id,
-        openai_api_key=company.openai_api_key,
-    )
+        if contact is None:
+            contact = self._create_contact(contact_id, message_client, payload)
+        else:
+            self._update_contact(contact)
+        return contact
 
-    return contact, assistant
+    def get_contact_by_phone_number(
+        self,
+        phone_number: str,
+        message_client: MessageClient,
+    ) -> Contact:
+        """Retrieve a contact by phone number."""
+        contact = (
+            self.db.query(Contact)
+            .filter_by(phone_number=phone_number, company_id=self.company.id)
+            .first()
+        )
+        if not contact:
+            contact_name = "Unknown"  # TODO: find a way to get contact name
+            contact_id = message_client.get_contact_id(
+                phone_number=phone_number,
+            )
 
+            contact = Contact(
+                contact_id=contact_id,
+                phone_number=phone_number,
+                contact_name=contact_name,
+                last_message_at=datetime.now(self.timezone),
+                deal_id=None,
+                company_id=self.company.id,
+            )
+        return contact
 
-@disabled_func
-async def create_contact(
-    request: DigisacRequest | EvolutionAPIRequest,
-    contact_id: str,
-    company_data: Tuple[Company, MessageClient | None],
-    timezone: pytz.timezone,
-    db: Session,
-) -> Contact:
-    company, message_client = company_data
+    def transfer_contact_to_department(
+        self,
+        contact: Contact,
+        message_client: MessageClient,
+        department: Department,
+    ) -> None:
+        """Transfers a contact to a specified department."""
+        if isinstance(message_client, DigisacClient):
+            message_client.transfer_contact(
+                contact_id=contact.contact_id,
+                department_id=department.digisac_department_id,
+                user_id=department.digisac_user_id,
+                by_user_id=None,
+                comments=department.contact_transfer_comment,
+            )
 
-    contact_data = message_client.get_contact_data(request=request)
+    def _create_contact(
+        self,
+        contact_id: str,
+        message_client: MessageClient,
+        payload: Union[DigisacRequest, EvolutionAPIRequest],
+    ) -> Contact:
+        """Creates a new contact and persists it in the database."""
+        contact_data = message_client.get_contact_data(request=payload)
 
-    deal_id = None
-    crm_client = create_crm_client(company, db)
-    if crm_client and contact_data:
-        deal_id = crm_client.create_lead(
-            contact_data.contact_name,
-            contact_data.contact_name,
-            contact_data.phone_number,
+        # Attempt to create a lead via the CRM client (if available)
+        crm_client = create_crm_client(self.company, self.db)
+        deal_id = (
+            crm_client.create_lead(
+                contact_data.contact_name,
+                contact_data.contact_name,
+                contact_data.phone_number,
+            )
+            if crm_client and contact_data
+            else None
         )
 
-    contact = Contact(
-        contact_id=contact_id,
-        phone_number=contact_data.phone_number,
-        contact_name=contact_data.contact_name,
-        last_message_at=datetime.now(timezone),
-        deal_id=deal_id,
-        company_id=company.id,
-    )
-    db.add(contact)
-    db.commit()
-    db.refresh(contact)
-
-    return contact
-
-
-async def change_awaiting_human_contact(
-    contact: Contact, value: bool, db: Session
-) -> None:
-    contact.awaiting_human_contact = value
-    db.commit()
-
-
-async def transfer_contact(
-    message_client: DigisacClient, contact: Contact, department: Department
-) -> None:
-    message_client.transfer_contact(
-        contact.contact_id,
-        department.digisac_department_id,
-        department.digisac_user_id,
-        by_user_id=None,
-        comments=department.comentario,
-    )
-
-
-@disabled_func
-async def update_current_assistant(
-    contact: Contact, assistant_id: int, db: Session
-) -> None:
-    contact.current_assistant = assistant_id
-    db.commit()
-
-
-@disabled_func
-async def reset_contact(contact: Contact, db: Session) -> None:
-    contact.current_thread_id = None
-    contact.current_assistant = None
-    contact.last_message_at = None
-    contact.recall_count = 0
-    contact.under_appointment_confirmation = False
-    contact.awaiting_human_contact = False
-    db.commit()
-
-
-async def end_contact(
-    contact: Contact, message_client: MessageClient, db: Session
-) -> None:
-    if isinstance(message_client, DigisacClient):
-        message_client.close_contact_ticket(
-            contact.contact_id, ticket_topic_ids=[], comments="", by_user_id=None
+        contact = Contact(
+            contact_id=contact_id,
+            phone_number=contact_data.phone_number,
+            contact_name=contact_data.contact_name,
+            last_message_at=datetime.now(self.timezone),
+            deal_id=deal_id,
+            company_id=self.company.id,
         )
-    await reset_contact(contact, db)
+        self.db.add(contact)
+        self.db.commit()
+        self.db.refresh(contact)
+        return contact
+
+    def _update_contact(self, contact: Contact):
+        """Updates an existing contact."""
+        now = datetime.now(self.timezone)
+        if not contact.receive_ai_replies and contact.last_message_at:
+            last_message_tz = contact.last_message_at.replace(tzinfo=self.timezone)
+            if now - last_message_tz >= timedelta(days=1):
+                self.change_ai_reply_reception(contact, True)
+
+        contact.last_message_at = now
+        contact.recall_count = 0
+        self.db.commit()
+
+    def change_ai_reply_reception(self, contact: Contact, value: bool):
+        """Changes the AI reply reception status for a contact."""
+        contact.receive_ai_replies = value
+        self.db.commit()
+
+    def reset_contact(self, contact: Contact):
+        """Resets contact-related data."""
+        contact.current_thread_id = None
+        contact.current_assistant = None
+        contact.last_message_at = None
+        contact.recall_count = 0
+        contact.under_appointment_confirmation = False
+        contact.awaiting_human_contact = False
+        self.db.commit()
+
+    def change_awaiting_human_contact(self, contact: Contact, value: bool) -> None:
+        """Defines if a contact is awaiting human contact."""
+        contact.awaiting_human_contact = value
+        self.db.commit()
+
+    def end_contact(self, contact: Contact, message_client: MessageClient) -> None:
+        """Ends the contact interaction and resets its data."""
+        if isinstance(message_client, DigisacClient):
+            message_client.close_contact_ticket(
+                contact.contact_id, ticket_topic_ids=[], comments="", by_user_id=None
+            )
+
+        self.reset_contact(contact)

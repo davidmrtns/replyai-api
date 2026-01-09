@@ -21,11 +21,14 @@ from app.utils.decorators import ensure_success_status
 class DigisacClient(MessageClient):
     def __init__(
         self,
+        message_client_id: int,
         digisac_slug: str,
         service_id: str,
         default_user_id: str,
         digisac_token: str,
     ):
+        super().__init__(message_client_id)
+
         decrypted_api_key = decrypt_api_key(digisac_token)
 
         self.headers = {

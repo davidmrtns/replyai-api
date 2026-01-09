@@ -17,6 +17,7 @@ def create_message_client(company: Company, db: Session) -> MessageClient | None
         )
         if digisac_client:
             return DigisacClient(
+                message_client_id=digisac_client.id,
                 digisac_slug=digisac_client.digisac_slug,
                 service_id=digisac_client.service_id,
                 default_user_id=digisac_client.default_user_id,
@@ -28,6 +29,7 @@ def create_message_client(company: Company, db: Session) -> MessageClient | None
         )
         if evolutionapi_client:
             return EvolutionAPIClient(
+                message_client_id=evolutionapi_client.id,
                 api_key=evolutionapi_client.api_key,
                 instance_name=evolutionapi_client.instance_name,
                 delay_amount=80000,

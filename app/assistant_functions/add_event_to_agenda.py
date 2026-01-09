@@ -2,7 +2,7 @@ from openai.types.beta import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import get_db_session_with_context
-from app.db.models import Assistant, Company, Agenda
+from app.db.models import Assistant, Company, Agenda, Contact
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_agenda_client import create_agenda_client
 
@@ -98,10 +98,21 @@ async def add_event_to_agenda(
                 function_name=add_event_to_agenda.__name__,
             )
 
+        contact = (
+            db.query(Contact)
+            .filter_by(current_thread_id=thread_id, company_id=company.id)
+            .first()
+        )
+
+        if contact:
+            subject = f"{title} - {contact.phone_number}"
+        else:
+            subject = title
+
         status = await agenda_client.add_event(
-            agenda_address=agenda.endereco,
+            agenda_address=agenda.address,
             data=date,
-            subject=title,
+            subject=subject,
             description=description,
             localization=localization,
         )

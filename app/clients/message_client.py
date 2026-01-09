@@ -42,6 +42,9 @@ class MediaMessageData:
 
 
 class MessageClient:
+    def __init__(self, message_client_id: int):
+        self.message_client_id = message_client_id
+
     @abstractmethod
     def send_message(self, **kwargs):
         pass
