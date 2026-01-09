@@ -67,6 +67,7 @@ async def process_payment(
                 "name": name,
                 "due_date": due_date,
                 "description": payment_description,
+                "company_name": company.company_name,
             },
         )
 

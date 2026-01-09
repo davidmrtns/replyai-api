@@ -83,7 +83,7 @@ class RecallConversationsJob(Job):
         else:
             prompt_name = "end_conversation"
 
-        prompt = load_prompt(prompt_name, {})
+        prompt = load_prompt(prompt_name, {"company_name": company.company_name})
 
         if isinstance(message_client, DigisacClient):
             should_break = await self._process_digisac_contact(

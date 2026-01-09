@@ -85,6 +85,8 @@ class ConfirmAppointmentsJob(Job):
                     "today": today_formatted,
                     "event_subject": subject,
                     "event_date": event.start.date_time,
+                    "event_location": event.location,
+                    "company_name": company.company_name,
                 },
             )
 
