@@ -68,7 +68,7 @@ class ReplyService:
 
         # Handle assistant replies
         try:
-            response = thread_service.execute_thread(message, image)
+            response = await thread_service.execute_thread(message, image)
             await message_handler_service.send_message(
                 text_message=response,
                 contact=contact,

@@ -1,4 +1,4 @@
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import get_db_session_with_context
@@ -8,16 +8,14 @@ from app.utils.model_utils import get_resource_from_db
 
 def get_employees_doc():
     return FunctionToolParam(
-        function={
-            "name": "get_employees",
-            "description": "A function to return a list of employees",
-            "strict": True,
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "additionalProperties": False,
-                "required": [],
-            },
+        name="get_employees",
+        description="A function to return a list of employees",
+        strict=True,
+        parameters={
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+            "required": [],
         },
         type="function",
     )

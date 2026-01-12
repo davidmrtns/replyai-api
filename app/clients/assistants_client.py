@@ -11,7 +11,10 @@ from openai import OpenAI
 from openai.types.responses import Response, ResponseFunctionToolCall
 import time
 
-from app.assistant_functions.assistant_function import FUNCTION_REGISTRY
+from app.assistant_functions.assistant_function import (
+    FUNCTION_REGISTRY,
+    get_function_documentations,
+)
 from app.clients.message_client import FileData
 from app.exceptions.exceptions import (
     AIResponseException,
@@ -144,7 +147,7 @@ class AssistantsClient:
                 "Audio file type not supported"
             )  # TODO: raise custom error
 
-    def process_conversation(
+    async def process_conversation(
         self, conversation_id: str | None = None
     ) -> ResponseOutput:
         MAX_ATTEMPTS = 1
@@ -153,7 +156,7 @@ class AssistantsClient:
             error = None
             try:
                 response = self._generate_response(conversation_id)
-                return self._process_response_output(response)
+                return await self._process_response_output(response)
             except FailedResponseException as e:
                 break  # No point in retrying if the response has definitively failed
             except Exception as e:
@@ -194,29 +197,26 @@ class AssistantsClient:
             conversation=conversation_id,
             instructions=self.instructions,
             input=self.messages,
+            tools=get_function_documentations(),
         )
 
-    # TODO: test the function calls processing
-    def _process_response_output(self, response: Response) -> ResponseOutput:
-        input_list = []
+    async def _process_response_output(self, response: Response) -> ResponseOutput:
         function_call_outputs = []
-
-        input_list += response.output
 
         for item in response.output:
             if item.type != "function_call":
                 continue
 
-            result = self._process_tool_calls(item, response.conversation.id)
+            result = await self._process_tool_calls(item, response.conversation.id)
             function_call_outputs.append(result)
 
         if len(function_call_outputs) > 0:
-            input_list += function_call_outputs
+            # Make a new request with outputs from the function calls
             response = self.client.responses.create(
                 model="gpt-4o",
-                instructions="Continue the previous response considering the function call outputs.",
                 conversation=response.conversation.id,
-                input=input_list,
+                input=function_call_outputs,
+                tools=get_function_documentations(),
             )
 
         if response.status in ERROR_STATUSES:
@@ -231,14 +231,14 @@ class AssistantsClient:
             conversation_id=response.conversation.id,
         )
 
-    def _process_tool_calls(
+    async def _process_tool_calls(
         self, tool_call: ResponseFunctionToolCall, conversation_id: str
     ) -> dict:
         try:
             function_name = tool_call.name
             args = json.loads(tool_call.arguments)
 
-            result = self._execute_function(function_name, conversation_id, args)
+            result = await self._execute_function(function_name, conversation_id, args)
             return {
                 "type": "function_call_output",
                 "call_id": tool_call.call_id,

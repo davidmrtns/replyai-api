@@ -94,7 +94,7 @@ class ConfirmAppointmentsJob(Job):
             )
 
             thread_service = ThreadService(contact, company, db)
-            response = thread_service.execute_thread(prompt, None)
+            response = await thread_service.execute_thread(prompt, None)
             assistants_client = thread_service.get_assistants_client()
 
             message_handler_service = MessageHandlerService(

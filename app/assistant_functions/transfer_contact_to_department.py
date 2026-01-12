@@ -1,4 +1,4 @@
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.clients.digisac_client import DigisacClient
@@ -12,21 +12,19 @@ from app.utils.model_utils import get_resource_from_db
 
 def transfer_contact_to_department_doc():
     return FunctionToolParam(
-        function={
-            "name": "transfer_contact_to_department",
-            "description": "Transfers the customer to a specified department",
-            "strict": False,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "department_code": {
-                        "type": "string",
-                        "description": "The department code, as chosen by the user",
-                    }
-                },
-                "additionalProperties": False,
-                "required": ["department_code"],
+        name="transfer_contact_to_department",
+        description="Transfers the customer to a specified department",
+        strict=False,
+        parameters={
+            "type": "object",
+            "properties": {
+                "department_code": {
+                    "type": "string",
+                    "description": "The department code, as chosen by the user",
+                }
             },
+            "additionalProperties": False,
+            "required": ["department_code"],
         },
         type="function",
     )

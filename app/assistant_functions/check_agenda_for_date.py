@@ -1,4 +1,4 @@
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import get_db_session_with_context
@@ -10,25 +10,23 @@ from app.utils.model_utils import get_resource_from_db
 
 def check_agenda_for_date_doc():
     return FunctionToolParam(
-        function={
-            "name": "check_agenda_for_date",
-            "description": "Gets the availability of a given agenda in a given date",
-            "strict": False,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "agenda_code": {
-                        "type": "string",
-                        "description": "The agenda code, as chosen by the user",
-                    },
-                    "suggestion_date": {
-                        "type": "string",
-                        "description": "The date suggested by the user, in the format DD-MM-YYYYTHH:MM:SS",
-                    },
+        name="check_agenda_for_date",
+        description="Gets the availability of a given agenda in a given date",
+        strict=False,
+        parameters={
+            "type": "object",
+            "properties": {
+                "agenda_code": {
+                    "type": "string",
+                    "description": "The agenda code, as chosen by the user",
                 },
-                "additionalProperties": False,
-                "required": ["agenda_code", "suggestion_date"],
+                "suggestion_date": {
+                    "type": "string",
+                    "description": "The date suggested by the user, in the format DD-MM-YYYYTHH:MM:SS",
+                },
             },
+            "additionalProperties": False,
+            "required": ["agenda_code", "suggestion_date"],
         },
         type="function",
     )

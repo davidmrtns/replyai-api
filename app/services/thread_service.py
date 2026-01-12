@@ -32,7 +32,7 @@ class ThreadService:
             openai_api_key=self.company.openai_api_key,
         )
 
-    def execute_thread(self, message: str, image: str | None) -> str:
+    async def execute_thread(self, message: str, image: str | None) -> str:
         """Runs or creates a thread for the assistant."""
         current_thread_id = (
             self.contact.current_thread.thread_id
@@ -47,7 +47,7 @@ class ThreadService:
             image_id = assistant.upload_image(image)
             assistant.add_message(message=None, is_image=True, image_id=image_id)
 
-        result = assistant.process_conversation(conversation_id=current_thread_id)
+        result = await assistant.process_conversation(conversation_id=current_thread_id)
 
         if not self.contact.current_thread:
             self._assign_thread_to_contact(result.conversation_id)

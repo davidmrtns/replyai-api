@@ -1,4 +1,4 @@
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.clients.digisac_client import DigisacClient
@@ -12,16 +12,14 @@ from app.utils.model_utils import get_resource_from_db
 
 def end_contact_doc():
     return FunctionToolParam(
-        function={
-            "name": "end_contact_doc",
-            "description": "Ends the contact when the issue has been resolved",
-            "strict": False,
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "additionalProperties": False,
-                "required": [],
-            },
+        name="end_contact_doc",
+        description="Ends the contact when the issue has been resolved",
+        strict=False,
+        parameters={
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+            "required": [],
         },
         type="function",
     )
