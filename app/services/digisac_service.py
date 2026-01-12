@@ -12,10 +12,8 @@ from app.utils.api_key_encryption import encrypt_api_key
 from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
-async def _get_digisac_client(
-    digisac_client_id: int, company_id: int | None, db: Session
-):
-    digisac_client_db = await get_resource_from_db(
+def _get_digisac_client(digisac_client_id: int, company_id: int | None, db: Session):
+    digisac_client_db = get_resource_from_db(
         DigisacClientDB, digisac_client_id, db, company_id
     )
 
@@ -27,10 +25,10 @@ async def _get_digisac_client(
     )
 
 
-async def _get_department_from_db(
+def _get_department_from_db(
     digisac_client_id: int, company_id: int | None, department_id: int, db: Session
 ):
-    digisac_client_db = await get_resource_from_db(
+    digisac_client_db = get_resource_from_db(
         DigisacClientDB, digisac_client_id, db, company_id
     )
 
@@ -47,7 +45,7 @@ async def _get_department_from_db(
     return department
 
 
-async def create_digisac_client(
+def create_digisac_client(
     company_id: int, payload: CreateDigisacClientSchema, db: Session
 ):
     digisac_client_db = (
@@ -73,7 +71,7 @@ async def create_digisac_client(
     return digisac_client
 
 
-async def update_digisac_client(
+def update_digisac_client(
     digisac_client_id: int,
     payload: UpdateDigisacClientSchema,
     company_id: int | None,
@@ -84,7 +82,7 @@ async def update_digisac_client(
     if "digisac_token" in update_data:
         update_data["digisac_token"] = encrypt_api_key(update_data["digisac_token"])
 
-    digisac_client_db = await get_resource_from_db(
+    digisac_client_db = get_resource_from_db(
         DigisacClientDB, digisac_client_id, db, company_id
     )
 
@@ -93,7 +91,7 @@ async def update_digisac_client(
     return digisac_client_db
 
 
-async def list_services(
+def list_services(
     digisac_client_id: int,
     company_id: int | None,
     page: int,
@@ -101,12 +99,12 @@ async def list_services(
     service_id: str | None,
     db: Session,
 ):
-    digisac_client = await _get_digisac_client(digisac_client_id, company_id, db)
+    digisac_client = _get_digisac_client(digisac_client_id, company_id, db)
     response = digisac_client.list_services(page, service_name, service_id)
     return response
 
 
-async def list_users(
+def list_users(
     digisac_client_id: int,
     company_id: int | None,
     page: int,
@@ -114,12 +112,12 @@ async def list_users(
     user_id: str | None,
     db: Session,
 ):
-    digisac_client = await _get_digisac_client(digisac_client_id, company_id, db)
+    digisac_client = _get_digisac_client(digisac_client_id, company_id, db)
     response = digisac_client.list_users(page, user_name, user_id)
     return response
 
 
-async def list_departments(
+def list_departments(
     digisac_client_id: int,
     company_id: int | None,
     page: int,
@@ -127,18 +125,18 @@ async def list_departments(
     department_id: str | None,
     db: Session,
 ):
-    digisac_client = await _get_digisac_client(digisac_client_id, company_id, db)
+    digisac_client = _get_digisac_client(digisac_client_id, company_id, db)
     response = digisac_client.list_departments(page, department_name, department_id)
     return response
 
 
-async def create_department(
+def create_department(
     digisac_client_id: int,
     payload: CreateDepartmentSchema,
     company_id: int | None,
     db: Session,
 ):
-    digisac_client_db = await get_resource_from_db(
+    digisac_client_db = get_resource_from_db(
         DigisacClientDB, digisac_client_id, db, company_id
     )
 
@@ -157,14 +155,14 @@ async def create_department(
     return department
 
 
-async def update_department(
+def update_department(
     digisac_client_id: int,
     department_id: int,
     payload: UpdateDigisacClientSchema,
     company_id: int | None,
     db: Session,
 ):
-    department = await _get_department_from_db(
+    department = _get_department_from_db(
         digisac_client_id, company_id, department_id, db
     )
     apply_model_update(department, payload)
@@ -172,13 +170,13 @@ async def update_department(
     return department
 
 
-async def delete_department(
+def delete_department(
     digisac_client_id: int,
     department_id: int,
     company_id: int | None,
     db: Session,
 ):
-    department = await _get_department_from_db(
+    department = _get_department_from_db(
         digisac_client_id, company_id, department_id, db
     )
     db.delete(department)

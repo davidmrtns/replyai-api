@@ -18,10 +18,10 @@ from app.utils.api_key_encryption import encrypt_api_key
 from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
-async def _get_deal_stage_from_db(
+def _get_deal_stage_from_db(
     rdstation_client_id: int, deal_stage_id: int, company_id: int | None, db: Session
 ):
-    rdstation_client = await get_resource_from_db(
+    rdstation_client = get_resource_from_db(
         RDStationClientDB, rdstation_client_id, db, company_id
     )
 
@@ -44,7 +44,7 @@ async def _get_deal_stage_from_db(
     return deal_stage
 
 
-async def create_rdstation_client(
+def create_rdstation_client(
     payload: CreateRDStationClientSchema, company_id: int, db: Session
 ):
     rdstationcrm_client = (
@@ -69,7 +69,7 @@ async def create_rdstation_client(
     return rdstationcrm_client
 
 
-async def update_rdstation_client(
+def update_rdstation_client(
     rdstation_client_id: int,
     payload: UpdateRDStationClientSchema,
     company_id: int | None,
@@ -80,7 +80,7 @@ async def update_rdstation_client(
     if "token" in update_data:
         update_data["token"] = encrypt_api_key(update_data["token"])
 
-    rdstation_client = await get_resource_from_db(
+    rdstation_client = get_resource_from_db(
         RDStationClientDB, rdstation_client_id, db, company_id
     )
 
@@ -89,10 +89,10 @@ async def update_rdstation_client(
     return rdstation_client
 
 
-async def delete_rdstation_client(
+def delete_rdstation_client(
     rdstation_client_id: int, company_id: int | None, db: Session
 ):
-    rdstation_client = await get_resource_from_db(
+    rdstation_client = get_resource_from_db(
         RDStationClientDB, rdstation_client_id, db, company_id
     )
     if rdstation_client:
@@ -102,13 +102,13 @@ async def delete_rdstation_client(
     return False
 
 
-async def create_deal_stage(
+def create_deal_stage(
     rdstation_client_id: int,
     payload: CreateDealStageSchema,
     company_id: int | None,
     db: Session,
 ):
-    rdstation_client = await get_resource_from_db(
+    rdstation_client = get_resource_from_db(
         RDStationClientDB, rdstation_client_id, db, company_id
     )
 
@@ -126,14 +126,14 @@ async def create_deal_stage(
     return deal_stage
 
 
-async def update_deal_stage(
+def update_deal_stage(
     rdstation_client_id: int,
     deal_stage_id: int,
     payload: UpdateDealStageSchema,
     company_id: int | None,
     db: Session,
 ):
-    deal_stage = await _get_deal_stage_from_db(
+    deal_stage = _get_deal_stage_from_db(
         rdstation_client_id, deal_stage_id, company_id, db
     )
 
@@ -142,13 +142,13 @@ async def update_deal_stage(
     return deal_stage
 
 
-async def delete_deal_stage(
+def delete_deal_stage(
     rdstation_client_id: int,
     deal_stage_id: int,
     company_id: int | None,
     db: Session,
 ):
-    deal_stage = await _get_deal_stage_from_db(
+    deal_stage = _get_deal_stage_from_db(
         rdstation_client_id, deal_stage_id, company_id, db
     )
     if deal_stage:

@@ -125,7 +125,7 @@ class AssistantsClient:
     def delete_uploaded_file(self, file_id: str) -> None:
         self.client.files.delete(file_id)
 
-    async def transcribe_audio(self, audio_file: FileData) -> str:
+    def transcribe_audio(self, audio_file: FileData) -> str:
         filename, mimetype, file_stream = audio_file
         base_mimetype = mimetype.split(";")[0].strip()  # normalize mimetype
 

@@ -91,7 +91,7 @@ def _generate_microsoft_auth_credentials(code: str, company_slug: str):
     )
 
 
-async def generate_auth_callback(company_slug: str, code: str, db: Session):
+def generate_auth_callback(company_slug: str, code: str, db: Session):
     if not code:
         raise IntegrationException(
             integration_name=INTEGRATION_NAME,
@@ -134,7 +134,7 @@ async def generate_auth_callback(company_slug: str, code: str, db: Session):
     return RedirectResponse(url=FAILED_AUTH_URL)
 
 
-async def generate_auth_link(company_slug: str) -> str:
+def generate_auth_link(company_slug: str) -> str:
     scopes = ["User.Read", "Calendars.ReadWrite", "offline_access"]
 
     query_parameters = urllib.parse.urlencode(
@@ -153,7 +153,7 @@ async def generate_auth_link(company_slug: str) -> str:
 
 
 async def get_timezones(outlook_client_id: int, company_id: int | None, db: Session):
-    outlook_client_db = await get_resource_from_db(
+    outlook_client_db = get_resource_from_db(
         OutlookClient, outlook_client_id, db, company_id
     )
     outlook_client = build_outlook_client(outlook_client_db, db)
@@ -162,13 +162,13 @@ async def get_timezones(outlook_client_id: int, company_id: int | None, db: Sess
     return timezones
 
 
-async def update_outlook_timezone(
+def update_outlook_timezone(
     outlook_client_id: int,
     payload: UpdateTimezoneSchema,
     company_id: int | None,
     db: Session,
 ):
-    outlook_client_db = await get_resource_from_db(
+    outlook_client_db = get_resource_from_db(
         OutlookClient, outlook_client_id, db, company_id
     )
 

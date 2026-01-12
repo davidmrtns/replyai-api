@@ -7,7 +7,7 @@ from app.exceptions.exceptions import UserAccessException
 from app.utils.password_utils import create_access_token, verify_password
 
 
-async def login(response: Response, form_data: OAuth2PasswordRequestForm, db: Session):
+def login(response: Response, form_data: OAuth2PasswordRequestForm, db: Session):
     user = (
         db.query(User)
         .filter(User.email == form_data.username, User.is_active == True)
@@ -49,6 +49,6 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm, db: Se
     return True
 
 
-async def logout(response: Response):
+def logout(response: Response):
     response.delete_cookie(key="access_token")
     return True

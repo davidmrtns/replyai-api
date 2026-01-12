@@ -26,24 +26,24 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[CompanyMinSchema])
-async def get_all_companies(
+def get_all_companies(
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await get_all_companies_service(company_id, db)
+    return get_all_companies_service(company_id, db)
 
 
 @router.post("/", response_model=CompanySchema)
-async def create_company(
+def create_company(
     request: CreateCompanySchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await create_company_service(company_id, request, db)
+    return create_company_service(company_id, request, db)
 
 
 @router.get("/{company_slug}", response_model=CompanySchema)
-async def get_company(
+def get_company(
     company_slug: str,
     company: Company = Depends(check_company_access),
 ):
@@ -51,10 +51,10 @@ async def get_company(
 
 
 @router.patch("/{company_slug}", response_model=CompanySchema)
-async def update_company(
+def update_company(
     company_slug: str,
     request: UpdateCompanySchema,
     company: Company = Depends(check_company_access),
     db: Session = Depends(get_db_session),
 ):
-    return await update_company_service(company, request, db)
+    return update_company_service(company, request, db)

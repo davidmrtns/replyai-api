@@ -63,7 +63,7 @@ async def add_event_to_agenda(
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = await get_resource_from_db(Assistant, assistant_id, db)
+        assistant = get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

@@ -100,9 +100,7 @@ class ConfirmAppointmentsJob(Job):
             message_handler_service = MessageHandlerService(
                 assistants_client, message_client, company, db
             )
-            await message_handler_service.send_message(
-                text_message=response, contact=contact
-            )
+            message_handler_service.send_message(text_message=response, contact=contact)
 
             if isinstance(message_client, DigisacClient):
                 department = (

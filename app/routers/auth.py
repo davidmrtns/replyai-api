@@ -12,14 +12,14 @@ router = APIRouter()
 
 
 @router.post("/login")
-async def login(
+def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db_session),
 ):
-    return await login_service(response, form_data, db)
+    return login_service(response, form_data, db)
 
 
 @router.post("/logout")
-async def logout(response: Response):
-    return await logout_service(response)
+def logout(response: Response):
+    return logout_service(response)

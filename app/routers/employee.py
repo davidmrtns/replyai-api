@@ -23,28 +23,28 @@ router = APIRouter()
 
 
 @router.post("/", response_model=EmployeeSchema)
-async def create_employee(
+def create_employee(
     request: CreateEmployeeSchema,
     company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(get_db_session),
 ):
-    return await create_employee_service(request, company_id, db)
+    return create_employee_service(request, company_id, db)
 
 
 @router.patch("/{employee_id}", response_model=EmployeeSchema)
-async def update_employee(
+def update_employee(
     employee_id: int,
     request: UpdateEmployeeSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await update_employee_service(employee_id, request, company_id, db)
+    return update_employee_service(employee_id, request, company_id, db)
 
 
 @router.delete("/{employee_id}")
-async def delete_employee(
+def delete_employee(
     employee_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await delete_employee_service(employee_id, company_id, db)
+    return delete_employee_service(employee_id, company_id, db)

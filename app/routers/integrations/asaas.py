@@ -23,28 +23,28 @@ router = APIRouter()
 
 
 @router.post("/", response_model=AsaasClientSchema)
-async def create_asaas_client(
+def create_asaas_client(
     request: CreateAsaasClientSchema,
     company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(get_db_session),
 ):
-    return await create_asaas_client_service(request, company_id, db)
+    return create_asaas_client_service(request, company_id, db)
 
 
 @router.patch("/{asaas_client_id}", response_model=AsaasClientSchema)
-async def update_asaas_client(
+def update_asaas_client(
     asaas_client_id: int,
     request: UpdateAsaasClientSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await update_asaas_client_service(request, asaas_client_id, company_id, db)
+    return update_asaas_client_service(request, asaas_client_id, company_id, db)
 
 
 @router.delete("/{asaas_client_id}")
-async def delete_asaas_client(
+def delete_asaas_client(
     asaas_client_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await delete_asaas_client_service(asaas_client_id, company_id, db)
+    return delete_asaas_client_service(asaas_client_id, company_id, db)

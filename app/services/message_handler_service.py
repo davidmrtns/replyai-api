@@ -29,9 +29,7 @@ class MessageHandlerService:
         self.company = company
         self.db = db
 
-    async def process_message_content(
-        self, payload: DigisacRequest | EvolutionAPIRequest
-    ):
+    def process_message_content(self, payload: DigisacRequest | EvolutionAPIRequest):
         """Extract the message and media content from the payload."""
         message, is_audio, image = self.message_client.get_message_content(
             request=payload
@@ -41,11 +39,11 @@ class MessageHandlerService:
         if is_audio:
             file = self.message_client.get_file_data(request=payload)
             if file:
-                message = await self.assistants_client.transcribe_audio(file)
+                message = self.assistants_client.transcribe_audio(file)
 
         return message, is_audio, image
 
-    async def _generate_audio_message(
+    def _generate_audio_message(
         self,
         text_message: str,
         is_audio: bool,
@@ -55,7 +53,7 @@ class MessageHandlerService:
             return None
 
         # Fetch the assistant's voice configuration
-        assistant_db = await get_resource_from_db(
+        assistant_db = get_resource_from_db(
             Assistant, self.assistants_client.assistant_id, self.db, self.company.id
         )
 
@@ -71,7 +69,7 @@ class MessageHandlerService:
             decrypt_api_key(self.company.elevenlabs_api_key)
         )
         text_message = replace_abbreviations(text_message)
-        return await elevenlabs_client.generate_audio(
+        return elevenlabs_client.generate_audio(
             text_message=text_message,
             voice_id=voice.elevenlabs_voice_id,
             stability=voice.stability,
@@ -79,7 +77,7 @@ class MessageHandlerService:
             style=voice.style,
         )
 
-    async def send_message(
+    def send_message(
         self,
         text_message: str | None,
         contact: Contact,
@@ -97,7 +95,7 @@ class MessageHandlerService:
         """
         is_audio = message_type == "audio"
 
-        audio_message_base64 = await self._generate_audio_message(
+        audio_message_base64 = self._generate_audio_message(
             text_message=text_message,
             is_audio=is_audio,
         )

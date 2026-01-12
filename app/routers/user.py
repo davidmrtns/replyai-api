@@ -29,37 +29,37 @@ router = APIRouter()
 
 
 @router.post("/", response_model=UserSchema)
-async def create_user(
+def create_user(
     request: CreateUserSchema,
     _=Depends(require_admin_user),
     company_id: int = Depends(get_company_id_from_user_or_request),
     db: Session = Depends(get_db_session),
 ):
-    return await create_user_service(request, company_id, db)
+    return create_user_service(request, company_id, db)
 
 
 @router.patch("/{user_id}", response_model=UserSchema)
-async def update_user(
+def update_user(
     user_id: int,
     request: UpdateUserSchema,
     logged_in_user: User = Depends(get_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await update_user_service(logged_in_user, user_id, request, db)
+    return update_user_service(logged_in_user, user_id, request, db)
 
 
 @router.delete("/{user_id}")
-async def delete_user(
+def delete_user(
     user_id: int,
     _=Depends(require_admin_user),
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await delete_user_service(user_id, company_id, db)
+    return delete_user_service(user_id, company_id, db)
 
 
 @router.get("/all", response_model=UserListSchema)
-async def get_all_users(
+def get_all_users(
     _=Depends(require_admin_user),
     logged_in_user: User = Depends(get_logged_in_user),
     db: Session = Depends(get_db_session),
@@ -70,4 +70,4 @@ async def get_all_users(
         10, alias="limit", ge=1, le=50, description="Number of records per page"
     ),
 ):
-    return await get_all_users_service(logged_in_user, limit, cursor, db)
+    return get_all_users_service(logged_in_user, limit, cursor, db)

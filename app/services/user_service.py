@@ -7,7 +7,7 @@ from app.utils.model_utils import apply_model_update, get_resource_from_db
 from app.utils.password_utils import hash_password
 
 
-async def create_user(payload: CreateUserSchema, company_id: int, db: Session):
+def create_user(payload: CreateUserSchema, company_id: int, db: Session):
     hashed_password = hash_password(payload.password)
 
     new_user = User(
@@ -25,7 +25,7 @@ async def create_user(payload: CreateUserSchema, company_id: int, db: Session):
     return new_user
 
 
-async def update_user(
+def update_user(
     logged_in_user: User, user_id: int, payload: CreateUserSchema, db: Session
 ):
     # If the logged-in user is an admin, they can edit any user
@@ -37,7 +37,7 @@ async def update_user(
         user_to_edit_id = None
 
     if user_to_edit_id:
-        user = await get_resource_from_db(User, user_id, db, logged_in_user.company_id)
+        user = get_resource_from_db(User, user_id, db, logged_in_user.company_id)
 
         update_data = payload.model_dump(exclude_unset=True)
 
@@ -55,8 +55,8 @@ async def update_user(
     )
 
 
-async def delete_user(user_id: int, company_id: int | None, db: Session):
-    user = await get_resource_from_db(User, user_id, db, company_id)
+def delete_user(user_id: int, company_id: int | None, db: Session):
+    user = get_resource_from_db(User, user_id, db, company_id)
 
     if user:
         db.delete(user)
@@ -65,9 +65,7 @@ async def delete_user(user_id: int, company_id: int | None, db: Session):
     return False
 
 
-async def get_all_users(
-    logged_in_user: User, limit: int, cursor: int | None, db: Session
-):
+def get_all_users(logged_in_user: User, limit: int, cursor: int | None, db: Session):
     query = db.query(User).order_by(User.id.asc())
     if logged_in_user.company_id:  # if user is tied to a company, filter by it
         query = query.filter(User.company_id == logged_in_user.company_id)

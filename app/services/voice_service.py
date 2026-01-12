@@ -67,8 +67,8 @@ async def create_voice(
             os.remove(temp_file)
 
 
-async def get_voice(voice_id: int, company_id: int, db: Session):
-    voice = await get_resource_from_db(Voice, voice_id, db, company_id)
+def get_voice(voice_id: int, company_id: int, db: Session):
+    voice = get_resource_from_db(Voice, voice_id, db, company_id)
     elevenlabs_client = _get_elevenlabs_client(company_id, db)
 
     elevenlabs_voice = elevenlabs_client.get_voice(voice.elevenlabs_voice_id)
@@ -80,10 +80,10 @@ async def get_voice(voice_id: int, company_id: int, db: Session):
     return None
 
 
-async def update_voice(
+def update_voice(
     voice_id: int, request: UpdateVoiceSchema, company_id: int | None, db: Session
 ):
-    voice = await get_resource_from_db(Voice, voice_id, db, company_id)
+    voice = get_resource_from_db(Voice, voice_id, db, company_id)
     elevenlabs_client = _get_elevenlabs_client(company_id, db)
 
     if elevenlabs_client.edit_voice(
@@ -94,8 +94,8 @@ async def update_voice(
     return voice
 
 
-async def delete_voice(voice_id: int, company_id: int | None, db: Session):
-    voice = await get_resource_from_db(Voice, voice_id, db, company_id)
+def delete_voice(voice_id: int, company_id: int | None, db: Session):
+    voice = get_resource_from_db(Voice, voice_id, db, company_id)
     elevenlabs_client = _get_elevenlabs_client(company_id, db)
 
     if elevenlabs_client.delete_voice(voice.elevenlabs_voice_id):

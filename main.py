@@ -32,7 +32,7 @@ def root():
 
 # Route to save incoming requests for debugging purposes
 @app.post("/request")
-async def save_request_body(request: dict):
+def save_request_body(request: dict):
     folder_path = Path("saved_requests")
     folder_path.mkdir(parents=True, exist_ok=True)
     file_name = f"request_{uuid.uuid4().hex}.json"

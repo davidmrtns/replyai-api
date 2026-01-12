@@ -31,13 +31,13 @@ def transfer_contact_to_department_doc():
 
 
 @register_function(transfer_contact_to_department_doc())
-async def transfer_contact_to_department(
+def transfer_contact_to_department(
     assistant_id: str, thread_id: str, department_code: str
 ) -> bool:
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = await get_resource_from_db(Assistant, assistant_id, db)
+        assistant = get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",
