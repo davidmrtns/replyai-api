@@ -150,7 +150,7 @@ class AssistantsClient:
     async def process_conversation(
         self, conversation_id: str | None = None
     ) -> ResponseOutput:
-        MAX_ATTEMPTS = 1
+        MAX_ATTEMPTS = 5
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
             error = None
@@ -207,7 +207,9 @@ class AssistantsClient:
             if item.type != "function_call":
                 continue
 
-            result = await self._process_tool_calls(item, response.conversation.id)
+            result = await self._process_tool_calls(
+                item, response.conversation.id, response.id
+            )
             function_call_outputs.append(result)
 
         if len(function_call_outputs) > 0:
@@ -221,18 +223,21 @@ class AssistantsClient:
 
         if response.status in ERROR_STATUSES:
             raise FailedResponseException(
-                detail="An error occured while processing the message. Trying again...",
+                detail="An error occurred while processing the message...",
                 response_id=response.id,
                 thread_id=response.conversation.id,
             )
 
         return ResponseOutput(
-            text_response=response.output[0].content[0].text,
+            text_response=self._extract_text_response(response),
             conversation_id=response.conversation.id,
         )
 
     async def _process_tool_calls(
-        self, tool_call: ResponseFunctionToolCall, conversation_id: str
+        self,
+        tool_call: ResponseFunctionToolCall,
+        conversation_id: str,
+        response_id: str,
     ) -> dict:
         try:
             function_name = tool_call.name
@@ -246,18 +251,36 @@ class AssistantsClient:
             }
         except Exception as e:
             raise PendingResponseException(
-                detail="An error occured while processing tool calls for the response. Trying again...",
-                response_id=tool_call.id,
+                detail="An error occurred while processing tool calls for the response. Trying again...",
+                response_id=response_id,
                 thread_id=conversation_id,
             ) from e
 
-    def _execute_function(self, function_name: str, conversation_id: str, arguments):
+    async def _execute_function(
+        self, function_name: str, conversation_id: str, arguments
+    ):
         func = FUNCTION_REGISTRY.get(function_name)
         if not func:
             raise ValueError(f"Unknown function called: {function_name}")
 
         func = func.get("function")
-        return func(self.assistant_id, conversation_id, **arguments)
+        return await func(self.assistant_id, conversation_id, **arguments)
+
+    def _extract_text_response(self, response: Response) -> str:
+        output_obj = getattr(response, "output", [])
+        if len(output_obj) > 0:
+            first_output = output_obj[0]
+            content_obj = getattr(first_output, "content", [])
+            if len(content_obj) > 0:
+                text: str = getattr(content_obj[0], "text", None)
+                if text:
+                    return text
+
+        raise FailedResponseException(
+            detail="No output was generated for this request...",
+            response_id=response.id,
+            thread_id=response.conversation.id,
+        )
 
 
 class CustomHTTPClient(httpx.Client):

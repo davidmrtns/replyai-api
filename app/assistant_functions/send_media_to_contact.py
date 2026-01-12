@@ -11,6 +11,7 @@ from app.utils.download_file import download_file
 from app.utils.model_utils import get_resource_from_db
 
 
+# TODO: correctly implement function
 def send_media_to_contact_doc():
     return FunctionToolParam(
         name="add_event_to_agenda",

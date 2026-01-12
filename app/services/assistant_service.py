@@ -22,6 +22,10 @@ async def create_assistant(
     return assistant
 
 
+async def get_assistant(assistant_id: int, company_id: int | None, db: Session):
+    return await get_resource_from_db(Assistant, assistant_id, db, company_id)
+
+
 async def update_assistant(
     assistant_id: int, payload: UpdateAssistantSchema, company_id: int, db: Session
 ):

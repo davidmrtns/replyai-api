@@ -3,8 +3,6 @@ from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
-from app.db.models import Assistant
-from app.utils.model_utils import get_resource_from_db
 from .routers_helpers import (
     get_company_id_from_logged_in_user,
     get_company_id_from_user_or_request,
@@ -16,6 +14,7 @@ from app.schemas.assistant_schema import (
 )
 from app.services.assistant_service import (
     create_assistant as create_assistant_service,
+    get_assistant as get_assistant_service,
     update_assistant as update_assistant_service,
     delete_assistant as delete_assistant_service,
 )
@@ -39,7 +38,7 @@ async def get_assistant(
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return get_resource_from_db(Assistant, assistant_id, db, company_id)
+    return await get_assistant_service(assistant_id, company_id, db)
 
 
 @router.patch("/{assistant_id}", response_model=AssistantSchema)
