@@ -32,7 +32,7 @@ def create_crm_client(company: Company, db: Session) -> CRMClient | None:
 
 
 # TODO: turn into an assistant function
-async def move_lead(
+def move_lead(
     crm_client: CRMClient,
     contact: Contact,
     company: Company,

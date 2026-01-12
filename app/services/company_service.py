@@ -15,7 +15,7 @@ def get_company_by_slug_and_token(
     return company
 
 
-async def get_all_companies(company_id: int | None, db: Session):
+def get_all_companies(company_id: int | None, db: Session):
     if not company_id:
         companies = db.query(Company).all()
     else:
@@ -23,9 +23,7 @@ async def get_all_companies(company_id: int | None, db: Session):
     return companies
 
 
-async def create_company(
-    company_id: int | None, payload: CreateCompanySchema, db: Session
-):
+def create_company(company_id: int | None, payload: CreateCompanySchema, db: Session):
     if not company_id:
         company = db.query(Company).filter_by(slug=payload.slug).first()
         if not company:
@@ -53,7 +51,7 @@ async def create_company(
     )
 
 
-async def update_company(payload: UpdateCompanySchema, company: Company, db: Session):
+def update_company(payload: UpdateCompanySchema, company: Company, db: Session):
     update_data = payload.model_dump(exclude_unset=True)
 
     if "openai_api_key" in update_data:

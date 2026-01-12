@@ -80,7 +80,7 @@ def _generate_google_auth_credentials(code: str, company_slug: str):
     return access_token, refresh_token, expires_in, user_email
 
 
-async def generate_auth_callback(company_slug: str, code: str, db: Session):
+def generate_auth_callback(company_slug: str, code: str, db: Session):
     if not code:
         raise IntegrationException(
             integration_name=INTEGRATION_NAME,
@@ -122,7 +122,7 @@ async def generate_auth_callback(company_slug: str, code: str, db: Session):
     return RedirectResponse(url=FAILED_AUTH_URL)
 
 
-async def generate_auth_link(company_slug: str):
+def generate_auth_link(company_slug: str):
     scopes = [
         "openid",
         "https://www.googleapis.com/auth/userinfo.email",
@@ -145,13 +145,13 @@ async def generate_auth_link(company_slug: str):
     return f"https://accounts.google.com/o/oauth2/auth?{query_parameters}"
 
 
-async def update_google_calendar_timezone(
+def update_google_calendar_timezone(
     google_calendar_client_id: int,
     payload: UpdateTimezoneSchema,
     company_id: int | None,
     db: Session,
 ):
-    google_calendar_client_db = await get_resource_from_db(
+    google_calendar_client_db = get_resource_from_db(
         GoogleCalendarClient, google_calendar_client_id, db, company_id
     )
 

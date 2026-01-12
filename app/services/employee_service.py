@@ -5,7 +5,7 @@ from app.schemas.employee_schema import CreateEmployeeSchema, UpdateEmployeeSche
 from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
-async def create_employee(payload: CreateEmployeeSchema, company_id: int, db: Session):
+def create_employee(payload: CreateEmployeeSchema, company_id: int, db: Session):
     employee = Employee(
         name=payload.name,
         nickname=payload.nickname,
@@ -20,18 +20,18 @@ async def create_employee(payload: CreateEmployeeSchema, company_id: int, db: Se
     return employee
 
 
-async def update_employee(
+def update_employee(
     employee_id: int, payload: UpdateEmployeeSchema, company_id: int | None, db: Session
 ):
-    employee = await get_resource_from_db(Employee, employee_id, db, company_id)
+    employee = get_resource_from_db(Employee, employee_id, db, company_id)
 
     apply_model_update(employee, payload)
     db.commit()
     return employee
 
 
-async def delete_employee(employee_id: int, company_id: int | None, db: Session):
-    employee = await get_resource_from_db(Employee, employee_id, db, company_id)
+def delete_employee(employee_id: int, company_id: int | None, db: Session):
+    employee = get_resource_from_db(Employee, employee_id, db, company_id)
 
     if employee:
         db.delete(employee)

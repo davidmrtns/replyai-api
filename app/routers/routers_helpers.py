@@ -14,7 +14,7 @@ from app.exceptions.exceptions import (
 from app.utils.password_utils import SECRET_KEY, ALGORITHM
 
 
-async def get_logged_in_user(
+def get_logged_in_user(
     token: str = Cookie(None, alias="access_token"),
     db: Session = Depends(get_db_session),
 ) -> User:
@@ -48,7 +48,7 @@ async def get_logged_in_user(
     return user
 
 
-async def check_company_access(
+def check_company_access(
     company_slug: str,
     db: Session = Depends(get_db_session),
     logged_in_user: User = Depends(get_logged_in_user),

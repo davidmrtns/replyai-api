@@ -55,7 +55,7 @@ def send_media_to_contact_doc():
 
 
 @register_function(send_media_to_contact_doc())
-async def send_media_to_contact(
+def send_media_to_contact(
     assistant_id: str,
     thread_id: str,
     agenda_code: str,
@@ -67,7 +67,7 @@ async def send_media_to_contact(
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = await get_resource_from_db(Assistant, assistant_id, db)
+        assistant = get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",
@@ -111,7 +111,7 @@ async def send_media_to_contact(
                     filename=media.media_name,
                 )
 
-                """await _handle_message_sending_through_client(
+                """_handle_message_sending_through_client(
                     message_client,
                     None,
                     "media",

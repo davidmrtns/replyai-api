@@ -22,9 +22,9 @@ def get_employees_doc():
 
 
 @register_function(get_employees_doc())
-async def get_employees(assistant_id: str, thread_id: str, **kwargs):
+def get_employees(assistant_id: str, thread_id: str, **kwargs):
     with get_db_session_with_context() as db:
-        assistant = await get_resource_from_db(Assistant, assistant_id, db)
+        assistant = get_resource_from_db(Assistant, assistant_id, db)
         if assistant:
             company = assistant.company
             employees = db.query(Employee).filter_by(company_id=company.id).all()

@@ -11,7 +11,7 @@ class ElevenLabsClient:
 
         self.client = el(decrypted_api_key)
 
-    async def generate_audio(
+    def generate_audio(
         self,
         text_message: str,
         voice_id: str,

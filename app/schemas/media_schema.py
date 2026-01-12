@@ -24,7 +24,7 @@ class UpdateMediaSchema(StrictBaseModel):
     order: Optional[int] = None
 
 
-async def parse_form_data_to_media(
+def parse_form_data_to_media(
     shortcut: str = Form(...), order: int = Form(...)
 ) -> CreateMediaSchema:
     return CreateMediaSchema(shortcut=shortcut, order=order)

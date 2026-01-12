@@ -86,7 +86,7 @@ class RecallConversationsJob(Job):
         prompt = load_prompt(prompt_name, {"company_name": company.company_name})
 
         if isinstance(message_client, DigisacClient):
-            should_break = await self._process_digisac_contact(
+            should_break = self._process_digisac_contact(
                 contact, message_client, contact_service, db
             )
             if should_break:
@@ -99,14 +99,12 @@ class RecallConversationsJob(Job):
         message_handler_service = MessageHandlerService(
             assistants_client, message_client, company, db
         )
-        await message_handler_service.send_message(
-            text_message=response, contact=contact
-        )
+        message_handler_service.send_message(text_message=response, contact=contact)
 
         apply_model_update(contact, {"recall_count": contact.recall_count + 1})
         db.commit()
 
-    async def _process_digisac_contact(
+    def _process_digisac_contact(
         self,
         contact: Contact,
         message_client: DigisacClient,
@@ -117,13 +115,13 @@ class RecallConversationsJob(Job):
             contact.contact_id
         )
         if ticket_id is None:
-            await contact_service.reset_contact(contact)
+            contact_service.reset_contact(contact)
             return True
         else:
             if last_message_id is None:
                 return True
             message_origin = message_client.get_message_origin(last_message_id)
             if message_origin is None or message_origin == "user":
-                await contact_service.reset_contact(contact, db)
+                contact_service.reset_contact(contact, db)
                 return True
         return False

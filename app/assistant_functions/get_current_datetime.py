@@ -24,11 +24,11 @@ def get_current_datetime_doc():
 
 
 @register_function(get_current_datetime_doc())
-async def get_current_datetime(assistant_id: str, thread_id: str, **kwargs):
+def get_current_datetime(assistant_id: str, thread_id: str, **kwargs):
     timezone = "UTC"
 
     with get_db_session_with_context() as db:
-        assistant = await get_resource_from_db(Assistant, assistant_id, db)
+        assistant = get_resource_from_db(Assistant, assistant_id, db)
         company = assistant.company
         timezone = company.timezone
 

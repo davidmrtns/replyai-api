@@ -10,9 +10,7 @@ from app.utils.api_key_encryption import encrypt_api_key
 from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
-async def create_asaas_client(
-    payload: CreateAsaasClientSchema, company_id: int, db: Session
-):
+def create_asaas_client(payload: CreateAsaasClientSchema, company_id: int, db: Session):
     asaas_client = (
         db.query(AsaasClient)
         .filter_by(
@@ -42,7 +40,7 @@ async def create_asaas_client(
     return asaas_client
 
 
-async def update_asaas_client(
+def update_asaas_client(
     asaas_client_id: int,
     payload: UpdateAsaasClientSchema,
     company_id: int | None,
@@ -53,21 +51,15 @@ async def update_asaas_client(
     if "token" in update_data:
         update_data["token"] = encrypt_api_key(update_data["token"])
 
-    asaas_client = await get_resource_from_db(
-        AsaasClient, asaas_client_id, db, company_id
-    )
+    asaas_client = get_resource_from_db(AsaasClient, asaas_client_id, db, company_id)
 
     apply_model_update(asaas_client, update_data)
     db.commit()
     return asaas_client
 
 
-async def delete_asaas_client(
-    asaas_client_id: int, company_id: int | None, db: Session
-):
-    asaas_client = await get_resource_from_db(
-        AsaasClient, asaas_client_id, db, company_id
-    )
+def delete_asaas_client(asaas_client_id: int, company_id: int | None, db: Session):
+    asaas_client = get_resource_from_db(AsaasClient, asaas_client_id, db, company_id)
 
     if asaas_client:
         db.delete(asaas_client)

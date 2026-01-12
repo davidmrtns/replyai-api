@@ -8,7 +8,7 @@ from app.exceptions.exceptions import ResourceNotFoundException
 T = TypeVar("T")
 
 
-async def get_resource_from_db(
+def get_resource_from_db(
     model: Type[T],
     resource_id: int,
     db: Session,

@@ -26,11 +26,11 @@ def end_contact_doc():
 
 
 @register_function(end_contact_doc())
-async def end_contact_doc(assistant_id: str, thread_id: str, **kwargs) -> bool:
+def end_contact_doc(assistant_id: str, thread_id: str, **kwargs) -> bool:
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = await get_resource_from_db(Assistant, assistant_id, db)
+        assistant = get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

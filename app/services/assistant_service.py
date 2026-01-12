@@ -5,9 +5,7 @@ from app.schemas.assistant_schema import CreateAssistantSchema, UpdateAssistantS
 from app.utils.model_utils import apply_model_update, get_resource_from_db
 
 
-async def create_assistant(
-    company_id: int, payload: CreateAssistantSchema, db: Session
-):
+def create_assistant(company_id: int, payload: CreateAssistantSchema, db: Session):
     assistant = Assistant(
         assistant_name=payload.assistant_name,
         instructions=payload.instructions,
@@ -22,22 +20,22 @@ async def create_assistant(
     return assistant
 
 
-async def get_assistant(assistant_id: int, company_id: int | None, db: Session):
-    return await get_resource_from_db(Assistant, assistant_id, db, company_id)
+def get_assistant(assistant_id: int, company_id: int | None, db: Session):
+    return get_resource_from_db(Assistant, assistant_id, db, company_id)
 
 
-async def update_assistant(
+def update_assistant(
     assistant_id: int, payload: UpdateAssistantSchema, company_id: int, db: Session
 ):
-    assistant = await get_resource_from_db(Assistant, assistant_id, db, company_id)
+    assistant = get_resource_from_db(Assistant, assistant_id, db, company_id)
 
     apply_model_update(assistant, payload)
     db.commit()
     return assistant
 
 
-async def delete_assistant(assistant_id: int, company_id: int | None, db: Session):
-    assistant = await get_resource_from_db(Assistant, assistant_id, db, company_id)
+def delete_assistant(assistant_id: int, company_id: int | None, db: Session):
+    assistant = get_resource_from_db(Assistant, assistant_id, db, company_id)
 
     if assistant:
         db.delete(assistant)

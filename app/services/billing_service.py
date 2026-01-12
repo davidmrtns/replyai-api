@@ -78,9 +78,7 @@ async def process_payment(
         message_handler_service = MessageHandlerService(
             assistants_client, message_client, company, db
         )
-        await message_handler_service.send_message(
-            text_message=response, contact=contact
-        )
+        message_handler_service.send_message(text_message=response, contact=contact)
 
         if send_file:
             if send_file == "bank_slip":
@@ -88,12 +86,12 @@ async def process_payment(
             else:
                 file_url = payment.get("pdfUrl", "")
 
-            await send_financial_document_to_contact(
+            send_financial_document_to_contact(
                 message_handler_service, file_url, message_client, contact
             )
 
 
-async def send_financial_document_to_contact(
+def send_financial_document_to_contact(
     message_handler_service: MessageHandlerService,
     file_url: str,
     message_client: MessageClient,

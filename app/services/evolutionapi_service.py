@@ -10,10 +10,10 @@ from app.db.models import EvolutionAPIClient as EvolutionAPIClientDB
 from app.utils.model_utils import get_resource_from_db
 
 
-async def _get_evolutionapi_client(
+def _get_evolutionapi_client(
     evolutionapi_client_id: int, company_id: int | None, db: Session
 ):
-    evolutionapi_client_db = await get_resource_from_db(
+    evolutionapi_client_db = get_resource_from_db(
         EvolutionAPIClientDB, evolutionapi_client_id, db, company_id
     )
 
@@ -22,7 +22,7 @@ async def _get_evolutionapi_client(
     )
 
 
-async def create_instance(
+def create_instance(
     payload: CreateEvolutionAPIInstanceSchema, company_id: int, db: Session
 ):
     response = EvolutionAPIClient.create_instance(payload.instance_name)
@@ -44,10 +44,8 @@ async def create_instance(
     return evolutionapi_client
 
 
-async def fetch_instance(
-    evolutionapi_client_id: int, company_id: int | None, db: Session
-):
-    evolutionapi_client = await _get_evolutionapi_client(
+def fetch_instance(evolutionapi_client_id: int, company_id: int | None, db: Session):
+    evolutionapi_client = _get_evolutionapi_client(
         evolutionapi_client_id, company_id, db
     )
 
@@ -55,10 +53,8 @@ async def fetch_instance(
     return response.json()
 
 
-async def connect_instance(
-    evolutionapi_client_id: int, company_id: int | None, db: Session
-):
-    evolutionapi_client = await _get_evolutionapi_client(
+def connect_instance(evolutionapi_client_id: int, company_id: int | None, db: Session):
+    evolutionapi_client = _get_evolutionapi_client(
         evolutionapi_client_id, company_id, db
     )
 
@@ -66,10 +62,8 @@ async def connect_instance(
     return response.json()
 
 
-async def restart_instance(
-    evolutionapi_client_id: int, company_id: int | None, db: Session
-):
-    evolutionapi_client = await _get_evolutionapi_client(
+def restart_instance(evolutionapi_client_id: int, company_id: int | None, db: Session):
+    evolutionapi_client = _get_evolutionapi_client(
         evolutionapi_client_id, company_id, db
     )
 
@@ -77,10 +71,10 @@ async def restart_instance(
     return response.json()
 
 
-async def shut_down_instance(
+def shut_down_instance(
     evolutionapi_client_id: int, company_id: int | None, db: Session
 ):
-    evolutionapi_client = await _get_evolutionapi_client(
+    evolutionapi_client = _get_evolutionapi_client(
         evolutionapi_client_id, company_id, db
     )
 
@@ -88,10 +82,10 @@ async def shut_down_instance(
     return response.json()
 
 
-async def check_instance_connection_state(
+def check_instance_connection_state(
     evolutionapi_client_id: int, company_id: int | None, db: Session
 ):
-    evolutionapi_client = await _get_evolutionapi_client(
+    evolutionapi_client = _get_evolutionapi_client(
         evolutionapi_client_id, company_id, db
     )
 
@@ -99,13 +93,13 @@ async def check_instance_connection_state(
     return response.json()
 
 
-async def add_webhook(
+def add_webhook(
     evolutionapi_client_id: int,
     payload: CreateEvolutionAPIWebhookSchema,
     company_id: int | None,
     db: Session,
 ):
-    evolutionapi_client = await _get_evolutionapi_client(
+    evolutionapi_client = _get_evolutionapi_client(
         evolutionapi_client_id, company_id, db
     )
 
@@ -113,10 +107,8 @@ async def add_webhook(
     return response.json()
 
 
-async def list_webhooks(
-    evolutionapi_client_id: int, company_id: int | None, db: Session
-):
-    evolutionapi_client = await _get_evolutionapi_client(
+def list_webhooks(evolutionapi_client_id: int, company_id: int | None, db: Session):
+    evolutionapi_client = _get_evolutionapi_client(
         evolutionapi_client_id, company_id, db
     )
 

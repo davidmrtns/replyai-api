@@ -47,7 +47,7 @@ class ReplyService:
         if not contact.receive_ai_replies:
             return
 
-        if not await self._handle_request_early_return(contact, company):
+        if not self._handle_request_early_return(contact, company):
             return
 
         # Initialize the assistant
@@ -59,8 +59,8 @@ class ReplyService:
         )
 
         # Process the message or media content
-        message, is_audio, image = (
-            await message_handler_service.process_message_content(self.payload)
+        message, is_audio, image = message_handler_service.process_message_content(
+            self.payload
         )
 
         if not message and not image:
@@ -69,14 +69,14 @@ class ReplyService:
         # Handle assistant replies
         try:
             response = await thread_service.execute_thread(message, image)
-            await message_handler_service.send_message(
+            message_handler_service.send_message(
                 text_message=response,
                 contact=contact,
                 message_type="audio" if is_audio else "text",
             )
             return True
         except AIResponseException:
-            await message_handler_service.send_message(
+            message_handler_service.send_message(
                 text_message=(
                     company.ai_reply_error_message
                     or "Sorry, an error occurred. Could you repeat your last message?"
@@ -85,7 +85,7 @@ class ReplyService:
             )
             return False
 
-    async def _handle_request_early_return(self, contact: Contact, company: Company):
+    def _handle_request_early_return(self, contact: Contact, company: Company):
         contact_service = ContactService(company, self.db, company.timezone)
 
         if isinstance(self.payload, DigisacRequest):

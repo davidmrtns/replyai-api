@@ -35,7 +35,7 @@ class UpdateVoiceSchema(StrictBaseModel):
     style: Optional[float] = None
 
 
-async def parse_form_data_to_voice(
+def parse_form_data_to_voice(
     voice_name: str = Form(...),
     description: Optional[str] = Form(None),
     stability: float = Form(...),

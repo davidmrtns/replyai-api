@@ -38,28 +38,28 @@ async def create_voice(
 
 
 @router.get("/{voice_id}", response_model=VoiceMinSchema)
-async def get_voice(
+def get_voice(
     voice_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await get_voice_service(voice_id, company_id, db)
+    return get_voice_service(voice_id, company_id, db)
 
 
 @router.patch("/{voice_id}", response_model=VoiceSchema)
-async def update_voice(
+def update_voice(
     voice_id: int,
     request: UpdateVoiceSchema,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await update_voice_service(voice_id, request, company_id, db)
+    return update_voice_service(voice_id, request, company_id, db)
 
 
 @router.delete("/{voice_id}")
-async def delete_voice(
+def delete_voice(
     voice_id: int,
     company_id: int | None = Depends(get_company_id_from_logged_in_user),
     db: Session = Depends(get_db_session),
 ):
-    return await delete_voice_service(voice_id, company_id, db)
+    return delete_voice_service(voice_id, company_id, db)
