@@ -7,6 +7,7 @@ from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_agenda_client import create_agenda_client
+from app.utils.model_utils import get_resource_from_db
 
 
 def cancel_or_confirm_event_doc():
@@ -60,9 +61,7 @@ async def cancel_or_confirm_event(
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = (
-            db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
-        )
+        assistant = await get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

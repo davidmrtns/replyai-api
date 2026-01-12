@@ -8,6 +8,7 @@ from app.db.models import Assistant, Company, Media
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_message_client import create_message_client
 from app.utils.download_file import download_file
+from app.utils.model_utils import get_resource_from_db
 
 
 def send_media_to_contact_doc():
@@ -67,9 +68,7 @@ async def send_media_to_contact(
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = (
-            db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
-        )
+        assistant = await get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

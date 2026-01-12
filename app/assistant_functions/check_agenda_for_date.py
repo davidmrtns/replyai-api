@@ -5,6 +5,7 @@ from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Agenda
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_agenda_client import create_agenda_client
+from app.utils.model_utils import get_resource_from_db
 
 
 def check_agenda_for_date_doc():
@@ -40,9 +41,7 @@ async def check_agenda_for_date(
     date_info = {"status": "unavaliable", "schedule": []}
 
     with get_db_session_with_context() as db:
-        assistant = (
-            db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
-        )
+        assistant = await get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

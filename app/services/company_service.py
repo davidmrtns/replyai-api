@@ -1,11 +1,7 @@
 import secrets
 from sqlalchemy.orm import Session
 
-from app.db.models import (
-    Assistant,
-    AssistantPurposeEnum,
-    Company,
-)
+from app.db.models import Assistant, Company
 from app.exceptions.exceptions import ResourceNotFoundException, UserAccessException
 from app.schemas.company_schema import CreateCompanySchema, UpdateCompanySchema
 from app.utils.api_key_encryption import encrypt_api_key
@@ -75,7 +71,6 @@ async def update_company(payload: UpdateCompanySchema, company: Company, db: Ses
             .filter_by(
                 id=update_data["default_assistant_id"],
                 company_id=company.id,
-                purpose=AssistantPurposeEnum.reply,
             )
             .first()
         )
