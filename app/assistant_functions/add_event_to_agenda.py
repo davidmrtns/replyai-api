@@ -1,51 +1,50 @@
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Agenda, Contact
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_agenda_client import create_agenda_client
+from app.utils.model_utils import get_resource_from_db
 
 
 def add_event_to_agenda_doc():
     return FunctionToolParam(
-        function={
-            "name": "add_event_to_agenda",
-            "description": "Adds an event to a given agenda on a given date",
-            "strict": False,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "agenda_code": {
-                        "type": "string",
-                        "description": "The agenda code, as chosen by the user",
-                    },
-                    "date": {
-                        "type": "string",
-                        "description": "The date chosen by the user, in the format DD-MM-YYYYTHH:MM:SS",
-                    },
-                    "title": {
-                        "type": "string",
-                        "description": "The title of the event",
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "The description of the event, if applicable",
-                    },
-                    "localization": {
-                        "type": "string",
-                        "description": "The localization of the event, if applicable",
-                    },
+        name="add_event_to_agenda",
+        description="Adds an event to a given agenda on a given date",
+        strict=False,
+        parameters={
+            "type": "object",
+            "properties": {
+                "agenda_code": {
+                    "type": "string",
+                    "description": "The agenda code, as chosen by the user",
                 },
-                "additionalProperties": False,
-                "required": [
-                    "agenda_code",
-                    "date",
-                    "title",
-                    "description",
-                    "localization",
-                ],
+                "date": {
+                    "type": "string",
+                    "description": "The date chosen by the user, in the format DD-MM-YYYYTHH:MM:SS",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "The title of the event",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "The description of the event, if applicable",
+                },
+                "localization": {
+                    "type": "string",
+                    "description": "The localization of the event, if applicable",
+                },
             },
+            "additionalProperties": False,
+            "required": [
+                "agenda_code",
+                "date",
+                "title",
+                "description",
+                "localization",
+            ],
         },
         type="function",
     )
@@ -64,9 +63,7 @@ async def add_event_to_agenda(
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = (
-            db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
-        )
+        assistant = await get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

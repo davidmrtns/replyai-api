@@ -1,4 +1,4 @@
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.clients.digisac_client import DigisacClient
@@ -7,20 +7,19 @@ from app.db.models import Assistant, Company, Thread
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.services.contact_service import ContactService
 from app.utils.create_message_client import create_message_client
+from app.utils.model_utils import get_resource_from_db
 
 
 def end_contact_doc():
     return FunctionToolParam(
-        function={
-            "name": "end_contact_doc",
-            "description": "Ends the contact when the issue has been resolved",
-            "strict": False,
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "additionalProperties": False,
-                "required": [],
-            },
+        name="end_contact_doc",
+        description="Ends the contact when the issue has been resolved",
+        strict=False,
+        parameters={
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+            "required": [],
         },
         type="function",
     )
@@ -31,9 +30,7 @@ async def end_contact_doc(assistant_id: str, thread_id: str, **kwargs) -> bool:
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = (
-            db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
-        )
+        assistant = await get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

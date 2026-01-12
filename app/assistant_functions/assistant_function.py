@@ -1,4 +1,4 @@
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 from typing import List
 from app.utils.logger import logger
 
@@ -8,7 +8,7 @@ FUNCTION_REGISTRY = {}
 
 def register_function(documentation):
     def decorator(func):
-        FUNCTION_REGISTRY[documentation.get("function").get("name")] = {
+        FUNCTION_REGISTRY[documentation.get("name")] = {
             "function": func,
             "documentation": documentation,
         }

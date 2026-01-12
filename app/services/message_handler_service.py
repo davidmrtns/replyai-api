@@ -10,6 +10,7 @@ from app.db.models import Assistant, Company, Contact, Voice
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.utils.api_key_encryption import decrypt_api_key
+from app.utils.model_utils import get_resource_from_db
 from app.utils.string_replacements import replace_abbreviations
 
 
@@ -54,13 +55,11 @@ class MessageHandlerService:
             return None
 
         # Fetch the assistant's voice configuration
-        assistant_db = (
-            self.db.query(Assistant)
-            .filter_by(openai_assistant_id=self.assistants_client.openai_assistant_id)
-            .first()
+        assistant_db = await get_resource_from_db(
+            Assistant, self.assistants_client.assistant_id, self.db, self.company.id
         )
 
-        if not assistant_db:
+        if not assistant_db.voice:
             return None  # No assistant voice configuration available
 
         voice: Voice = assistant_db.voice
@@ -106,6 +105,10 @@ class MessageHandlerService:
         # Clears text message if audio or media
         if (is_audio and audio_message_base64) or message_type == "media":
             text_message = None
+
+        # Fallback to text if audio generation failed
+        if is_audio and (not audio_message_base64):
+            message_type = "text"
 
         if isinstance(self.message_client, EvolutionAPIClient):
             self.message_client.send_message(

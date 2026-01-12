@@ -9,6 +9,7 @@ from sqlalchemy import (
     Boolean,
     Enum,
     Time,
+    Text,
     Float,
 )
 from sqlalchemy.orm import relationship
@@ -37,15 +38,6 @@ class FinancialClientTypeEnum(str, enum.Enum):
 class EventCancellationTypeEnum(str, enum.Enum):
     keep = "keep"
     delete = "delete"
-
-
-# TODO: this is not needed anymore, remove it
-class AssistantPurposeEnum(str, enum.Enum):
-    reply = "reply"
-    recall = "recall"
-    rewrite = "rewrite"
-    schedule = "schedule"
-    charge = "charge"
 
 
 class LastMessageFromEnum(str, enum.Enum):
@@ -144,9 +136,8 @@ class Assistant(Base):
     __tablename__ = "assistants"
 
     id = Column(Integer, primary_key=True, index=True)
-    openai_assistant_id = Column(String, nullable=False)
     assistant_name = Column(String, nullable=False)
-    purpose = Column(Enum(AssistantPurposeEnum), nullable=False)
+    instructions = Column(Text, nullable=False)
     shortcut = Column(String)
     voice_id = Column(
         Integer, ForeignKey("voices.id", ondelete="SET NULL"), nullable=True

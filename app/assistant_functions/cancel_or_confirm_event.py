@@ -1,48 +1,46 @@
 from typing import Literal
-
-from openai.types.beta import FunctionToolParam
+from openai.types.responses import FunctionToolParam
 
 from app.assistant_functions.assistant_function import register_function
 from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_agenda_client import create_agenda_client
+from app.utils.model_utils import get_resource_from_db
 
 
 def cancel_or_confirm_event_doc():
     return FunctionToolParam(
-        function={
-            "name": "cancel_or_confirm_event",
-            "description": "Edits an event, canceling or confirming it",
-            "strict": False,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "agenda_address": {
-                        "type": "string",
-                        "description": "The agenda email address, as given in the start of the conversation",
-                    },
-                    "original_event_title": {
-                        "type": "string",
-                        "description": "The event title, strictly as received in the start of the conversation",
-                    },
-                    "original_event_start_datetime": {
-                        "type": "string",
-                        "description": "The event start date and time, in the format DD-MM-YYYYTHH:MM:SS, strictly as received in the start of the conversation",
-                    },
-                    "action": {
-                        "type": "string",
-                        "description": "'cancel' to cancel the event, 'confirm' to confirm the event, according to the user's request",
-                    },
+        name="cancel_or_confirm_event",
+        description="Edits an event, canceling or confirming it",
+        strict=False,
+        parameters={
+            "type": "object",
+            "properties": {
+                "agenda_address": {
+                    "type": "string",
+                    "description": "The agenda email address, as given in the start of the conversation",
                 },
-                "additionalProperties": False,
-                "required": [
-                    "agenda_address",
-                    "original_event_title",
-                    "original_event_start_datetime",
-                    "action",
-                ],
+                "original_event_title": {
+                    "type": "string",
+                    "description": "The event title, strictly as received in the start of the conversation",
+                },
+                "original_event_start_datetime": {
+                    "type": "string",
+                    "description": "The event start date and time, in the format DD-MM-YYYYTHH:MM:SS, strictly as received in the start of the conversation",
+                },
+                "action": {
+                    "type": "string",
+                    "description": "'cancel' to cancel the event, 'confirm' to confirm the event, according to the user's request",
+                },
             },
+            "additionalProperties": False,
+            "required": [
+                "agenda_address",
+                "original_event_title",
+                "original_event_start_datetime",
+                "action",
+            ],
         },
         type="function",
     )
@@ -60,9 +58,7 @@ async def cancel_or_confirm_event(
     status = False
 
     with get_db_session_with_context() as db:
-        assistant = (
-            db.query(Assistant).filter_by(openai_assistant_id=assistant_id).first()
-        )
+        assistant = await get_resource_from_db(Assistant, assistant_id, db)
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",

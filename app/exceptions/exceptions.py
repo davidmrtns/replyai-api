@@ -23,8 +23,8 @@ class DatabaseConnectionException(AppException):
 
 
 class AIResponseException(AppException):
-    def __init__(self, thread_id: str, assistant_id: str, **kwargs):
-        self.thread_id = thread_id or "Unknown thread"
+    def __init__(self, conversation_id: str, assistant_id: str, **kwargs):
+        self.conversation_id = conversation_id or "Unknown conversation/thread"
         self.assistant_id = assistant_id or "Unknown assistant"
         super().__init__(**kwargs)
 
@@ -70,22 +70,22 @@ class IntegrationException(AppException):
         super().__init__(**kwargs)
 
 
-class RunException(Exception):
-    def __init__(self, detail: str, run_id: str, thread_id: str):
+class ResponseException(Exception):
+    def __init__(self, detail: str, response_id: str, thread_id: str):
         self.detail = detail
-        self.run_id = run_id or "Unknown run"
+        self.response_id = response_id or "Unknown response"
         self.thread_id = thread_id or "Unknown thread"
         super().__init__(self.detail)
 
     def __str__(self):
-        return f"[{self.__class__.__name__}] {self.detail} (Run ID: {self.run_id}, Thread ID: {self.thread_id})"
+        return f"[{self.__class__.__name__}] {self.detail} (Response ID: {self.response_id}, Thread ID: {self.thread_id})"
 
 
-class PendingRunException(RunException):
+class PendingResponseException(ResponseException):
     pass
 
 
-class FailedRunException(RunException):
+class FailedResponseException(ResponseException):
     pass
 
 

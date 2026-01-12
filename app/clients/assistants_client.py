@@ -8,40 +8,47 @@ from PIL import Image
 from fastapi import UploadFile
 import httpx
 from openai import OpenAI
-from openai.types.beta.threads import Run
+from openai.types.responses import Response, ResponseFunctionToolCall
 import time
 
-from app.assistant_functions.assistant_function import FUNCTION_REGISTRY
+from app.assistant_functions.assistant_function import (
+    FUNCTION_REGISTRY,
+    get_function_documentations,
+)
 from app.clients.message_client import FileData
-from app.db.models import Assistant
 from app.exceptions.exceptions import (
     AIResponseException,
-    FailedRunException,
-    PendingRunException,
+    FailedResponseException,
+    PendingResponseException,
 )
 from app.utils.api_key_encryption import decrypt_api_key
 from app.utils.logger import logger
 
 
-PENDING_STATUSES = {"queued", "in_progress", "cancelling"}
+PENDING_STATUSES = {"queued", "in_progress"}
 ERROR_STATUSES = {"canceled", "failed", "expired"}
 FINAL_STATUSES = {"completed", "canceled", "failed", "expired"}
 
 
-class RunResult(NamedTuple):
+class ResponseOutput(NamedTuple):
     text_response: str
-    thread_id: str
+    conversation_id: str
 
 
 class AssistantsClient:
     def __init__(
-        self, assistant_name: str, openai_assistant_id: str, openai_api_key: str
+        self,
+        assistant_name: str,
+        instructions: str,
+        assistant_id: str,
+        openai_api_key: str,
     ):
         decrypted_api_key = decrypt_api_key(openai_api_key)
 
         self.client = OpenAI(http_client=CustomHTTPClient(), api_key=decrypted_api_key)
         self.assistant_name = assistant_name
-        self.openai_assistant_id = openai_assistant_id
+        self.instructions = instructions
+        self.assistant_id = assistant_id
         self.messages = []
         self.files = []
         self.audio_extensions = {
@@ -54,46 +61,36 @@ class AssistantsClient:
             "application/octet-stream": "oga",
         }
 
-    @classmethod
-    def from_db(cls, assistant_db: Assistant):
-        return cls(
-            assistant_name=assistant_db.assistant_name,
-            openai_assistant_id=assistant_db.openai_assistant_id,
-            openai_api_key=assistant_db.company.openai_api_key,
-        )
-
     def add_message(
         self,
-        message: str | None | None,
+        message: str | None,
         is_image: bool = False,
         image_id: str | None = None,
         attachments_ids: list | None = None,
-        thread_id: str | None = None,
     ) -> None:
-        base_message = {"role": "user"}
+        base_message = {"role": "user", "type": "message"}
 
         if not is_image:
-            base_message["content"] = [{"type": "text", "text": message}]
+            base_message["content"] = [{"type": "input_text", "text": message}]
         else:
             base_message["content"] = [
                 {
-                    "type": "image_file",
-                    "image_file": {"file_id": image_id, "detail": "high"},
+                    "type": "input_image",
+                    "detail": "high",
+                    "file_id": image_id,
                 }
             ]
 
         if attachments_ids and len(attachments_ids) > 0:
-            base_message["attachments"] = [
-                {"file_id": attachment_id, "tools": [{"type": "file_search"}]}
+            base_message["content"] = [
+                {
+                    "type": "input_file",
+                    "file_id": attachment_id,
+                }
                 for attachment_id in attachments_ids
             ]
 
-        if thread_id is None:
-            self.messages.append(base_message)
-        else:
-            self.client.beta.threads.messages.create(
-                thread_id=thread_id, **base_message
-            )
+        self.messages.append(base_message)
 
     def upload_image(self, image: str) -> str:
         img_data = base64.b64decode(image)
@@ -114,7 +111,7 @@ class AssistantsClient:
         pdf_bytes.seek(0)
         pdf_bytes.name = f"file_{uuid.uuid4()}.pdf"
 
-        response = self.client.files.create(file=pdf_bytes, purpose="assistants")
+        response = self.client.files.create(file=pdf_bytes, purpose="user_data")
 
         return response.id
 
@@ -130,10 +127,8 @@ class AssistantsClient:
 
     async def transcribe_audio(self, audio_file: FileData) -> str:
         filename, mimetype, file_stream = audio_file
-
         base_mimetype = mimetype.split(";")[0].strip()  # normalize mimetype
 
-        print(f"filename: {filename}, mimetype: {base_mimetype}")
         if base_mimetype in self.audio_extensions:
             file_stream.seek(0)
             file_stream.name = filename
@@ -152,17 +147,18 @@ class AssistantsClient:
                 "Audio file type not supported"
             )  # TODO: raise custom error
 
-    def create_or_run_thread(self, thread_id: str | None = None) -> RunResult:
+    async def process_conversation(
+        self, conversation_id: str | None = None
+    ) -> ResponseOutput:
         MAX_ATTEMPTS = 5
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
             error = None
             try:
-                run = self._initiate_run(thread_id)
-                response = self._process_run(run)
-                return response
-            except FailedRunException as e:
-                break  # No point in retrying if the run has definitively failed
+                response = self._generate_response(conversation_id)
+                return await self._process_response_output(response)
+            except FailedResponseException as e:
+                break  # No point in retrying if the response has definitively failed
             except Exception as e:
                 error = e
                 time.sleep(15)
@@ -172,183 +168,119 @@ class AssistantsClient:
                     logger.exception(f"Attempt {attempt}: {error}")
 
         raise AIResponseException(
-            thread_id=thread_id,
-            assistant_id=self.openai_assistant_id,
+            conversation_id=conversation_id,
+            assistant_id=self.assistant_id,
             detail=f"Failed to generate a response after {MAX_ATTEMPTS} attempts.",
             user_friendly_detail=f"The AI assistant was unable to generate a response at this time. Please try again later or check the error logs for more details.",
             http_status_code=500,
         )
 
-    def _initiate_run(self, thread_id: str | None) -> Run:
-        if thread_id:
-            runs = self.client.beta.threads.runs.list(
-                thread_id=thread_id, limit=1, order="desc"
+    def _generate_response(self, conversation_id: str | None) -> Response:
+        if conversation_id:
+            items = self.client.conversations.items.list(
+                conversation_id=conversation_id, limit=1, order="desc"
             )
-            last_run = runs.data[0]
+            last_item = items.data[0]
 
-            if last_run.status not in PENDING_STATUSES:
-                return self.client.beta.threads.runs.create(
-                    assistant_id=self.openai_assistant_id,
-                    thread_id=thread_id,
-                    tool_choice="auto",
+            if last_item.status in PENDING_STATUSES:
+                raise PendingResponseException(
+                    detail="A message is already in progress for this conversation. Trying again in a few seconds...",
+                    response_id=last_item.id,
+                    thread_id=conversation_id,
                 )
-
-            raise PendingRunException(
-                "A run is already in progress for this thread. Trying again in a few seconds...",
-                last_run.id,
-                thread_id,
-            )
         else:
-            return self.client.beta.threads.create_and_run(
-                assistant_id=self.openai_assistant_id,
-                thread={"messages": self.messages},
-                tool_choice="auto",
-            )
+            conversation = self.client.conversations.create()
+            conversation_id = conversation.id
 
-    def _process_run(self, run: Run) -> RunResult:
-        while run.status not in FINAL_STATUSES:
-            run = self.client.beta.threads.runs.retrieve(
-                thread_id=run.thread_id, run_id=run.id
-            )
-
-            if (
-                run.required_action
-                and run.required_action.type == "submit_tool_outputs"
-            ):
-                if not self._process_tool_calls(run):
-                    raise PendingRunException(
-                        "An error occured while processing tool calls for the run. Trying again...",
-                        run.id,
-                        run.thread_id,
-                    )
-
-            time.sleep(2)
-
-        if run.status in ERROR_STATUSES:
-            raise PendingRunException(
-                "An error occured while processing the run. Trying again...",
-                run.id,
-                run.thread_id,
-            )
-
-        run_result = self.client.beta.threads.messages.list(
-            thread_id=run.thread_id, limit=1, order="desc"
+        return self.client.responses.create(
+            model="gpt-4o",
+            conversation=conversation_id,
+            instructions=self.instructions,
+            input=self.messages,
+            tools=get_function_documentations(),
         )
 
-        last_message = run_result.data
-        if not last_message or not last_message[0].content:
-            raise FailedRunException(
-                "No response message found after run completion. Trying again...",
-                run.id,
-                run.thread_id,
+    async def _process_response_output(self, response: Response) -> ResponseOutput:
+        function_call_outputs = []
+
+        for item in response.output:
+            if item.type != "function_call":
+                continue
+
+            result = await self._process_tool_calls(
+                item, response.conversation.id, response.id
+            )
+            function_call_outputs.append(result)
+
+        if len(function_call_outputs) > 0:
+            # Make a new request with outputs from the function calls
+            response = self.client.responses.create(
+                model="gpt-4o",
+                conversation=response.conversation.id,
+                input=function_call_outputs,
+                tools=get_function_documentations(),
             )
 
-        return RunResult(
-            text_response=last_message[0].content[0].text.value, thread_id=run.thread_id
+        if response.status in ERROR_STATUSES:
+            raise FailedResponseException(
+                detail="An error occurred while processing the message...",
+                response_id=response.id,
+                thread_id=response.conversation.id,
+            )
+
+        return ResponseOutput(
+            text_response=self._extract_text_response(response),
+            conversation_id=response.conversation.id,
         )
 
-    def _process_tool_calls(self, run: Run) -> bool:
-        tool_calls = run.required_action.submit_tool_outputs.tool_calls
-        function_outputs = []
+    async def _process_tool_calls(
+        self,
+        tool_call: ResponseFunctionToolCall,
+        conversation_id: str,
+        response_id: str,
+    ) -> dict:
+        try:
+            function_name = tool_call.name
+            args = json.loads(tool_call.arguments)
 
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            arguments = json.loads(tool_call.function.arguments)
+            result = await self._execute_function(function_name, conversation_id, args)
+            return {
+                "type": "function_call_output",
+                "call_id": tool_call.call_id,
+                "output": str(result),
+            }
+        except Exception as e:
+            raise PendingResponseException(
+                detail="An error occurred while processing tool calls for the response. Trying again...",
+                response_id=response_id,
+                thread_id=conversation_id,
+            ) from e
 
-            try:
-                result = self._execute_function(function_name, run.thread_id, arguments)
-
-                function_outputs.append(
-                    {"tool_call_id": tool_call.id, "output": json.dumps(result)}
-                )
-            except Exception as e:
-                logger.exception(f"Error while executing {function_name}: {e}")
-
-        if function_outputs:
-            self.client.beta.threads.runs.submit_tool_outputs(
-                thread_id=run.thread_id, run_id=run.id, tool_outputs=function_outputs
-            )
-
-            return True
-        return False
-
-    def _execute_function(self, function_name: str, thread_id: str, arguments):
+    async def _execute_function(
+        self, function_name: str, conversation_id: str, arguments
+    ):
         func = FUNCTION_REGISTRY.get(function_name)
         if not func:
             raise ValueError(f"Unknown function called: {function_name}")
 
         func = func.get("function")
-        return func(self.openai_assistant_id, thread_id, **arguments)
+        return await func(self.assistant_id, conversation_id, **arguments)
 
-    def run_instruction(self, thread_id: str, instructions: str) -> str:
-        run = self.client.beta.threads.runs.create(
-            assistant_id=self.openai_assistant_id,
-            thread_id=thread_id,
-            instructions=instructions,
+    def _extract_text_response(self, response: Response) -> str:
+        output_obj = getattr(response, "output", [])
+        if len(output_obj) > 0:
+            first_output = output_obj[0]
+            content_obj = getattr(first_output, "content", [])
+            if len(content_obj) > 0:
+                text: str = getattr(content_obj[0], "text", None)
+                if text:
+                    return text
+
+        raise FailedResponseException(
+            detail="No output was generated for this request...",
+            response_id=response.id,
+            thread_id=response.conversation.id,
         )
-
-        while run.status != "completed":
-            run = self.client.beta.threads.runs.retrieve(
-                thread_id=run.thread_id, run_id=run.id
-            )
-            time.sleep(2)
-
-        resultado = self.client.beta.threads.messages.list(thread_id=run.thread_id)
-
-        return resultado.data[0].content[0].text.value
-
-    def list_thread_messages(self, thread_id: str, order: str, limit: int):
-        messages = self.client.beta.threads.messages.list(
-            thread_id, order=order, limit=limit
-        )
-        return messages
-
-    def get_specific_message_from_thread(
-        self, thread_id: str, index: int, order: str, limit: int
-    ):
-        try:
-            messages = self.list_thread_messages(thread_id, order, limit)
-            if messages:
-                return messages.data[index].content[0].text.value
-        except Exception as e:
-            print(
-                f"An error occurred while trying to get message from thread: {e}"
-            )  # TODO: raise custom error
-        return None
-
-
-class AssistantReply:
-    def __init__(
-        self,
-        activity: str,
-        department_code: str,
-        message: str,
-        media_code: str,
-        assistant_code: str,
-    ):
-        self.activity = activity
-        self.department_code = department_code
-        self.message = message
-        self.media_code = media_code
-        self.assistant_code = assistant_code
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(
-            activity=data["activity"],
-            department_code=data["department_code"],
-            message=data["message"],
-            media_code=data["media_code"],
-            assistant_code=data["assistant_code"],
-        )
-
-    @classmethod
-    def from_run_result(cls, run_result: RunResult):
-        try:
-            data = json.loads(run_result.text_response)
-            return cls.from_dict(data)
-        except Exception as e:
-            raise ValueError(f"Error parsing AssistantReply from run result: {e}")
 
 
 class CustomHTTPClient(httpx.Client):
