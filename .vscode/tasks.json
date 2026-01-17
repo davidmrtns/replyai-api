@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run API",
+      "type": "shell",
+      "command": ".\\venv\\Scripts\\python -m uvicorn main:app",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "Run Worker",
+      "type": "shell",
+      "command": ".\\venv\\Scripts\\python -m rq.cli worker messages --worker-class rq.worker.SimpleWorker",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "Dev (API + Worker)",
+      "dependsOn": ["Run API", "Run Worker"],
+      "dependsOrder": "parallel"
+    }
+  ]
+}
