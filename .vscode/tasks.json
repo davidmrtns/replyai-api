@@ -11,10 +11,17 @@
     {
       "label": "Run Worker",
       "type": "shell",
-      "command": ".\\venv\\Scripts\\python -m rq.cli worker messages --worker-class rq.worker.SimpleWorker",
+      "command": ".\\venv\\Scripts\\python -m app.queue.worker",
       "problemMatcher": [],
       "isBackground": true
     },
+    // {
+    //   "label": "Run Scheduler",
+    //   "type": "shell",
+    //   "command": ".\\venv\\Scripts\\python -m rq.cli scheduler --queue messages",
+    //   "problemMatcher": [],
+    //   "isBackground": true
+    // },
     {
       "label": "Dev (API + Worker)",
       "dependsOn": ["Run API", "Run Worker"],

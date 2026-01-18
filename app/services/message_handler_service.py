@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import List, Literal
 from sqlalchemy.orm import Session
 
 from app.clients.assistants_client import AssistantsClient
@@ -29,19 +29,33 @@ class MessageHandlerService:
         self.company = company
         self.db = db
 
-    def process_message_content(self, payload: DigisacRequest | EvolutionAPIRequest):
+    def process_message_content(
+        self, payloads: List[DigisacRequest | EvolutionAPIRequest]
+    ):
         """Extract the message and media content from the payload."""
-        message, is_audio, image = self.message_client.get_message_content(
-            request=payload
-        )
+        messages = []
+        images = []
+        is_any_audio = False
 
-        # Handle audio transcription if the message is audio
-        if is_audio:
-            file = self.message_client.get_file_data(request=payload)
-            if file:
-                message = self.assistants_client.transcribe_audio(file)
+        for payload in payloads:
+            message, is_audio, image = self.message_client.get_message_content(
+                request=payload
+            )
 
-        return message, is_audio, image
+            # Handle audio transcription if the message is audio
+            if is_audio:
+                file = self.message_client.get_file_data(request=payload)
+                if file:
+                    message = self.assistants_client.transcribe_audio(file)
+
+            messages.append(message)
+            if image:
+                images.append(image)
+
+            if not is_any_audio and is_audio:
+                is_any_audio = is_audio
+
+        return messages, is_any_audio, images
 
     def _generate_audio_message(
         self,

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 from sqlalchemy.orm import Session
 
 from app.db.models import Company, Contact
@@ -15,10 +15,10 @@ class ReplyService:
     """Service for generating replies."""
 
     def __init__(
-        self, db: Session, payload: Union[DigisacRequest, EvolutionAPIRequest]
+        self, db: Session, payloads: List[Union[DigisacRequest, EvolutionAPIRequest]]
     ):
         self.db = db
-        self.payload = payload
+        self.payloads = payloads
 
     async def generate_reply(self, company_slug: str, token: str):
         """Main function to generate a reply."""
@@ -33,15 +33,15 @@ class ReplyService:
 
         message_client = create_message_client(company, self.db)
         contact_id = (
-            self.payload.data.contactId
-            if isinstance(self.payload, DigisacRequest)
-            else self.payload.data.key.remoteJid
+            self.payloads[0].data.contactId
+            if isinstance(self.payloads[0], DigisacRequest)
+            else self.payloads[0].data.key.remoteJid
         )
 
         # Handle contact creation or retrieval
         contact_service = ContactService(company, self.db, company.timezone)
         contact = contact_service.get_or_create_contact(
-            contact_id, message_client, self.payload
+            contact_id, message_client, self.payloads[0]
         )
 
         if not contact.receive_ai_replies:
@@ -59,20 +59,20 @@ class ReplyService:
         )
 
         # Process the message or media content
-        message, is_audio, image = message_handler_service.process_message_content(
-            self.payload
-        )
+        messages, is_any_audio, images = (
+            message_handler_service.process_message_content(self.payloads)
+        )  # TODO: check if there's a better way of doing so, to maintain message and image order
 
-        if not message and not image:
+        if len(messages) < 1 and len(images) < 1:
             return
 
         # Handle assistant replies
         try:
-            response = await thread_service.execute_thread(message, image)
+            response = await thread_service.execute_thread(messages, images)
             message_handler_service.send_message(
                 text_message=response,
                 contact=contact,
-                message_type="audio" if is_audio else "text",
+                message_type="audio" if is_any_audio else "text",
             )
             return True
         except AIResponseException:
@@ -88,11 +88,11 @@ class ReplyService:
     def _handle_request_early_return(self, contact: Contact, company: Company):
         contact_service = ContactService(company, self.db, company.timezone)
 
-        if isinstance(self.payload, DigisacRequest):
-            if self.payload.data.command == "reset":
+        if isinstance(self.payloads, DigisacRequest):
+            if self.payloads.data.command == "reset":
                 contact_service.reset_contact(contact)
-        elif isinstance(self.payload, EvolutionAPIRequest):
-            if self.payload.data.key.fromMe:
+        elif isinstance(self.payloads, EvolutionAPIRequest):
+            if self.payloads.data.key.fromMe:
                 contact_service.change_ai_reply_reception(contact, False)
                 return False
         return True
