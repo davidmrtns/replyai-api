@@ -25,7 +25,8 @@
     {
       "label": "Dev (API + Worker)",
       "dependsOn": ["Run API", "Run Worker"],
-      "dependsOrder": "parallel"
+      "dependsOrder": "parallel",
+      "problemMatcher": []
     }
   ]
 }
