@@ -184,7 +184,7 @@ class Contact(Base):
 
 
 class Media(Base):
-    __tablename__ = "midias"
+    __tablename__ = "medias"
 
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String)
@@ -198,7 +198,7 @@ class Media(Base):
 
 
 class Department(Base):
-    __tablename__ = "departamentos"
+    __tablename__ = "departments"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     shortcut = Column(String)
