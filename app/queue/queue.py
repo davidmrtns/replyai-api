@@ -9,7 +9,7 @@ redis_conn = Redis.from_url(REDIS_URL, decode_responses=True)
 message_queue = Queue("messages", connection=redis_conn)
 
 BASE_KEY_TEMPLATE = "user:{user_id}:company:{company_slug}:{suffix}"
-ACTIVE_CHATS_SET_TEMPLATE = "{user_id}:{company_slug}:{token}"
+ACTIVE_CHATS_SET_TEMPLATE = "{user_id}:{company_slug}:{token}:{payload_type}"
 DEBOUNCE_EXPIRY_SECONDS = 20
 
 
@@ -25,27 +25,46 @@ def _get_debounce_key(user_id: str, company_slug: str) -> str:
     )
 
 
-def _get_active_chats_set(user_id: str, company_slug: str, token: str) -> str:
+def _get_active_chats_set(
+    user_id: str,
+    company_slug: str,
+    token: str,
+    payload_type: str,
+) -> str:
     return ACTIVE_CHATS_SET_TEMPLATE.format(
-        user_id=user_id, company_slug=company_slug, token=token
+        user_id=user_id,
+        company_slug=company_slug,
+        token=token,
+        payload_type=payload_type,
     )
 
 
 def add_message_to_queue(
-    user_id: str, company_slug: str, token: str, message_request: dict
+    user_id: str,
+    company_slug: str,
+    token: str,
+    message_request: dict,
+    payload_type: str,
 ):
     pending_messages_key = _get_pending_messages_key(user_id, company_slug)
     debounce_key = _get_debounce_key(user_id, company_slug)
-    active_chats_set = _get_active_chats_set(user_id, company_slug, token)
+    active_chats_set = _get_active_chats_set(user_id, company_slug, token, payload_type)
 
     redis_conn.rpush(pending_messages_key, json.dumps(message_request))
     redis_conn.set(debounce_key, 1, ex=DEBOUNCE_EXPIRY_SECONDS)
     redis_conn.sadd("active_chats", active_chats_set)
 
 
-def get_and_clear_messages(user_id: str, company_slug: str, token: str):
+def get_and_clear_messages(
+    user_id: str,
+    company_slug: str,
+    token: str,
+    message_client_type: str,
+):
     pending_messages_key = _get_pending_messages_key(user_id, company_slug)
-    active_chats_set = _get_active_chats_set(user_id, company_slug, token)
+    active_chats_set = _get_active_chats_set(
+        user_id, company_slug, token, message_client_type
+    )
 
     messages = redis_conn.lrange(pending_messages_key, 0, -1)
 

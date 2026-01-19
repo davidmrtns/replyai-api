@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.clients.assistants_client import AssistantsClient
 from app.db.models import Assistant, Company, Contact, Thread
-from app.services.message_handler_service import MessageObj
+from app.services.message_handler_service import MessageToProcess
 from app.utils.logger import logger
 
 
@@ -35,7 +35,7 @@ class ThreadService:
             openai_api_key=self.company.openai_api_key,
         )
 
-    async def execute_thread(self, messages: List[MessageObj] | str) -> str:
+    async def execute_thread(self, messages: List[MessageToProcess] | str) -> str:
         """Runs or creates a thread for the assistant."""
         current_thread_id = (
             self.contact.current_thread.thread_id

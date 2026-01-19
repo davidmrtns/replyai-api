@@ -14,7 +14,7 @@ from app.utils.model_utils import get_resource_from_db
 from app.utils.string_replacements import replace_abbreviations
 
 
-class MessageObj:  # TODO: remove from here
+class MessageToProcess:
     def __init__(self, content: str, type: Literal["text", "image"]):
         self.content = content
         self.type = type
@@ -39,7 +39,7 @@ class MessageHandlerService:
         self, payloads: List[DigisacRequest | EvolutionAPIRequest]
     ):
         """Extract the message and media content from the payload."""
-        messages: List[MessageObj] = []
+        messages: List[MessageToProcess] = []
         is_any_audio = False
 
         for payload in payloads:
@@ -54,9 +54,9 @@ class MessageHandlerService:
                     message = self.assistants_client.transcribe_audio(file)
 
             if message:
-                messages.append(MessageObj(content=message, type="text"))
+                messages.append(MessageToProcess(content=message, type="text"))
             if image:
-                messages.append(MessageObj(content=image, type="image"))
+                messages.append(MessageToProcess(content=image, type="image"))
 
             if not is_any_audio and is_audio:
                 is_any_audio = is_audio

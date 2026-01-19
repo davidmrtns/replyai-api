@@ -17,7 +17,7 @@ def debounce_worker():
                 continue
 
             for entry in active_chats:
-                user_id, company_slug, token = entry.split(":", 2)
+                user_id, company_slug, token, payload_type = entry.split(":", 3)
 
                 # If the debounce has expired, the user has stopped messaging for a while
                 if not check_debounce(user_id, company_slug):
@@ -30,6 +30,7 @@ def debounce_worker():
                             slug=company_slug,
                             token=token,
                             user_id=user_id,
+                            payload_type=payload_type,
                         )
                     except Exception as e:
                         logger.error(f"Error processing conversation {user_id}: {e}")
