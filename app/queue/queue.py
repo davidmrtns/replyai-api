@@ -1,9 +1,11 @@
 import json
+import os
 from redis import Redis
 from rq import Queue
 
 
-redis_conn = Redis(host="localhost", port=6379, db=0, decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL")
+redis_conn = Redis.from_url(REDIS_URL, decode_responses=True)
 message_queue = Queue("messages", connection=redis_conn)
 
 BASE_KEY_TEMPLATE = "user:{user_id}:company:{company_slug}:{suffix}"
