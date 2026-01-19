@@ -1,7 +1,10 @@
+from typing import List
 from sqlalchemy.orm import Session
 
 from app.clients.assistants_client import AssistantsClient
 from app.db.models import Assistant, Company, Contact, Thread
+from app.services.message_handler_service import MessageToProcess
+from app.utils.logger import logger
 
 
 class ThreadService:
@@ -32,7 +35,7 @@ class ThreadService:
             openai_api_key=self.company.openai_api_key,
         )
 
-    async def execute_thread(self, message: str, image: str | None) -> str:
+    async def execute_thread(self, messages: List[MessageToProcess] | str) -> str:
         """Runs or creates a thread for the assistant."""
         current_thread_id = (
             self.contact.current_thread.thread_id
@@ -41,11 +44,21 @@ class ThreadService:
         )
 
         assistant = self.get_assistants_client()
-        if message:
-            assistant.add_message(message=message)
-        if image:
-            image_id = assistant.upload_image(image)
-            assistant.add_message(message=None, is_image=True, image_id=image_id)
+
+        if isinstance(messages, list):
+            logger.info(f"Messages: {[message.content for message in messages]}")
+        else:
+            logger.info(f"Message: {messages}")
+
+        if isinstance(messages, str):
+            assistant.add_message(text_message=messages)
+        else:
+            for message in messages:
+                if message.type == "text":
+                    assistant.add_message(text_message=message.content)
+                elif message.type == "image":
+                    image_id = assistant.upload_image(message.content)
+                    assistant.add_message(image_id=image_id)
 
         result = await assistant.process_conversation(conversation_id=current_thread_id)
 

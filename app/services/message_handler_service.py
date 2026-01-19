@@ -1,5 +1,6 @@
-from typing import Literal
+from typing import List, Literal
 from sqlalchemy.orm import Session
+from dataclasses import dataclass
 
 from app.clients.assistants_client import AssistantsClient
 from app.clients.digisac_client import DigisacClient
@@ -12,6 +13,12 @@ from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.utils.api_key_encryption import decrypt_api_key
 from app.utils.model_utils import get_resource_from_db
 from app.utils.string_replacements import replace_abbreviations
+
+
+@dataclass(frozen=True)
+class MessageToProcess:
+    content: str
+    type: Literal["text", "image"]
 
 
 class MessageHandlerService:
@@ -29,19 +36,33 @@ class MessageHandlerService:
         self.company = company
         self.db = db
 
-    def process_message_content(self, payload: DigisacRequest | EvolutionAPIRequest):
+    def process_message_content(
+        self, payloads: List[DigisacRequest | EvolutionAPIRequest]
+    ):
         """Extract the message and media content from the payload."""
-        message, is_audio, image = self.message_client.get_message_content(
-            request=payload
-        )
+        messages: List[MessageToProcess] = []
+        is_any_audio = False
 
-        # Handle audio transcription if the message is audio
-        if is_audio:
-            file = self.message_client.get_file_data(request=payload)
-            if file:
-                message = self.assistants_client.transcribe_audio(file)
+        for payload in payloads:
+            message, is_audio, image = self.message_client.get_message_content(
+                request=payload
+            )
 
-        return message, is_audio, image
+            # Handle audio transcription if the message is audio
+            if is_audio:
+                file = self.message_client.get_file_data(request=payload)
+                if file:
+                    message = self.assistants_client.transcribe_audio(file)
+
+            if message:
+                messages.append(MessageToProcess(content=message, type="text"))
+            if image:
+                messages.append(MessageToProcess(content=image, type="image"))
+
+            if not is_any_audio and is_audio:
+                is_any_audio = is_audio
+
+        return messages, is_any_audio
 
     def _generate_audio_message(
         self,

@@ -63,16 +63,15 @@ class AssistantsClient:
 
     def add_message(
         self,
-        message: str | None,
-        is_image: bool = False,
+        text_message: str | None = None,
         image_id: str | None = None,
-        attachments_ids: list | None = None,
+        attachment_id: str | None = None,
     ) -> None:
         base_message = {"role": "user", "type": "message"}
 
-        if not is_image:
-            base_message["content"] = [{"type": "input_text", "text": message}]
-        else:
+        if text_message:
+            base_message["content"] = [{"type": "input_text", "text": text_message}]
+        elif image_id:
             base_message["content"] = [
                 {
                     "type": "input_image",
@@ -80,14 +79,12 @@ class AssistantsClient:
                     "file_id": image_id,
                 }
             ]
-
-        if attachments_ids and len(attachments_ids) > 0:
+        elif attachment_id:
             base_message["content"] = [
                 {
                     "type": "input_file",
                     "file_id": attachment_id,
                 }
-                for attachment_id in attachments_ids
             ]
 
         self.messages.append(base_message)
