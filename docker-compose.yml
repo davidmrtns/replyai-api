@@ -14,11 +14,12 @@ services:
   
   evolution-api:
     container_name: evolution_api
-    image: atendai/evolution-api
+    image: evoapicloud/evolution-api
     networks:
       - evolution-net
     depends_on:
       - redis
+      - db
     restart: always
     ports:
       - "8080:8080"
@@ -30,9 +31,24 @@ services:
 
   replyai-api:
     container_name: replyai_api
+    networks:
+      - evolution-net
     build: .
+    image: replyai-api:latest
     ports:
       - "8000:8000"
+    env_file:
+      - .env
+
+  replyai-worker:
+    container_name: replyai_worker
+    image: replyai-api:latest
+    depends_on:
+      - replyai-api
+      - redis
+    networks:
+      - evolution-net
+    command: python -m app.queue.worker
     env_file:
       - .env
 

@@ -15,18 +15,32 @@
       "problemMatcher": [],
       "isBackground": true
     },
-    // {
-    //   "label": "Run Scheduler",
-    //   "type": "shell",
-    //   "command": ".\\venv\\Scripts\\python -m rq.cli scheduler --queue messages",
-    //   "problemMatcher": [],
-    //   "isBackground": true
-    // },
     {
       "label": "Dev (API + Worker)",
       "dependsOn": ["Run API", "Run Worker"],
       "dependsOrder": "parallel",
       "problemMatcher": []
+    },
+    {
+        "label": "Docker Compose Up (Dev)",
+        "type": "shell",
+        "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up",
+        "problemMatcher": [],
+        "isBackground": true
+    },
+    {
+        "label": "Docker Compose Up --Build (Dev)",
+        "type": "shell",
+        "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+        "problemMatcher": [],
+        "isBackground": true
+    },
+    {
+        "label": "Docker Compose Down (Dev)",
+        "type": "shell",
+        "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
+        "problemMatcher": [],
+        "isBackground": true
     }
   ]
 }
