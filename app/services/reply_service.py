@@ -59,16 +59,16 @@ class ReplyService:
         )
 
         # Process the message or media content
-        messages, is_any_audio, images = (
-            message_handler_service.process_message_content(self.payloads)
+        messages, is_any_audio = message_handler_service.process_message_content(
+            self.payloads
         )  # TODO: check if there's a better way of doing so, to maintain message and image order
 
-        if len(messages) < 1 and len(images) < 1:
+        if len(messages) < 1:
             return
 
         # Handle assistant replies
         try:
-            response = await thread_service.execute_thread(messages, images)
+            response = await thread_service.execute_thread(messages)
             message_handler_service.send_message(
                 text_message=response,
                 contact=contact,
