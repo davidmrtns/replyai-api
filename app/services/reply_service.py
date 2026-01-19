@@ -9,6 +9,7 @@ from app.services.contact_service import ContactService
 from app.services.message_handler_service import MessageHandlerService
 from app.services.thread_service import ThreadService
 from app.utils.create_message_client import create_message_client
+from app.utils.iterable_utils import has_entry_with_attr
 
 
 class ReplyService:
@@ -88,11 +89,11 @@ class ReplyService:
     def _handle_request_early_return(self, contact: Contact, company: Company):
         contact_service = ContactService(company, self.db, company.timezone)
 
-        if isinstance(self.payloads, DigisacRequest):
-            if self.payloads.data.command == "reset":
+        if isinstance(self.payloads[0], DigisacRequest):
+            if has_entry_with_attr(self.payloads, "data.command", "reset"):
                 contact_service.reset_contact(contact)
-        elif isinstance(self.payloads, EvolutionAPIRequest):
-            if self.payloads.data.key.fromMe:
+        elif isinstance(self.payloads[0], EvolutionAPIRequest):
+            if has_entry_with_attr(self.payloads, "data.key.fromMe", True):
                 contact_service.change_ai_reply_reception(contact, False)
                 return False
         return True

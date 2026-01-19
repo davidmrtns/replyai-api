@@ -1,3 +1,4 @@
+import signal
 import time
 
 from app.queue.queue import check_debounce, get_active_chats
@@ -5,15 +6,34 @@ from app.queue.tasks import process_reply
 from app.utils.logger import logger
 
 
+WORKER_POLL_INTERVAL_SECONDS = 2
+shutdown_flag = False
+
+
+def handle_shutdown(signum, frame):
+    global shutdown_flag
+    logger.info(f"Received signal {signum}, shutting down worker...")
+    shutdown_flag = True
+
+
+signal.signal(signal.SIGTERM, handle_shutdown)
+signal.signal(signal.SIGINT, handle_shutdown)
+
+
 def debounce_worker():
+    """
+    Background worker that processes queued chat conversations using a debouncing mechanism.
+
+    This worker ensures that multiple messages sent in a short time window will receive a single AI response.
+    """
     logger.info("Debounce worker initialized")
 
-    while True:
+    while not shutdown_flag:
         try:
             active_chats = get_active_chats()
 
             if not active_chats:
-                time.sleep(2)
+                time.sleep(WORKER_POLL_INTERVAL_SECONDS)
                 continue
 
             for entry in active_chats:
@@ -37,11 +57,11 @@ def debounce_worker():
                         # Do not remove from set to try again later
                         continue
 
-            time.sleep(2)
+            time.sleep(WORKER_POLL_INTERVAL_SECONDS)
 
         except Exception as e:
             logger.error(f"Error in debounce worker loop: {e}")
-            time.sleep(2)
+            time.sleep(WORKER_POLL_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":

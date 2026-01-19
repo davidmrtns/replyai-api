@@ -44,7 +44,11 @@ class ThreadService:
         )
 
         assistant = self.get_assistants_client()
-        logger.info(f"Messages: {[message.content for message in messages]}")
+
+        if isinstance(messages, list):
+            logger.info(f"Messages: {[message.content for message in messages]}")
+        else:
+            logger.info(f"Message: {messages}")
 
         if isinstance(messages, str):
             assistant.add_message(text_message=messages)

@@ -1,5 +1,6 @@
 from typing import List, Literal
 from sqlalchemy.orm import Session
+from dataclasses import dataclass
 
 from app.clients.assistants_client import AssistantsClient
 from app.clients.digisac_client import DigisacClient
@@ -14,10 +15,10 @@ from app.utils.model_utils import get_resource_from_db
 from app.utils.string_replacements import replace_abbreviations
 
 
+@dataclass(frozen=True)
 class MessageToProcess:
-    def __init__(self, content: str, type: Literal["text", "image"]):
-        self.content = content
-        self.type = type
+    content: str
+    type: Literal["text", "image"]
 
 
 class MessageHandlerService:
