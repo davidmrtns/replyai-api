@@ -12,6 +12,7 @@ msal-extensions==1.2.0
 msgraph-sdk==1.14.0
 openai==2.15.0
 passlib==1.7.4
+pillow==11.1.0
 psycopg2-binary==2.9.10
 pydantic==2.10.3
 pydantic_core==2.27.1
