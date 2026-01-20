@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    container_name: db
+    networks:
+      - replyai-net
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: postgres
+      POSTGRES_DB: evolutionapi
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  evolution-api:
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_CONNECTION_URI: postgresql://postgres:root@db:5432/evolutionapi?schema=public
+
+  replyai-api:
+    environment:
+      DATABASE_URL: postgresql://postgres:root@db:5432/postgres
+
+volumes:
+  pgdata:
