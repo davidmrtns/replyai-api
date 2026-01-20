@@ -1,3 +1,4 @@
+import os
 from app.db.database import get_db_session_with_context
 from app.db.models import User
 from app.utils.logger import logger
@@ -7,10 +8,18 @@ from app.utils.password_utils import hash_password
 def create_root_user():
     with get_db_session_with_context() as db:
         try:
+            ROOT_PASSWORD = os.getenv("ROOT_PASSWORD", "root")
+            ROOT_EMAIL = os.getenv("ROOT_EMAIL", "root@example.com")
+
+            if ROOT_PASSWORD == "root" or ROOT_EMAIL == "root@example.com":
+                logger.warning(
+                    "Using default root password 'root' and email. This should NOT be used in production."
+                )
+
             root_user = User(
                 name="Root",
-                email="root@example.com",
-                password=hash_password("root"),
+                email=ROOT_EMAIL,
+                password=hash_password(ROOT_PASSWORD),
                 is_admin=True,
             )
             db.add(root_user)
