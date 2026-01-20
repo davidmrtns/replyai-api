@@ -3,26 +3,22 @@ services:
   redis:
     image: redis:latest
     networks:
-      - evolution-net
+      - replyai-net
     container_name: redis
     command: >
       redis-server --port 6379 --appendonly yes
     volumes:
-      - evolution_redis:/data
-    ports:
-      - "6379:6379"
+      - redis_data:/data
   
   evolution-api:
     container_name: evolution_api
     image: evoapicloud/evolution-api
     networks:
-      - evolution-net
+      - replyai-net
     depends_on:
       - redis
       - db
     restart: always
-    ports:
-      - "8080:8080"
     env_file:
       - evolutionapi.env
     volumes:
@@ -32,7 +28,7 @@ services:
   replyai-api:
     container_name: replyai_api
     networks:
-      - evolution-net
+      - replyai-net
     build: .
     image: replyai-api:latest
     ports:
@@ -47,7 +43,7 @@ services:
       - replyai-api
       - redis
     networks:
-      - evolution-net
+      - replyai-net
     command: python -m app.queue.worker
     env_file:
       - .env
@@ -55,9 +51,9 @@ services:
 volumes:
   evolution_store:
   evolution_instances:
-  evolution_redis:
+  redis_data:
 
 networks:
-  evolution-net:
-    name: evolution-net
+  replyai-net:
+    name: replyai-net
     driver: bridge

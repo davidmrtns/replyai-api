@@ -4,7 +4,7 @@ services:
     restart: always
     container_name: db
     networks:
-      - evolution-net
+      - replyai-net
     environment:
       POSTGRES_PASSWORD: root
       POSTGRES_USER: postgres
@@ -14,7 +14,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql
 
+  redis:
+    ports:
+      - "6379:6379"
+
   evolution-api:
+    ports:
+      - "8080:8080"
     environment:
       DATABASE_CONNECTION_URI: postgresql://postgres:root@db:5432/evolutionapi?schema=public
 
