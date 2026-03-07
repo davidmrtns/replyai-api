@@ -22,23 +22,23 @@
       "problemMatcher": []
     },
     {
-        "label": "Docker Compose Up (Dev)",
+        "label": "Docker Compose Up",
         "type": "shell",
-        "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up",
+        "command": "docker compose -f docker-compose.yml up",
         "problemMatcher": [],
         "isBackground": true
     },
     {
-        "label": "Docker Compose Up --Build (Dev)",
+        "label": "Docker Compose Up (Build)",
         "type": "shell",
-        "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+        "command": "docker compose -f docker-compose.yml up --build",
         "problemMatcher": [],
         "isBackground": true
     },
     {
-        "label": "Docker Compose Down (Dev)",
+        "label": "Docker Compose Down",
         "type": "shell",
-        "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
+        "command": "docker compose -f docker-compose.yml down",
         "problemMatcher": [],
         "isBackground": true
     }
