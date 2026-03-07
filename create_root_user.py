@@ -11,6 +11,12 @@ def create_root_user():
             ROOT_PASSWORD = os.getenv("ROOT_PASSWORD", "root")
             ROOT_EMAIL = os.getenv("ROOT_EMAIL", "root@example.com")
 
+            # Verifies if a root user already exists to avoid duplicates
+            existing_root = db.query(User).filter(User.email == ROOT_EMAIL).first()
+            if existing_root:
+                logger.info("Root user already exists. Skipping creation.")
+                return
+
             if ROOT_PASSWORD == "root" or ROOT_EMAIL == "root@example.com":
                 logger.warning(
                     "Using default root password 'root' and email. This should NOT be used in production."

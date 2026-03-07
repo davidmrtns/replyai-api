@@ -1,12 +1,29 @@
 version: '3'
 services:
+  db:
+    container_name: db
+    image: postgres:16
+    networks:
+      - replyai-net
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: postgres
+      POSTGRES_DB: evolutionapi
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   redis:
+    container_name: redis
     image: redis:latest
     networks:
       - replyai-net
-    container_name: redis
     command: >
       redis-server --port 6379 --appendonly yes
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
   
@@ -21,29 +38,41 @@ services:
     restart: always
     env_file:
       - evolutionapi.env
+    environment:
+      DATABASE_CONNECTION_URI: postgresql://postgres:root@db:5432/evolutionapi?schema=public
+    ports:
+      - "8080:8080"
     volumes:
       - evolution_store:/evolution/store
       - evolution_instances:/evolution/instances
 
   replyai-api:
     container_name: replyai_api
-    networks:
-      - replyai-net
     build: .
     image: replyai-api:latest
-    ports:
-      - "8000:8000"
+    networks:
+      - replyai-net
+    depends_on:
+      - db
+      - redis
+    entrypoint: ["sh", "-c"]
+    command: ["scripts/generate_database.sh && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:root@db:5432/postgres
+    ports:
+      - "8000:8000"
 
   replyai-worker:
     container_name: replyai_worker
     image: replyai-api:latest
+    networks:
+      - replyai-net
     depends_on:
       - replyai-api
       - redis
-    networks:
-      - replyai-net
+    restart: always
     command: python -m app.queue.worker
     env_file:
       - .env
@@ -52,6 +81,7 @@ volumes:
   evolution_store:
   evolution_instances:
   redis_data:
+  pgdata:
 
 networks:
   replyai-net:
