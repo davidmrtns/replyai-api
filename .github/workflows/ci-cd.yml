@@ -1,0 +1,25 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-and-publish-image.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+  deploy:
+    needs: build
+    uses: ./.github/workflows/deploy-container.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
