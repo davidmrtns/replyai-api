@@ -11,6 +11,13 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    strategy:
+      matrix:
+        app:
+          - name: replyai-api-test
+            mode: api
+          - name: replyai-worker-test
+            mode: worker
 
     steps:
       - name: Login Azure
@@ -23,11 +30,11 @@ jobs:
       - name: Deploy Container App
         uses: azure/container-apps-deploy-action@v2
         with:
-          containerAppName: replyai-api-test
+          containerAppName: ${{ matrix.app.name }}
           resourceGroup: replyai
           imageToDeploy: ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
           registryUrl: ghcr.io
           registryUsername: davidmrtns
           registryPassword: ${{ secrets.REPLYAIAPITEST_REGISTRY_PASSWORD }}
-          env: |
-            APP_MODE=api
+          environmentVariables: |
+            APP_MODE=${{ matrix.app.mode }}
