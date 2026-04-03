@@ -58,6 +58,7 @@ services:
     env_file:
       - .env
     environment:
+      APP_MODE: api
       DATABASE_URL: postgresql://postgres:root@db:5432/postgres
     ports:
       - "8000:8000"
@@ -71,9 +72,10 @@ services:
       - replyai-api
       - redis
     restart: always
-    command: python -m app.queue.worker
     env_file:
       - .env
+    environment:
+      APP_MODE: worker
 
 volumes:
   evolution_store:

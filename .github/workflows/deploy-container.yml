@@ -29,3 +29,5 @@ jobs:
           registryUrl: ghcr.io
           registryUsername: davidmrtns
           registryPassword: ${{ secrets.REPLYAIAPITEST_REGISTRY_PASSWORD }}
+          env: |
+            APP_MODE=api
