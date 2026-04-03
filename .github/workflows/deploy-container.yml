@@ -15,9 +15,7 @@ jobs:
       matrix:
         app:
           - name: replyai-api-test
-            mode: api
           - name: replyai-worker-test
-            mode: worker
 
     steps:
       - name: Login Azure
@@ -36,5 +34,3 @@ jobs:
           registryUrl: ghcr.io
           registryUsername: davidmrtns
           registryPassword: ${{ secrets.REPLYAIAPITEST_REGISTRY_PASSWORD }}
-          environmentVariables: |
-            APP_MODE=${{ matrix.app.mode }}
