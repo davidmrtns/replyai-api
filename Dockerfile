@@ -1,6 +1,6 @@
-FROM python:3.11-slim
+FROM python:3.11.16-alpine
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
