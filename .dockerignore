@@ -22,7 +22,8 @@ saved_requests
 .vscode
 .idea
 
-*.md
+README.md
+
 *.db
 
 docker-compose.yml
