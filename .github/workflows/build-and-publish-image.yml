@@ -1,7 +1,11 @@
 name: Create and publish Docker image
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 env:
@@ -11,11 +15,11 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
-      attestations: write
-      id-token: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -33,7 +37,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         id: push
@@ -43,10 +49,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
