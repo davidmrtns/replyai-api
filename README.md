@@ -19,20 +19,83 @@ This includes actions such as checking or scheduling appointments, sending image
 - 🤖 **Application management**: the API provides endpoints for fully managing the tool's operation.
 
 ### Integrations
-| Category                   | Tools/Services                                | Purpose                                                       |
+| Category                   | Tools/Services                                | Purpose                                                      |
 |----------------------------|----------------------------------------------|---------------------------------------------------------------|
 | 📅 **Virtual calendars**   | Google Calendar, Outlook                     | Automated appointment scheduling                              |
 | 💬 **WhatsApp API**        | Digisac, EvolutionAPI                        | Sending and receiving messages                                |
 | 📊 **CRM**                 | RD Station CRM                               | Lead registration and management                              |
-| 🤖 **Response generation** | OpenAI (Assistants API)                      | Intelligent response generation                               |
+| 🤖 **Response generation** | OpenAI (Responses API)                       | Intelligent response generation                               |
 | 🔉 **Audio responses**     | ElevenLabs                                   | Converting text to natural audio                              |
 | ☁️ **Storage**             | Azure Blob Storage                           | Storing images, videos, and other generated files             |
 
 ## Development
+### Configure and Run the Containers
+1. Make sure Docker Desktop and Docker Compose are installed and running.
+2. Create the environment file from the example:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    On Windows PowerShell, use:
+
+    ```powershell
+    Copy-Item .env.example .env
+    ```
+
+3. Update `.env` with the credentials and integration settings required for your environment. 
+    > _For local development, the database and Redis hostnames must remain `db` and `redis`, respectively, because these are the service names on the Docker network._
+
+4. Build and start all containers in the background:
+
+    ```bash
+    docker compose up --build -d
+    ```
+
+The stack includes PostgreSQL (`db`), Redis (`redis`), Evolution API (`evolution-api`), the FastAPI application (`replyai-api`), and the background worker (`replyai-worker`).
+
+**Useful commands:**
+
+```bash
+# Show container status
+docker compose ps
+
+# Follow logs for the whole stack or for one service
+docker compose logs -f
+docker compose logs -f replyai-api
+docker compose logs -f replyai-worker
+
+# Stop and remove the containers and network
+docker compose down
+
+# Stop the containers and remove their persistent volumes
+docker compose down -v
+```
+
+### Test the Container Connections
+Run these commands from the project directory after starting the stack:
+
+```bash
+# Check PostgreSQL readiness
+docker compose exec db pg_isready -U postgres -d postgres
+
+# Check Redis connectivity
+docker compose exec redis redis-cli ping
+
+# Check that the API is reachable from the host
+curl http://localhost:8000/
+
+# Check that the API container can reach the database and Redis services
+docker compose exec replyai-api python -c "import socket; socket.create_connection(('db', 5432), 5).close(); socket.create_connection(('redis', 6379), 5).close(); print('db: connected'); print('redis: connected')"
+```
+
+The expected responses are: `accepting connections` from PostgreSQL, `PONG` from Redis, and `{"status":"The API is running"}` from the API.
+
+If a service is not ready, inspect its output with `docker compose logs <service-name>` and confirm that all required values in `.env` are configured.
+
 ### Technologies Used
 - **Backend**: FastAPI;
-- **AI integration**: OpenAI;
-- **Database**: SQLAlchemy.
+- **Database ORM**: SQLAlchemy.
 
 ## Author
 - David Martins - [@davidmrtns](https://github.com/davidmrtns/)
