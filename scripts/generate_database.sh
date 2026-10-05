@@ -1,9 +1,6 @@
 #!/bin/sh
 set -e
 
-echo "Waiting for database..."
-sleep 5
-
 echo "Running migrations..."
 if alembic upgrade head; then
     echo "✓ Migrations applied successfully."
