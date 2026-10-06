@@ -89,7 +89,10 @@ curl http://localhost:8000/
 docker compose exec replyai-api python -c "import socket; socket.create_connection(('db', 5432), 5).close(); socket.create_connection(('redis', 6379), 5).close(); print('db: connected'); print('redis: connected')"
 ```
 
-The expected responses are: `accepting connections` from PostgreSQL, `PONG` from Redis, and `{"status":"The API is running"}` from the API.
+The expected responses are:
+- `accepting connections` from PostgreSQL;
+- `PONG` from Redis; and
+- `{"status":"The API is running"}` from the API.
 
 If a service is not ready, inspect its output with `docker compose logs <service-name>` and confirm that all required values in `.env` are configured.
 
