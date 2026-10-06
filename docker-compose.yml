@@ -6,14 +6,18 @@ services:
     networks:
       - replyai-net
     restart: always
-    environment:
-      POSTGRES_PASSWORD: root
-      POSTGRES_USER: postgres
-      POSTGRES_DB: evolutionapi
+    env_file:
+      - .env
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./scripts/psql_init.sh:/docker-entrypoint-initdb.d/psql_init.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     container_name: redis
@@ -26,6 +30,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   
   evolution-api:
     container_name: evolution_api
@@ -33,13 +42,13 @@ services:
     networks:
       - replyai-net
     depends_on:
-      - redis
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
     env_file:
-      - evolutionapi.env
-    environment:
-      DATABASE_CONNECTION_URI: postgresql://postgres:root@db:5432/evolutionapi?schema=public
+      - .env
     ports:
       - "8080:8080"
     volumes:
@@ -53,13 +62,14 @@ services:
     networks:
       - replyai-net
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       APP_MODE: api
-      DATABASE_URL: postgresql://postgres:root@db:5432/postgres
     ports:
       - "8000:8000"
 

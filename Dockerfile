@@ -8,8 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN chmod +x scripts/generate_database.sh
-RUN chmod +x entrypoint.sh
+RUN chmod +x scripts/entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "./entrypoint.sh"]
+CMD ["./scripts/entrypoint.sh"]
