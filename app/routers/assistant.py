@@ -31,7 +31,7 @@ model = build_chat_model(
     model_name="gemini-3.8-flash",
     api_key=GEMINI_API_KEY,
 )
-assistant = NewAssistantClient(model=model)
+assistant = NewAssistantClient(model=model, instructions="You are a helpful assistant.")
 
 
 @router.post("/", response_model=AssistantSchema)
@@ -73,10 +73,10 @@ def delete_assistant(
 
 @router.post("/v2/test")
 def test_assistant(request: dict):
-    message = assistant.add_message(content=request["message"], content_type="text")
-    thread_id = str(request.get("thread_id") or "1")
-    response = assistant.process_conversation(message, thread_id)
-    if response is None:
-        return {"message": "Error processing conversation"}
-    response_content, response_thread_id = response
-    return {"message": response_content, "thread_id": response_thread_id}
+    try:
+        message = assistant.add_message(content=request["message"], content_type="text")
+        thread_id = str(request.get("thread_id") or "1")
+        response, thread_id = assistant.process_conversation(message, thread_id)
+        return {"message": response, "thread_id": thread_id}
+    except Exception as e:
+        return {"message": f"Error processing conversation: {e}"}
