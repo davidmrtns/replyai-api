@@ -31,7 +31,19 @@ model = build_chat_model(
     model_name="gemini-3.8-flash",
     api_key=GEMINI_API_KEY,
 )
-assistant = NewAssistantClient(model=model, instructions="You are a helpful assistant.")
+assistant: NewAssistantClient | None = None
+
+
+def initialize_assistant() -> None:
+    global assistant
+    assistant = NewAssistantClient(
+        assistant_id="1", model=model, instructions="You are a helpful assistant."
+    )
+
+
+def close_assistant() -> None:
+    if assistant is not None:
+        assistant.close()
 
 
 @router.post("/", response_model=AssistantSchema)
@@ -73,10 +85,25 @@ def delete_assistant(
 
 @router.post("/v2/test")
 def test_assistant(request: dict):
-    try:
-        message = assistant.add_message(content=request["message"], content_type="text")
-        thread_id = str(request.get("thread_id") or "1")
-        response, thread_id = assistant.process_conversation(message, thread_id)
-        return {"message": response, "thread_id": thread_id}
-    except Exception as e:
-        return {"message": f"Error processing conversation: {e}"}
+    current_assistant = _get_assistant()
+    message = current_assistant.add_message(
+        content=request["message"], content_type="text"
+    )
+    response, thread_id = current_assistant.process_conversation(
+        message, request.get("thread_id")
+    )
+    return {"message": response, "thread_id": thread_id}
+
+
+@router.get("/v2/thread/{thread_id}")
+def get_thread_messages(thread_id: str):
+    return {
+        "thread_id": thread_id,
+        "messages": _get_assistant().get_messages(thread_id),
+    }
+
+
+def _get_assistant() -> NewAssistantClient:
+    if assistant is None:
+        raise RuntimeError("The assistant has not been initialized")
+    return assistant
