@@ -1,6 +1,8 @@
-from openai.types.responses import FunctionToolParam
+from typing import Annotated
 
-from app.assistant_functions.assistant_function import register_function
+from langchain.tools import InjectedToolArg, ToolRuntime, tool
+
+from app.assistant_functions.assistant_function import register_tool
 from app.clients.digisac_client import DigisacClient
 from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Department, Thread
@@ -8,32 +10,18 @@ from app.exceptions.exceptions import FailedFunctionRunException
 from app.services.contact_service import ContactService
 from app.utils.create_message_client import create_message_client
 from app.utils.model_utils import get_resource_from_db
+from app.assistant_functions.runtime_context import RuntimeContext
 
 
-def transfer_contact_to_department_doc():
-    return FunctionToolParam(
-        name="transfer_contact_to_department",
-        description="Transfers the customer to a specified department",
-        strict=False,
-        parameters={
-            "type": "object",
-            "properties": {
-                "department_code": {
-                    "type": "string",
-                    "description": "The department code, as chosen by the user",
-                }
-            },
-            "additionalProperties": False,
-            "required": ["department_code"],
-        },
-        type="function",
-    )
-
-
-@register_function(transfer_contact_to_department_doc())
+@register_tool
+@tool("transfer_contact_to_department")
 def transfer_contact_to_department(
-    assistant_id: str, thread_id: str, department_code: str
+    department_code: str,
+    runtime: Annotated[ToolRuntime[RuntimeContext], InjectedToolArg],
 ) -> bool:
+    """Transfer the customer to a specified department."""
+    assistant_id = runtime.context["assistant_id"]
+    thread_id = runtime.context["thread_id"]
     status = False
 
     with get_db_session_with_context() as db:

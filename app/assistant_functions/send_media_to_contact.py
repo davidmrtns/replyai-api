@@ -1,6 +1,8 @@
-from openai.types.responses import FunctionToolParam
+from typing import Annotated
 
-from app.assistant_functions.assistant_function import register_function
+from langchain.tools import InjectedToolArg, ToolRuntime, tool
+
+from app.assistant_functions.assistant_function import register_tool
 from app.clients.digisac_client import DigisacClient
 from app.clients.message_client import MediaMessageData
 from app.db.database import get_db_session_with_context
@@ -9,61 +11,21 @@ from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_message_client import create_message_client
 from app.utils.download_file import download_file
 from app.utils.model_utils import get_resource_from_db
+from app.assistant_functions.runtime_context import RuntimeContext
 
 
-# TODO: correctly implement function
-def send_media_to_contact_doc():
-    return FunctionToolParam(
-        name="add_event_to_agenda",
-        description="Adds an event to a given agenda on a given date",
-        strict=False,
-        parameters={
-            "type": "object",
-            "properties": {
-                "agenda_code": {
-                    "type": "string",
-                    "description": "The agenda code, as chosen by the user",
-                },
-                "date": {
-                    "type": "string",
-                    "description": "The date chosen by the user, in the format DD-MM-YYYYTHH:MM:SS",
-                },
-                "title": {
-                    "type": "string",
-                    "description": "The title of the event",
-                },
-                "description": {
-                    "type": "string",
-                    "description": "The description of the event, if applicable",
-                },
-                "localization": {
-                    "type": "string",
-                    "description": "The localization of the event, if applicable",
-                },
-            },
-            "additionalProperties": False,
-            "required": [
-                "agenda_code",
-                "date",
-                "title",
-                "description",
-                "localization",
-            ],
-        },
-        type="function",
-    )
-
-
-@register_function(send_media_to_contact_doc())
+@register_tool
+@tool("send_media_to_contact")
 def send_media_to_contact(
-    assistant_id: str,
-    thread_id: str,
-    agenda_code: str,
+    calendar_code: str,
     date: str,
     title: str,
     description: str,
     localization: str,
+    runtime: Annotated[ToolRuntime[RuntimeContext], InjectedToolArg],
 ) -> bool:
+    """Send the media configured for a shortcut to the current contact."""
+    assistant_id = runtime.context["assistant_id"]
     status = False
 
     with get_db_session_with_context() as db:
@@ -83,7 +45,7 @@ def send_media_to_contact(
 
         medias = (
             db.query(Media)
-            .filter_by(shortcut=agenda_code, company_id=company.id)
+            .filter_by(shortcut=calendar_code, company_id=company.id)
             .order_by(Media.order)
             .all()
         )

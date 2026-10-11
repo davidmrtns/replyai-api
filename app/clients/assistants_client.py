@@ -12,7 +12,6 @@ from openai.types.responses import Response, ResponseFunctionToolCall
 import time
 
 from app.assistant_functions.assistant_function import (
-    FUNCTION_REGISTRY,
     get_function_documentations,
 )
 from app.clients.message_client import FileData
@@ -23,7 +22,6 @@ from app.exceptions.exceptions import (
 )
 from app.utils.api_key_encryption import decrypt_api_key
 from app.utils.logger import logger
-
 
 PENDING_STATUSES = {"queued", "in_progress"}
 ERROR_STATUSES = {"canceled", "failed", "expired"}
@@ -256,7 +254,7 @@ class AssistantsClient:
     async def _execute_function(
         self, function_name: str, conversation_id: str, arguments
     ):
-        func = FUNCTION_REGISTRY.get(function_name)
+        func = {}.get(function_name)
         if not func:
             raise ValueError(f"Unknown function called: {function_name}")
 

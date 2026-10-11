@@ -1,41 +1,25 @@
-from openai.types.responses import FunctionToolParam
+from typing import Annotated
 
-from app.assistant_functions.assistant_function import register_function
+from langchain.tools import InjectedToolArg, ToolRuntime, tool
+
+from app.assistant_functions.assistant_function import register_tool
 from app.db.database import get_db_session_with_context
 from app.db.models import Assistant, Company, Agenda
 from app.exceptions.exceptions import FailedFunctionRunException
 from app.utils.create_agenda_client import create_agenda_client
 from app.utils.model_utils import get_resource_from_db
+from app.assistant_functions.runtime_context import RuntimeContext
 
 
-def check_agenda_for_date_doc():
-    return FunctionToolParam(
-        name="check_agenda_for_date",
-        description="Gets the availability of a given agenda in a given date",
-        strict=False,
-        parameters={
-            "type": "object",
-            "properties": {
-                "agenda_code": {
-                    "type": "string",
-                    "description": "The agenda code, as chosen by the user",
-                },
-                "suggestion_date": {
-                    "type": "string",
-                    "description": "The date suggested by the user, in the format DD-MM-YYYYTHH:MM:SS",
-                },
-            },
-            "additionalProperties": False,
-            "required": ["agenda_code", "suggestion_date"],
-        },
-        type="function",
-    )
-
-
-@register_function(check_agenda_for_date_doc())
-async def check_agenda_for_date(
-    assistant_id: str, thread_id: str, agenda_code: str, suggestion_date: str
-):
+@register_tool
+@tool("check_calendar_for_date")
+async def check_calendar_for_date(
+    calendar_code: str,
+    suggestion_date: str,
+    runtime: Annotated[ToolRuntime[RuntimeContext], InjectedToolArg],
+) -> dict:
+    """Get the availability of a calendar on a given date."""
+    assistant_id = runtime.context["assistant_id"]
     date_info = {"status": "unavaliable", "schedule": []}
 
     with get_db_session_with_context() as db:
@@ -43,32 +27,32 @@ async def check_agenda_for_date(
         if not assistant:
             raise FailedFunctionRunException(
                 detail="Assistant not found in the database",
-                function_name=check_agenda_for_date.__name__,
+                function_name=check_calendar_for_date.__name__,
             )
 
         company: Company = assistant.company
         if not company:
             raise FailedFunctionRunException(
                 detail="Company not found in the database",
-                function_name=check_agenda_for_date.__name__,
+                function_name=check_calendar_for_date.__name__,
             )
 
         agenda = (
             db.query(Agenda)
-            .filter_by(atalho=agenda_code, id_empresa=company.id)
+            .filter_by(atalho=calendar_code, id_empresa=company.id)
             .first()
         )
         if not agenda:
             raise FailedFunctionRunException(
                 detail="Agenda not found in the database",
-                function_name=check_agenda_for_date.__name__,
+                function_name=check_calendar_for_date.__name__,
             )
 
         agenda_client = create_agenda_client(company, db)
         if agenda_client is None:
             raise FailedFunctionRunException(
                 detail="Could not create the agenda client",
-                function_name=check_agenda_for_date.__name__,
+                function_name=check_calendar_for_date.__name__,
             )
 
         schedules = await agenda_client.get_schedules(

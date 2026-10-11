@@ -10,7 +10,7 @@ from psycopg_pool import ConnectionPool
 import os
 from uuid import uuid4
 
-from app.assistant_functions.get_current_datetime import get_current_datetime
+from app.assistant_functions.assistant_function import get_tools
 from app.assistant_functions.runtime_context import RuntimeContext
 from app.exceptions.exceptions import AIResponseException
 
@@ -46,7 +46,7 @@ class NewAssistantClient(ABC):
         checkpointer.setup()
         self.agent = create_agent(
             model=model,
-            tools=[get_current_datetime],
+            tools=get_tools(),
             system_prompt=instructions,
             context_schema=RuntimeContext,
             checkpointer=checkpointer,

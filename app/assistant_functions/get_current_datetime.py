@@ -4,12 +4,14 @@ from typing import Annotated
 import pytz
 from langchain.tools import InjectedToolArg, ToolRuntime, tool
 
+from app.assistant_functions.assistant_function import register_tool
 from app.db.database import get_db_session_with_context
 from app.db.models import Assistant
 from app.utils.model_utils import get_resource_from_db
 from app.assistant_functions.runtime_context import RuntimeContext
 
 
+@register_tool
 @tool("get_current_datetime")
 def get_current_datetime(
     runtime: Annotated[ToolRuntime[RuntimeContext], InjectedToolArg],
