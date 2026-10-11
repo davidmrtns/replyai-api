@@ -70,11 +70,12 @@ class ReplyService:
         # Handle assistant replies
         try:
             response = await thread_service.execute_thread(messages)
-            message_handler_service.send_message(
-                text_message=response,
-                contact=contact,
-                message_type="audio" if is_any_audio else "text",
-            )
+            print("Response:", response)
+            # message_handler_service.send_message(
+            #     text_message=response,
+            #     contact=contact,
+            #     message_type="audio" if is_any_audio else "text",
+            # )
             return True
         except AIResponseException:
             message_handler_service.send_message(

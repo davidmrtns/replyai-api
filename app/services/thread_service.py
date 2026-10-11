@@ -1,7 +1,9 @@
+import os
 from typing import List
 from sqlalchemy.orm import Session
 
-from app.clients.assistants_client import AssistantsClient
+from app.clients.langchain_model_factory import build_chat_model
+from app.clients.new_assistant_client import NewAssistantClient
 from app.db.models import Assistant, Company, Contact, Thread
 from app.services.message_handler_service import MessageToProcess
 from app.utils.logger import logger
@@ -15,7 +17,7 @@ class ThreadService:
         self.company = company
         self.db = db
 
-    def get_assistants_client(self) -> AssistantsClient:
+    def get_assistants_client(self) -> NewAssistantClient:
         """Retrieve the assistant for the contact."""
         assistant = (
             self.db.query(Assistant)
@@ -28,11 +30,19 @@ class ThreadService:
             self.contact.current_assistant = assistant.id
             self.db.commit()
 
-        return AssistantsClient(
+        GEMINI_API_KEY = os.getenv(
+            "GEMINI_API_KEY"
+        )  # TODO: replace with API key from DB
+        model = build_chat_model(
+            provider="google_genai",  # TODO: add provider from DB
+            model_name="gemini-3.8-flash",  # TODO: add model name from DB
+            api_key=GEMINI_API_KEY,  # TODO: add API key from DB
+        )
+        return NewAssistantClient(
             assistant_name=assistant.assistant_name,
-            instructions=assistant.instructions,
             assistant_id=assistant.id,
-            openai_api_key=self.company.openai_api_key,
+            model=model,
+            instructions=assistant.instructions,
         )
 
     async def execute_thread(self, messages: List[MessageToProcess] | str) -> str:
@@ -51,21 +61,24 @@ class ThreadService:
             logger.info(f"Message: {messages}")
 
         if isinstance(messages, str):
-            assistant.add_message(text_message=messages)
+            assistant.add_message(content=messages, content_type="text")
         else:
             for message in messages:
                 if message.type == "text":
-                    assistant.add_message(text_message=message.content)
+                    assistant.add_message(content=message.content, content_type="text")
                 elif message.type == "image":
-                    image_id = assistant.upload_image(message.content)
-                    assistant.add_message(image_id=image_id)
+                    pass  # TODO: Implement image handling logic
+                    # image_id = assistant.upload_image(message.content)
+                    # assistant.add_message(image_id=image_id)
 
-        result = await assistant.process_conversation(conversation_id=current_thread_id)
+        response, thread_id = assistant.process_conversation(
+            thread_id=current_thread_id
+        )
 
         if not self.contact.current_thread:
-            self._assign_thread_to_contact(result.conversation_id)
+            self._assign_thread_to_contact(thread_id)
 
-        return result.text_response
+        return response[0]["text"]
 
     def _assign_thread_to_contact(self, thread_id: str):
         """Assign a new thread to the contact."""

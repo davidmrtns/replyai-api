@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import List
 from typing_extensions import Literal
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
@@ -21,8 +22,16 @@ def get_current_date_time() -> str:
 
 
 class NewAssistantClient(ABC):
-    def __init__(self, assistant_id: str, model: BaseChatModel, instructions: str):
+    def __init__(
+        self,
+        assistant_name: str,
+        assistant_id: str,
+        model: BaseChatModel,
+        instructions: str,
+    ):
+        self.assistant_name = assistant_name
         self.assistant_id = assistant_id
+        self.messages: List[HumanMessage] = []
         if not DATABASE_URL:
             raise RuntimeError("DATABASE_URL is required for the Postgres checkpointer")
 
@@ -51,19 +60,25 @@ class NewAssistantClient(ABC):
 
     def add_message(
         self, content: str, content_type: Literal["text", "image", "document"]
-    ) -> HumanMessage:
+    ):
         if content_type == "text":
-            return HumanMessage(
+            message = HumanMessage(
                 content_blocks=[{"type": content_type, "text": content}]
             )
-        return HumanMessage(content_blocks=[{"type": content_type, "url": content}])
+        else:
+            message = HumanMessage(
+                content_blocks=[{"type": content_type, "url": content}]
+            )
+        self.messages.append(message)
 
-    def process_conversation(self, message: HumanMessage, thread_id: str | None = None):
+    def process_conversation(self, thread_id: str | None = None):
         thread_id = thread_id or str(uuid4())
         thread_config = {"configurable": {"thread_id": thread_id}}
 
         try:
-            result = self.agent.invoke({"messages": [message]}, config=thread_config)
+            result = self.agent.invoke(
+                {"messages": self.messages}, config=thread_config
+            )
             return result["messages"][-1].content_blocks, thread_id
         except Exception as e:
             raise AIResponseException(

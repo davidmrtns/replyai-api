@@ -37,7 +37,10 @@ assistant: NewAssistantClient | None = None
 def initialize_assistant() -> None:
     global assistant
     assistant = NewAssistantClient(
-        assistant_id="1", model=model, instructions="You are a helpful assistant."
+        assistant_name="Default Assistant",
+        assistant_id="1",
+        model=model,
+        instructions="You are a helpful assistant.",
     )
 
 
@@ -86,11 +89,9 @@ def delete_assistant(
 @router.post("/v2/test")
 def test_assistant(request: dict):
     current_assistant = _get_assistant()
-    message = current_assistant.add_message(
-        content=request["message"], content_type="text"
-    )
+    current_assistant.add_message(content=request["message"], content_type="text")
     response, thread_id = current_assistant.process_conversation(
-        message, request.get("thread_id")
+        thread_id=request.get("thread_id")
     )
     return {"message": response, "thread_id": thread_id}
 
