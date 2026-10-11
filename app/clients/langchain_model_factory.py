@@ -3,6 +3,8 @@ from typing import Any
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
 
+from app.utils.api_key_encryption import decrypt_api_key
+
 PROVIDER_API_KEY_ARGUMENTS = {
     "google_genai": "google_api_key",
     "openai": "api_key",
@@ -26,6 +28,6 @@ def build_chat_model(
     return init_chat_model(
         model=model_name,
         model_provider=normalized_provider,
-        **{api_key_argument: api_key},
+        **{api_key_argument: decrypt_api_key(api_key)},
         **model_options,
     )
