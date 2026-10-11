@@ -1,4 +1,3 @@
-import os
 from typing import List
 from sqlalchemy.orm import Session
 
@@ -30,13 +29,10 @@ class ThreadService:
             self.contact.current_assistant = assistant.id
             self.db.commit()
 
-        GEMINI_API_KEY = os.getenv(
-            "GEMINI_API_KEY"
-        )  # TODO: replace with API key from DB
         model = build_chat_model(
-            provider="google_genai",  # TODO: add provider from DB
-            model_name="gemini-3.8-flash",  # TODO: add model name from DB
-            api_key=GEMINI_API_KEY,  # TODO: add API key from DB
+            provider=self.company.ai_provider.provider_name,
+            model_name=assistant.model_name,
+            api_key=self.company.ai_provider.api_key,
         )
         return NewAssistantClient(
             assistant_name=assistant.assistant_name,

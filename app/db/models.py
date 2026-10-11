@@ -44,6 +44,12 @@ class LastMessageFromEnum(str, enum.Enum):
     customer = "customer"
 
 
+class AIProviderNamesEnum(str, enum.Enum):
+    openai = "openai"
+    google_genai = "google_genai"
+    anthropic = "anthropic"
+
+
 class Company(Base):
     __tablename__ = "companies"
 
@@ -76,6 +82,7 @@ class Company(Base):
     default_assistant_id = Column(Integer, ForeignKey("assistants.id"))
 
     default_assistant = relationship("Assistant", foreign_keys=[default_assistant_id])
+    ai_provider = relationship("AIProvider", back_populates="company", uselist=False)
 
 
 class User(Base):
@@ -138,6 +145,7 @@ class Assistant(Base):
     assistant_name = Column(String, nullable=False)
     instructions = Column(Text, nullable=False)
     shortcut = Column(String)
+    model_name = Column(String, nullable=False)
     voice_id = Column(
         Integer, ForeignKey("voices.id", ondelete="SET NULL"), nullable=True
     )
@@ -145,6 +153,19 @@ class Assistant(Base):
 
     company = relationship("Company", backref="assistants", foreign_keys=[company_id])
     voice = relationship("Voice", foreign_keys=[voice_id])
+
+
+class AIProvider(Base):
+    __tablename__ = "ai_providers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider_name = Column(Enum(AIProviderNamesEnum), nullable=False)
+    api_key = Column(String, nullable=False)
+    company_id = Column(
+        Integer, ForeignKey("companies.id"), nullable=False, unique=True
+    )
+
+    company = relationship("Company", back_populates="ai_provider")
 
 
 class Thread(Base):
