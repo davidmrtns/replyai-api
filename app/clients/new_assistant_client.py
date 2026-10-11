@@ -7,18 +7,14 @@ from langchain_core.language_models import BaseChatModel
 from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
-from datetime import datetime
 import os
 from uuid import uuid4
 
+from app.assistant_functions.get_current_datetime import get_current_datetime
+from app.assistant_functions.runtime_context import RuntimeContext
 from app.exceptions.exceptions import AIResponseException
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-
-def get_current_date_time() -> str:
-    """Returns the current date and time as a string in the format "YYYY-MM-DD HH:MM:SS"."""
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 class NewAssistantClient(ABC):
@@ -50,8 +46,9 @@ class NewAssistantClient(ABC):
         checkpointer.setup()
         self.agent = create_agent(
             model=model,
-            tools=[get_current_date_time],
+            tools=[get_current_datetime],
             system_prompt=instructions,
+            context_schema=RuntimeContext,
             checkpointer=checkpointer,
         )
 
@@ -77,7 +74,12 @@ class NewAssistantClient(ABC):
 
         try:
             result = self.agent.invoke(
-                {"messages": self.messages}, config=thread_config
+                {"messages": self.messages},
+                config=thread_config,
+                context={
+                    "assistant_id": self.assistant_id,
+                    "thread_id": thread_id,
+                },
             )
             return result["messages"][-1].content_blocks, thread_id
         except Exception as e:
