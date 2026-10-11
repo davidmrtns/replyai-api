@@ -6,6 +6,7 @@ from .elevenlabs_client_schema import VoiceSchema
 class AssistantSchema(OrmBaseModel):
     assistant_name: str
     instructions: str
+    model_name: str
     shortcut: str
     voice: Optional[VoiceSchema] = None
 
@@ -13,6 +14,7 @@ class AssistantSchema(OrmBaseModel):
 class CreateAssistantSchema(StrictBaseModel):
     assistant_name: str
     instructions: str
+    model_name: str
     shortcut: str
     voice_id: Optional[int] = None
     company_id: Optional[int] = None
@@ -21,5 +23,6 @@ class CreateAssistantSchema(StrictBaseModel):
 class UpdateAssistantSchema(StrictBaseModel):
     assistant_name: Optional[str] = None
     instructions: Optional[str] = None
+    model_name: Optional[str] = None
     shortcut: Optional[str] = None
     voice_id: Optional[int] = None

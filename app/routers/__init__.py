@@ -1,4 +1,5 @@
 from app.routers import (
+    ai_provider,
     agenda,
     assistant,
     auth,

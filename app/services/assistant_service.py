@@ -9,6 +9,7 @@ def create_assistant(company_id: int, payload: CreateAssistantSchema, db: Sessio
     assistant = Assistant(
         assistant_name=payload.assistant_name,
         instructions=payload.instructions,
+        model_name=payload.model_name,
         shortcut=payload.shortcut,
         voice_id=payload.voice_id,
         company_id=company_id,
