@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from redis import Redis
 from rq import Queue
 
@@ -14,6 +15,7 @@ NEW_CONVERSATION_KEY_TEMPLATE = (
 )
 DEBOUNCE_KEY_TEMPLATE = "debounce:{conversation_key}"
 DEBOUNCE_DELAY_SECONDS = 20
+DEBOUNCE_STATE_TTL_SECONDS = 3600
 DEBOUNCE_EXPIRY_SECONDS = DEBOUNCE_DELAY_SECONDS
 
 
@@ -31,7 +33,29 @@ def get_conversation_key(
 
 def touch_conversation_debounce(conversation_key: str) -> int:
     debounce_key = DEBOUNCE_KEY_TEMPLATE.format(conversation_key=conversation_key)
-    return redis_conn.incr(debounce_key)
+    due_at = time.time() + DEBOUNCE_DELAY_SECONDS
+    pipe = redis_conn.pipeline()
+    pipe.hincrby(debounce_key, "generation", 1)
+    pipe.hset(debounce_key, "due_at", due_at)
+    pipe.expire(debounce_key, DEBOUNCE_STATE_TTL_SECONDS)
+    generation, _, _ = pipe.execute()
+    return int(generation)
+
+
+def get_conversation_debounce_state(
+    conversation_key: str,
+) -> tuple[int | None, float | None]:
+    debounce_key = DEBOUNCE_KEY_TEMPLATE.format(conversation_key=conversation_key)
+    state = redis_conn.hgetall(debounce_key)
+    if not state:
+        return None, None
+
+    generation = state.get("generation")
+    due_at = state.get("due_at")
+    return (
+        int(generation) if generation is not None else None,
+        float(due_at) if due_at is not None else None,
+    )
 
 
 def _get_pending_messages_key(user_id: str, company_slug: str) -> str:

@@ -9,7 +9,39 @@ from app.db.models import InboundMessage
 MAX_MESSAGE_ATTEMPTS = 5
 RETRY_BASE_DELAY_SECONDS = 10
 RETRY_MAX_DELAY_SECONDS = 300
+PROCESSING_LEASE_SECONDS = 360
 CLAIMABLE_STATUSES = ("received", "retrying")
+
+
+def recover_stale_messages(
+    db: Session,
+    conversation_key: str,
+) -> int:
+    """Return messages abandoned by a worker to the retryable state."""
+    stale_before = datetime.now(timezone.utc) - timedelta(
+        seconds=PROCESSING_LEASE_SECONDS
+    )
+
+    recovered_count = (
+        db.query(InboundMessage)
+        .filter(
+            InboundMessage.conversation_key == conversation_key,
+            InboundMessage.status == "processing",
+            InboundMessage.processing_started_at < stale_before,
+        )
+        .update(
+            {
+                InboundMessage.status: "retrying",
+                InboundMessage.claim_token: None,
+                InboundMessage.next_attempt_at: datetime.now(timezone.utc),
+                InboundMessage.last_error: "Processing lease expired",
+            },
+            synchronize_session=False,
+        )
+    )
+
+    db.commit()
+    return recovered_count
 
 
 def claim_pending_messages(

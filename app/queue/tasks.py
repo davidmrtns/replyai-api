@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import List, Union
 
 from app.db.database import get_db_session_with_context
@@ -7,10 +8,14 @@ from app.queue.claim_messages import (
     claim_pending_messages,
     mark_messages_completed,
     mark_messages_for_retry,
+    recover_stale_messages,
 )
 from app.queue.claim_messages import claim_pending_messages
 from app.queue.locks import acquire_conversation_lock, release_conversation_lock
-from app.queue.queue import DEBOUNCE_KEY_TEMPLATE, get_and_clear_messages, redis_conn
+from app.queue.queue import (
+    get_conversation_debounce_state,
+    get_and_clear_messages,
+)
 from app.queue.serialization import deserialize_messages
 from app.services.reply_service import ReplyService
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
@@ -20,15 +25,27 @@ from app.utils.logger import logger
 
 @celery_app.task
 def process_debounce_task(conversation_key: str, generation: int) -> None:
-    debounce_key = DEBOUNCE_KEY_TEMPLATE.format(conversation_key=conversation_key)
-    current_generation = redis_conn.get(debounce_key)
+    current_generation, due_at = get_conversation_debounce_state(conversation_key)
 
-    if current_generation is None or int(current_generation) != generation:
+    if current_generation != generation or due_at is None:
         logger.warning(
             "Skipping debounce for %s: expected generation=%s, current generation=%s",
             conversation_key,
             generation,
             current_generation,
+        )
+        return
+
+    remaining_seconds = due_at - time.time()
+    if remaining_seconds > 0:
+        logger.info(
+            "Debounce still active for %s; rescheduling in %.2f seconds",
+            conversation_key,
+            remaining_seconds,
+        )
+        process_debounce_task.apply_async(
+            args=[conversation_key, generation],
+            countdown=remaining_seconds,
         )
         return
 
@@ -75,10 +92,38 @@ def process_reply_task(self, conversation_key: str):
     lock = acquire_conversation_lock(conversation_key)
 
     if not lock:
+        logger.info(
+            "Conversation task skipped because it is already being processed: %s",
+            conversation_key,
+        )
         return
 
+    claim_token = None
+    company_id = None
+    messages = []
+
     try:
+        current_generation, due_at = get_conversation_debounce_state(conversation_key)
+        if current_generation is None or due_at is None:
+            logger.info("No active debounce state for %s", conversation_key)
+            return
+
+        remaining_seconds = due_at - time.time()
+        if remaining_seconds > 0:
+            logger.info(
+                "Conversation lock acquired before debounce expired for %s; "
+                "rescheduling in %.2f seconds",
+                conversation_key,
+                remaining_seconds,
+            )
+            process_debounce_task.apply_async(
+                args=[conversation_key, current_generation],
+                countdown=remaining_seconds,
+            )
+            return
+
         with get_db_session_with_context() as db:
+            recover_stale_messages(db, conversation_key)
             claim_token, company_id, messages = claim_pending_messages(
                 db, conversation_key
             )
