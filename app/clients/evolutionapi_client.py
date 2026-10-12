@@ -19,7 +19,6 @@ from .message_client import (
     MessageContent,
 )
 
-
 BASE_URL = os.getenv("EVOLUTIONAPI_SERVER_URL")
 GLOBAL_API_KEY = os.getenv("EVOLUTIONAPI_GLOBAL_KEY")
 
@@ -87,6 +86,7 @@ class EvolutionAPIClient(MessageClient):
             raise ValueError("Invalid message type")  # TODO: raise custom exception
 
         response = requests.post(endpoint, headers=self.headers, json=payload)
+        response.raise_for_status()
         return response
 
     def send_presence(

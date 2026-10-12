@@ -2,10 +2,15 @@ import asyncio
 import time
 from typing import List, Union
 
+from redis.exceptions import ConnectionError as RedisConnectionError
+from requests.exceptions import RequestException
+from sqlalchemy.exc import OperationalError
+
 from app.db.database import get_db_session_with_context
 from app.queue.celery_app import celery_app
 from app.queue.claim_messages import (
     claim_pending_messages,
+    mark_messages_dead_letter,
     mark_messages_completed,
     mark_messages_for_retry,
     recover_stale_messages,
@@ -16,7 +21,7 @@ from app.queue.queue import (
     get_conversation_debounce_state,
     get_and_clear_messages,
 )
-from app.queue.serialization import deserialize_messages
+from app.queue.serialization import InvalidInboundMessage, deserialize_messages
 from app.services.reply_service import ReplyService
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
 from app.schemas.integrations.digisac_schema import DigisacRequest
@@ -80,7 +85,13 @@ def process_reply(slug: str, token: str, user_id: str, payload_type: str):
 
 @celery_app.task(
     bind=True,
-    autoretry_for=(TimeoutError, ConnectionError),
+    autoretry_for=(
+        TimeoutError,
+        ConnectionError,
+        RedisConnectionError,
+        RequestException,
+        OperationalError,
+    ),
     retry_backoff=True,
     retry_backoff_max=300,
     retry_jitter=True,
@@ -131,7 +142,22 @@ def process_reply_task(self, conversation_key: str):
         if not messages:
             return
 
-        payloads = deserialize_messages(messages)
+        try:
+            payloads = deserialize_messages(messages)
+        except InvalidInboundMessage as error:
+            with get_db_session_with_context() as db:
+                mark_messages_dead_letter(
+                    db=db,
+                    message_ids=[message["id"] for message in messages],
+                    claim_token=claim_token,
+                    error=f"task={self.request.id}: {error}",
+                )
+            logger.error(
+                "Inbound messages moved to dead letter for task %s: %s",
+                self.request.id,
+                error,
+            )
+            return
 
         with get_db_session_with_context() as db:
             reply_service = ReplyService(db)
@@ -150,7 +176,7 @@ def process_reply_task(self, conversation_key: str):
                 db=db,
                 message_ids=[message["id"] for message in messages],
                 claim_token=claim_token,
-                error=error,
+                error=f"task={self.request.id}: {error}",
             )
         raise
     finally:

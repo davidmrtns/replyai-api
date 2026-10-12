@@ -170,3 +170,34 @@ def mark_messages_for_retry(
     db.commit()
 
     return len(messages)
+
+
+def mark_messages_dead_letter(
+    db: Session,
+    message_ids: list[int],
+    claim_token: str,
+    error: Exception | str,
+) -> int:
+    if not message_ids:
+        return 0
+
+    updated_count = (
+        db.query(InboundMessage)
+        .filter(
+            InboundMessage.id.in_(message_ids),
+            InboundMessage.status == "processing",
+            InboundMessage.claim_token == claim_token,
+        )
+        .update(
+            {
+                InboundMessage.status: "dead_letter",
+                InboundMessage.claim_token: None,
+                InboundMessage.next_attempt_at: None,
+                InboundMessage.last_error: str(error)[:2000],
+            },
+            synchronize_session=False,
+        )
+    )
+
+    db.commit()
+    return updated_count

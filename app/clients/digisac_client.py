@@ -73,6 +73,7 @@ class DigisacClient(MessageClient):
             payload["text"] = ""
 
         response = requests.post(endpoint, headers=self.headers, json=payload)
+        response.raise_for_status()
         return response
 
     def get_contact_data(self, request: DigisacRequest) -> ContactData:
