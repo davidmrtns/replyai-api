@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from app.clients.langchain_model_factory import build_chat_model
-from app.clients.new_assistant_client import NewAssistantClient
+from app.clients.assistant_client import AssistantClient
 from app.db.models import Assistant, Company, Contact, Thread
 from app.services.message_handler_service import MessageToProcess
 from app.utils.logger import logger
@@ -16,7 +16,7 @@ class ThreadService:
         self.company = company
         self.db = db
 
-    def get_assistants_client(self) -> NewAssistantClient:
+    def get_assistants_client(self) -> AssistantClient:
         """Retrieve the assistant for the contact."""
         assistant = (
             self.db.query(Assistant)
@@ -34,7 +34,7 @@ class ThreadService:
             model_name=assistant.model_name,
             api_key=self.company.ai_provider.api_key,
         )
-        return NewAssistantClient(
+        return AssistantClient(
             assistant_name=assistant.assistant_name,
             assistant_id=assistant.id,
             model=model,

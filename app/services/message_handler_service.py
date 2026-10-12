@@ -6,7 +6,7 @@ from app.clients.digisac_client import DigisacClient
 from app.clients.elevenlabs_client import ElevenLabsClient
 from app.clients.evolutionapi_client import EvolutionAPIClient
 from app.clients.message_client import MediaMessageData, MessageClient
-from app.clients.new_assistant_client import NewAssistantClient
+from app.clients.assistant_client import AssistantClient
 from app.db.models import Assistant, Company, Contact, Voice
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
@@ -25,7 +25,7 @@ class MessageHandlerService:
 
     def __init__(
         self,
-        assistant: NewAssistantClient,
+        assistant: AssistantClient,
         message_client: MessageClient,
         company: Company,
         db: Session,

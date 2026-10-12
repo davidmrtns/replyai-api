@@ -17,7 +17,7 @@ from app.exceptions.exceptions import AIResponseException
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 
-class NewAssistantClient(ABC):
+class AssistantClient(ABC):
     def __init__(
         self,
         assistant_name: str,
