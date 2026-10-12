@@ -2,7 +2,6 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import os
 import base64
 
-
 MASTER_KEY = os.getenv("MASTER_KEY")
 if MASTER_KEY is None:
     raise ValueError("MASTER_KEY environment variable is not set")
@@ -28,5 +27,5 @@ def decrypt_api_key(encrypted_api_key: str) -> str:
         ciphertext = encrypted_data[12:]
         decrypted_key = aesgcm.decrypt(iv, ciphertext, None)
         return decrypted_key.decode()
-    except Exception:
-        raise ValueError("Failed to decrypt API key")  # TODO: log the exception
+    except Exception as e:
+        raise ValueError(f"Failed to decrypt API key: {e}")  # TODO: log the exception

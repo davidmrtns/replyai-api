@@ -2,15 +2,14 @@ from typing import List, Literal
 from sqlalchemy.orm import Session
 from dataclasses import dataclass
 
-from app.clients.assistants_client import AssistantsClient
 from app.clients.digisac_client import DigisacClient
 from app.clients.elevenlabs_client import ElevenLabsClient
 from app.clients.evolutionapi_client import EvolutionAPIClient
 from app.clients.message_client import MediaMessageData, MessageClient
+from app.clients.new_assistant_client import NewAssistantClient
 from app.db.models import Assistant, Company, Contact, Voice
 from app.schemas.integrations.digisac_schema import DigisacRequest
 from app.schemas.integrations.evolutionapi_schema import EvolutionAPIRequest
-from app.utils.api_key_encryption import decrypt_api_key
 from app.utils.model_utils import get_resource_from_db
 from app.utils.string_replacements import replace_abbreviations
 
@@ -26,12 +25,12 @@ class MessageHandlerService:
 
     def __init__(
         self,
-        assistants_client: AssistantsClient,
+        assistant: NewAssistantClient,
         message_client: MessageClient,
         company: Company,
         db: Session,
     ):
-        self.assistants_client = assistants_client
+        self.assistant = assistant
         self.message_client = message_client
         self.company = company
         self.db = db
@@ -52,7 +51,7 @@ class MessageHandlerService:
             if is_audio:
                 file = self.message_client.get_file_data(request=payload)
                 if file:
-                    message = self.assistants_client.transcribe_audio(file)
+                    message = self.assistant.transcribe_audio(file)
 
             if message:
                 messages.append(MessageToProcess(content=message, type="text"))
@@ -75,7 +74,7 @@ class MessageHandlerService:
 
         # Fetch the assistant's voice configuration
         assistant_db = get_resource_from_db(
-            Assistant, self.assistants_client.assistant_id, self.db, self.company.id
+            Assistant, self.assistant.assistant_id, self.db, self.company.id
         )
 
         if not assistant_db.voice:
@@ -86,9 +85,7 @@ class MessageHandlerService:
             return None  # Missing voice configuration or API key
 
         # Initialize ElevenLabs client and generate audio
-        elevenlabs_client = ElevenLabsClient(
-            decrypt_api_key(self.company.elevenlabs_api_key)
-        )
+        elevenlabs_client = ElevenLabsClient(self.company.elevenlabs_api_key)
         text_message = replace_abbreviations(text_message)
         return elevenlabs_client.generate_audio(
             text_message=text_message,
@@ -136,7 +133,7 @@ class MessageHandlerService:
                 text_message=text_message,
                 audio_message_base64=audio_message_base64,
                 media_message=media_message,
-                assistant_name=self.assistants_client.assistant_name,
+                assistant_name=self.assistant.assistant_name,
             )
         elif isinstance(self.message_client, DigisacClient):
             self.message_client.send_message(
@@ -145,7 +142,7 @@ class MessageHandlerService:
                 text_message=text_message,
                 audio_message_base64=audio_message_base64,
                 media_message=media_message,
-                assistant_name=self.assistants_client.assistant_name,
+                assistant_name=self.assistant.assistant_name,
             )
         else:
             raise ValueError(

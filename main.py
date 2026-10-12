@@ -1,5 +1,4 @@
 import json
-from contextlib import asynccontextmanager
 from pathlib import Path
 import uuid
 from fastapi import FastAPI
@@ -12,17 +11,8 @@ from app.exceptions.exception_handler import (
 )
 from app.exceptions.exceptions import AppException
 from app.routers import *
-from app.routers import assistant as assistant_router
 
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    assistant_router.initialize_assistant()
-    yield
-    assistant_router.close_assistant()
-
-
-app = FastAPI(title="ReplyAI API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="ReplyAI API", version="1.0.0")
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
 app.add_middleware(

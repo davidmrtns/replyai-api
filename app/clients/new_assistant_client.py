@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List
+from typing import Any, List
 from typing_extensions import Literal
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
@@ -102,3 +102,8 @@ class NewAssistantClient(ABC):
             {"type": message.type, "content": message.content}
             for message in state.values.get("messages", [])
         ]
+
+    def transcribe_audio(self, file: Any) -> str:
+        raise NotImplementedError(
+            "Audio transcription is not implemented in this client."
+        )
