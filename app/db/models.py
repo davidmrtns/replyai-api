@@ -1,5 +1,6 @@
 import enum
 from sqlalchemy import (
+    JSON,
     Column,
     Integer,
     String,
@@ -10,6 +11,7 @@ from sqlalchemy import (
     Time,
     Text,
     Float,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -48,6 +50,14 @@ class AIProviderNamesEnum(str, enum.Enum):
     openai = "openai"
     google_genai = "google_genai"
     anthropic = "anthropic"
+
+
+class InboundMessageStatusEnum(str, enum.Enum):
+    received = "received"
+    processing = "processing"
+    retrying = "retrying"
+    completed = "completed"
+    dead_letter = "dead_letter"
 
 
 class Company(Base):
@@ -177,6 +187,38 @@ class Thread(Base):
     contact_id = Column(Integer, ForeignKey("contacts.id"))
 
     contact = relationship("Contact", backref="threads", foreign_keys=[contact_id])
+
+
+class InboundMessage(Base):
+    __tablename__ = "inbound_messages"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    conversation_key = Column(String, nullable=False, index=True)
+    integration = Column(Enum(MessageClientTypeEnum), nullable=False)
+    external_contact_id = Column(String, nullable=False)
+    external_message_id = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+
+    status = Column(
+        Enum(InboundMessageStatusEnum), nullable=False, default="received", index=True
+    )
+    claim_token = Column(String, nullable=True, index=True)
+    attempt_count = Column(Integer, nullable=False, default=0)
+    received_at = Column(DateTime(timezone=True), nullable=False)
+    processing_started_at = Column(DateTime(timezone=True))
+    completed_at = Column(DateTime(timezone=True))
+    next_attempt_at = Column(DateTime(timezone=True))
+    last_error = Column(Text)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "integration",
+            "external_message_id",
+            name="uq_inbound_message_external_id",
+        ),
+    )
 
 
 class Contact(Base):

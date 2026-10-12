@@ -16,39 +16,39 @@ class ReplyService:
     """Service for generating replies."""
 
     def __init__(
-        self, db: Session, payloads: List[Union[DigisacRequest, EvolutionAPIRequest]]
+        self,
+        db: Session,
     ):
         self.db = db
-        self.payloads = payloads
 
-    async def generate_reply(self, company_slug: str, token: str):
+    async def generate_reply(
+        self,
+        company_id: int,
+        payloads: List[Union[DigisacRequest, EvolutionAPIRequest]],
+    ):
         """Main function to generate a reply."""
 
-        company = (
-            self.db.query(Company)
-            .filter_by(slug=company_slug, token=token, is_active=True)
-            .first()
-        )
+        company = self.db.query(Company).filter_by(id=company_id).first()
         if not company:
             raise Exception("Company not found or inactive")
 
         message_client = create_message_client(company, self.db)
         contact_id = (
-            self.payloads[0].data.contactId
-            if isinstance(self.payloads[0], DigisacRequest)
-            else self.payloads[0].data.key.remoteJid
+            payloads[0].data.contactId
+            if isinstance(payloads[0], DigisacRequest)
+            else payloads[0].data.key.remoteJid
         )
 
         # Handle contact creation or retrieval
         contact_service = ContactService(company, self.db, company.timezone)
         contact = contact_service.get_or_create_contact(
-            contact_id, message_client, self.payloads[0]
+            contact_id, message_client, payloads[0]
         )
 
         if not contact.receive_ai_replies:
             return
 
-        if not self._handle_request_early_return(contact, company):
+        if not self._handle_request_early_return(contact, company, payloads):
             return
 
         # Initialize the assistant
@@ -61,7 +61,7 @@ class ReplyService:
 
         # Process the message or media content
         messages, is_any_audio = message_handler_service.process_message_content(
-            self.payloads
+            payloads
         )  # TODO: check if there's a better way of doing so, to maintain message and image order
 
         if len(messages) < 1:
@@ -87,14 +87,19 @@ class ReplyService:
             )
             return False
 
-    def _handle_request_early_return(self, contact: Contact, company: Company):
+    def _handle_request_early_return(
+        self,
+        contact: Contact,
+        company: Company,
+        payloads: List[Union[DigisacRequest, EvolutionAPIRequest]],
+    ) -> bool:
         contact_service = ContactService(company, self.db, company.timezone)
 
-        if isinstance(self.payloads[0], DigisacRequest):
-            if has_entry_with_attr(self.payloads, "data.command", "reset"):
+        if isinstance(payloads[0], DigisacRequest):
+            if has_entry_with_attr(payloads, "data.command", "reset"):
                 contact_service.reset_contact(contact)
-        elif isinstance(self.payloads[0], EvolutionAPIRequest):
-            if has_entry_with_attr(self.payloads, "data.key.fromMe", True):
+        elif isinstance(payloads[0], EvolutionAPIRequest):
+            if has_entry_with_attr(payloads, "data.key.fromMe", True):
                 contact_service.change_ai_reply_reception(contact, False)
                 return False
         return True

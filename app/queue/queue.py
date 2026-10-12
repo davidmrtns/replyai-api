@@ -3,14 +3,35 @@ import os
 from redis import Redis
 from rq import Queue
 
-
 REDIS_URL = os.getenv("REDIS_URL")
 redis_conn = Redis.from_url(REDIS_URL, decode_responses=True)
 message_queue = Queue("messages", connection=redis_conn)
 
 BASE_KEY_TEMPLATE = "user:{user_id}:company:{company_slug}:{suffix}"
 ACTIVE_CHATS_SET_TEMPLATE = "{user_id}:{company_slug}:{token}:{payload_type}"
-DEBOUNCE_EXPIRY_SECONDS = 20
+NEW_CONVERSATION_KEY_TEMPLATE = (
+    "conversation:{company_id}:{integration}:{external_contact_id}"
+)
+DEBOUNCE_KEY_TEMPLATE = "debounce:{conversation_key}"
+DEBOUNCE_DELAY_SECONDS = 20
+DEBOUNCE_EXPIRY_SECONDS = DEBOUNCE_DELAY_SECONDS
+
+
+def get_conversation_key(
+    company_id: int,
+    integration: str,
+    external_contact_id: str,
+) -> str:
+    return NEW_CONVERSATION_KEY_TEMPLATE.format(
+        company_id=company_id,
+        integration=integration,
+        external_contact_id=external_contact_id,
+    )
+
+
+def touch_conversation_debounce(conversation_key: str) -> int:
+    debounce_key = DEBOUNCE_KEY_TEMPLATE.format(conversation_key=conversation_key)
+    return redis_conn.incr(debounce_key)
 
 
 def _get_pending_messages_key(user_id: str, company_slug: str) -> str:
