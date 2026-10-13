@@ -8,7 +8,12 @@ if [ "$APP_MODE" = "api" ]; then
 
 elif [ "$APP_MODE" = "worker" ]; then
     echo "Starting worker..."
-    exec python -m app.queue.worker
+    CELERY_POOL="${CELERY_POOL:-prefork}"
+    CELERY_CONCURRENCY="${CELERY_CONCURRENCY:-2}"
+    exec celery -A app.queue.celery_app:celery_app worker \
+        --pool="$CELERY_POOL" \
+        --concurrency="$CELERY_CONCURRENCY" \
+        --loglevel=INFO
 
 else
     echo "Invalid APP_MODE: $APP_MODE. Use 'api' or 'worker'."

@@ -86,6 +86,8 @@ services:
       - .env
     environment:
       APP_MODE: worker
+      CELERY_POOL: ${CELERY_POOL:-prefork}
+      CELERY_CONCURRENCY: ${CELERY_CONCURRENCY:-2}
 
 volumes:
   evolution_store:

@@ -11,7 +11,7 @@
     {
       "label": "Run Worker",
       "type": "shell",
-      "command": ".\\venv\\Scripts\\python -m app.queue.worker",
+      "command": ".\\venv\\Scripts\\python -m celery -A app.queue.celery_app:celery_app worker --pool=solo --loglevel=INFO",
       "problemMatcher": [],
       "isBackground": true
     },
