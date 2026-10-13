@@ -11,7 +11,6 @@ import os
 from app.exceptions.exceptions import DatabaseConnectionException
 from app.utils.logger import logger
 
-
 # Certificate setup
 SSL_CERTIFICATE = os.getenv("AZURE_POSTGRES_CERT")
 
@@ -34,15 +33,20 @@ if SSL_CERTIFICATE:
 DATABASE_URL = os.getenv("DATABASE_URL")
 MAX_RETRIES = 3
 RETRY_DELAY = 5
+DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
+DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "5"))
+DB_POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+DB_POOL_RECYCLE = int(os.getenv("DB_POOL_RECYCLE", "600"))
 
 
 engine = create_engine(
     DATABASE_URL,
     # connect_args={"sslmode": "verify-full"},
-    pool_size=10,
-    max_overflow=20,
-    pool_timeout=30,
-    pool_recycle=600,
+    pool_size=DB_POOL_SIZE,
+    max_overflow=DB_MAX_OVERFLOW,
+    pool_timeout=DB_POOL_TIMEOUT,
+    pool_recycle=DB_POOL_RECYCLE,
+    pool_pre_ping=True,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

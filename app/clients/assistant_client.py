@@ -8,6 +8,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 import os
+from threading import Lock
 from uuid import uuid4
 
 from app.assistant_functions.assistant_function import get_tools
@@ -15,6 +16,50 @@ from app.assistant_functions.runtime_context import RuntimeContext
 from app.exceptions.exceptions import AIResponseException
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+CHECKPOINTER_POOL_MIN_SIZE = int(os.getenv("CHECKPOINTER_POOL_MIN_SIZE", "1"))
+CHECKPOINTER_POOL_MAX_SIZE = int(os.getenv("CHECKPOINTER_POOL_MAX_SIZE", "5"))
+
+_checkpointer_pool: ConnectionPool | None = None
+_checkpointer: PostgresSaver | None = None
+_checkpointer_lock = Lock()
+
+
+def get_checkpointer() -> PostgresSaver:
+    global _checkpointer_pool, _checkpointer
+
+    if _checkpointer is not None:
+        return _checkpointer
+
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is required for the Postgres checkpointer")
+
+    with _checkpointer_lock:
+        if _checkpointer is None:
+            _checkpointer_pool = ConnectionPool(
+                conninfo=DATABASE_URL,
+                min_size=CHECKPOINTER_POOL_MIN_SIZE,
+                max_size=CHECKPOINTER_POOL_MAX_SIZE,
+                kwargs={
+                    "autocommit": True,
+                    "prepare_threshold": 0,
+                    "row_factory": dict_row,
+                },
+            )
+            _checkpointer_pool.wait()
+            _checkpointer = PostgresSaver(_checkpointer_pool)
+            _checkpointer.setup()
+
+    return _checkpointer
+
+
+def close_checkpointer_pool() -> None:
+    global _checkpointer_pool, _checkpointer
+
+    with _checkpointer_lock:
+        if _checkpointer_pool is not None:
+            _checkpointer_pool.close()
+        _checkpointer_pool = None
+        _checkpointer = None
 
 
 class AssistantClient(ABC):
@@ -28,22 +73,7 @@ class AssistantClient(ABC):
         self.assistant_name = assistant_name
         self.assistant_id = assistant_id
         self.messages: List[HumanMessage] = []
-        if not DATABASE_URL:
-            raise RuntimeError("DATABASE_URL is required for the Postgres checkpointer")
-
-        self._pool = ConnectionPool(
-            conninfo=DATABASE_URL,
-            min_size=1,
-            max_size=10,
-            kwargs={
-                "autocommit": True,
-                "prepare_threshold": 0,
-                "row_factory": dict_row,
-            },
-        )
-        self._pool.wait()
-        checkpointer = PostgresSaver(self._pool)
-        checkpointer.setup()
+        checkpointer = get_checkpointer()
         self.agent = create_agent(
             model=model,
             tools=get_tools(),
@@ -51,9 +81,6 @@ class AssistantClient(ABC):
             context_schema=RuntimeContext,
             checkpointer=checkpointer,
         )
-
-    def close(self) -> None:
-        self._pool.close()
 
     def add_message(
         self, content: str, content_type: Literal["text", "image", "document"]
