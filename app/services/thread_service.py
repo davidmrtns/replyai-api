@@ -18,6 +18,7 @@ class ThreadService:
 
     def get_assistants_client(self) -> AssistantClient:
         """Retrieve the assistant for the contact."""
+        self._lock_contact()
         assistant = (
             self.db.query(Assistant)
             .filter_by(id=self.contact.current_assistant, company_id=self.company.id)
@@ -40,6 +41,14 @@ class ThreadService:
             model=model,
             instructions=assistant.instructions,
         )
+
+    def _lock_contact(self) -> None:
+        """Serialize updates to the contact's assistant and current thread."""
+        self.db.query(Contact).filter_by(
+            id=self.contact.id,
+            company_id=self.company.id,
+        ).with_for_update().one()
+        self.db.refresh(self.contact)
 
     async def execute_thread(self, messages: List[MessageToProcess] | str) -> str:
         """Runs or creates a thread for the assistant."""

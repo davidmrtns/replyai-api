@@ -245,6 +245,14 @@ class Contact(Base):
     company = relationship("Company", backref="contacts")
     current_thread = relationship("Thread", foreign_keys=[current_thread_id])
 
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "contact_id",
+            name="uq_contact_company_contact_id",
+        ),
+    )
+
 
 class Media(Base):
     __tablename__ = "medias"

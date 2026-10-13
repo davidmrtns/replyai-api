@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Union
 import pytz
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.clients.digisac_client import DigisacClient
@@ -32,7 +33,15 @@ class ContactService:
             .first()
         )
         if contact is None:
-            contact = self._create_contact(contact_id, message_client, payload)
+            try:
+                contact = self._create_contact(contact_id, message_client, payload)
+            except IntegrityError:
+                self.db.rollback()
+                contact = (
+                    self.db.query(Contact)
+                    .filter_by(contact_id=contact_id, company_id=self.company.id)
+                    .one()
+                )
         else:
             self._update_contact(contact)
         return contact

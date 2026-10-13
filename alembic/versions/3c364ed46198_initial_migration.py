@@ -253,6 +253,17 @@ def upgrade() -> None:
         op.f("ix_contacts_contact_id"), "contacts", ["contact_id"], unique=False
     )
     op.create_index(op.f("ix_contacts_id"), "contacts", ["id"], unique=False)
+    op.create_index(
+        "ix_contacts_company_id",
+        "contacts",
+        ["company_id"],
+        unique=False,
+    )
+    op.create_unique_constraint(
+        "uq_contact_company_contact_id",
+        "contacts",
+        ["company_id", "contact_id"],
+    )
     sa.ForeignKeyConstraint(
         ["contact_id"],
         ["contacts.id"],
@@ -514,6 +525,12 @@ def downgrade() -> None:
     op.drop_table("threads")
     op.drop_index(op.f("ix_contacts_id"), table_name="contacts")
     op.drop_index(op.f("ix_contacts_contact_id"), table_name="contacts")
+    op.drop_constraint(
+        "uq_contact_company_contact_id",
+        "contacts",
+        type_="unique",
+    )
+    op.drop_index("ix_contacts_company_id", table_name="contacts")
     op.drop_table("contacts")
     op.drop_index(op.f("ix_companies_slug"), table_name="companies")
     op.drop_index(op.f("ix_companies_id"), table_name="companies")
